@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - 页面迷航</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 数字动画 */
+        .error-code {
+            font-size: 15rem;
+            font-weight: 700;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            opacity: 0;
+            animation: float 3s ease-in-out infinite, fadeIn 0.8s forwards 0.3s;
+        }
+
+        /* 星球元素 */
+        .planet {
+            width: 300px;
+            height: 300px;
+            background: url('data:image/svg+xml,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="45" fill="%23ffffff" opacity="0.1"/></svg>');
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: rotate 30s linear infinite;
+        }
+
+        /* 主要文案 */
+        .message {
+            margin: 2rem 0;
+            font-size: 1.5rem;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: slideUp 0.8s forwards 0.5s;
+        }
+
+        /* 返回按钮 */
+        .home-btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 50px;
+            text-decoration: none;
+            color: white;
+            font-weight: 500;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards 1s;
+        }
+
+        .home-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        /* 流星动画 */
+        .meteor {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: meteor 3s linear infinite;
+        }
+
+        /* 关键帧动画 */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes rotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes slideUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        @keyframes meteor {
+            0% { 
+                transform: translate(-200px, -200px);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(500px, 500px);
+                opacity: 0;
+            }
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .error-code { font-size: 10rem; }
+            .message { font-size: 1.2rem; }
+            .planet { width: 200px; height: 200px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景流星 -->
+    <div class="meteor" style="top:15%; left:20%; animation-delay: 1s;"></div>
+    <div class="meteor" style="top:30%; left:80%; animation-delay: 3s;"></div>
+    <div class="meteor" style="top:70%; left:40%; animation-delay: 2s;"></div>
+
+    <!-- 星球背景 -->
+    <div class="planet"></div>
+
+    <div class="container">
+        <div class="error-code">404</div>
+        <p class="message">
+            🚀 哎呀！我们似乎进入了未知空间<br>
+            这个页面可能被黑洞吞噬了...
+        </p>
+        <a href="/" class="home-btn">
+            🛸 带我返回地球
+        </a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,2688 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成绩记录</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#64748b',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                        info: '#06b6d4',
+                        light: '#f8fafc',
+                        dark: '#1e293b'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    },
+                    boxShadow: {
+                        card: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .glass-effect {
+                background: rgba(255, 255, 255, 0.7);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.18);
+            }
+            .dark .glass-effect {
+                background: rgba(30, 41, 59, 0.7);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .card-transition {
+                transition: all 0.3s ease;
+            }
+            .nav-item {
+                @apply flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300;
+            }
+            .nav-item.active {
+                @apply bg-primary text-white;
+            }
+            .nav-item:not(.active) {
+                @apply text-secondary hover:bg-blue-50 hover:text-primary dark:hover:bg-gray-800;
+            }
+            .btn {
+                @apply px-4 py-2 rounded rounded-lg rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2;
+            }
+            .btn-primary {
+                @apply bg-primary text-white hover:bg-blue-600 active:bg-blue-700;
+            }
+            .btn-secondary {
+                @apply bg-gray-200 text-gray-700 hover:bg-gray-300 active:bg-gray-400 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 dark:active:bg-gray-500;
+            }
+            .btn-success {
+                @apply bg-success text-white hover:bg-green-600 active:bg-green-700;
+            }
+            .btn-danger {
+                @apply bg-danger text-white hover:bg-red-600 active:bg-red-700;
+            }
+            .input-field {
+                @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 dark:bg-gray-800 dark:border-gray-600 dark:text-white;
+            }
+            .card {
+                @apply bg-white rounded-xl shadow-card p-6 card-transition hover:shadow-card-hover dark:bg-gray-800 dark:text-white;
+            }
+            .badge {
+                @apply px-2 py-1 text-xs font-medium rounded-full;
+            }
+            .badge-excellent {
+                @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100;
+            }
+            .badge-good {
+                @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100;
+            }
+            .badge-passed {
+                @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100;
+            }
+            .badge-failed {
+                @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100;
+            }
+            .animate-fade-in {
+                animation: fadeIn 0.5s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .animate-pulse-slow {
+                animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.7; }
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans dark:bg-gray-900 dark:text-white transition-colors duration-300">
+    <div class="flex h-screen overflow-hidden">
+        <!-- 侧边导航栏 -->
+        <aside class="w-64 bg-white shadow-lg z-10 hidden md:block dark:bg-gray-800 dark:text-white dark:border-gray-700">
+            <div class="p-4 border-b">
+                <h1 class="text-xl font-bold text-primary flex items-center gap-2">
+                    <i class="fa fa-line-chart"></i>
+                    <span>成绩分析</span>
+                </h1>
+            </div>
+            <nav class="p-4 space-y-2">
+                <a href="#dashboard" class="nav-item active" data-page="dashboard">
+                    <i class="fa fa-dashboard w-5 text-center"></i>
+                    <span>仪表盘</span>
+                </a>
+                <a href="#input" class="nav-item" data-page="input">
+                    <i class="fa fa-pencil-square-o w-5 text-center"></i>
+                    <span>成绩录入</span>
+                </a>
+                <a href="#records" class="nav-item" data-page="records">
+                    <i class="fa fa-list-alt w-5 text-center"></i>
+                    <span>成绩记录</span>
+                </a>
+                <a href="#analysis" class="nav-item" data-page="analysis">
+                    <i class="fa fa-bar-chart w-5 text-center"></i>
+                    <span>成绩分析</span>
+                </a>
+                <a href="#profile" class="nav-item" data-page="profile">
+                    <i class="fa fa-user-circle-o w-5 text-center"></i>
+                    <span>个人档案</span>
+                </a>
+            </nav>
+            <div class="absolute bottom-0 w-64 p-4 border-t">
+                <button id="exportBtn" class="btn btn-secondary w-full">
+                    <i class="fa fa-download"></i>
+                    <span>导出数据</span>
+                </button>
+                <button id="importBtn" class="btn btn-secondary w-full mt-2">
+                    <i class="fa fa-upload"></i>
+                    <span>导入数据</span>
+                </button>
+                <input type="file" id="importFile" accept=".json" class="hidden">
+            </div>
+        </aside>
+
+        <!-- 移动端导航菜单按钮 -->
+        <div class="md:hidden fixed bottom-4 right-4 z-50">
+            <button id="mobileMenuBtn" class="bg-primary text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center">
+                <i class="fa fa-bars"></i>
+            </button>
+        </div>
+
+        <!-- 移动端导航菜单 -->
+        <div id="mobileMenu" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-40 hidden">
+            <div class="bg-white w-64 h-full p-4 transform transition-transform duration-300 -translate-x-full dark:bg-gray-800 dark:text-white" id="mobileMenuContent">
+                <div class="flex justify-between items-center border-b pb-4">
+                    <h1 class="text-xl font-bold text-primary flex items-center gap-2">
+                        <i class="fa fa-line-chart"></i>
+                        <span>成绩分析系统</span>
+                    </h1>
+                    <button id="closeMobileMenu" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+                <nav class="p-4 space-y-2 mt-4">
+                    <a href="#dashboard" class="nav-item active" data-page="dashboard">
+                        <i class="fa fa-dashboard w-5 text-center"></i>
+                        <span>仪表盘</span>
+                    </a>
+                    <a href="#input" class="nav-item" data-page="input">
+                        <i class="fa fa-pencil-square-o w-5 text-center"></i>
+                        <span>成绩录入</span>
+                    </a>
+                    <a href="#records" class="nav-item" data-page="records">
+                        <i class="fa fa-list-alt w-5 text-center"></i>
+                        <span>成绩记录</span>
+                    </a>
+                    <a href="#analysis" class="nav-item" data-page="analysis">
+                        <i class="fa fa-bar-chart w-5 text-center"></i>
+                        <span>成绩分析</span>
+                    </a>
+                    <a href="#profile" class="nav-item" data-page="profile">
+                        <i class="fa fa-user-circle-o w-5 text-center"></i>
+                        <span>个人档案</span>
+                    </a>
+                </nav>
+                <div class="absolute bottom-0 w-64 p-4 border-t">
+                    <button id="mobileExportBtn" class="btn btn-secondary w-full">
+                        <i class="fa fa-download"></i>
+                        <span>导出数据</span>
+                    </button>
+                    <button id="mobileImportBtn" class="btn btn-secondary w-full mt-2">
+                        <i class="fa fa-upload"></i>
+                        <span>导入数据</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主内容区 -->
+        <main class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 dark:text-white">
+            <!-- 顶部导航栏 -->
+            <header class="bg-white shadow-sm sticky top-0 z-10 dark:bg-gray-800 dark:text-white dark:border-gray-700">
+                <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+                    <div class="flex items-center gap-4">
+                        <h2 id="pageTitle" class="text-lg font-semibold text-gray-800 dark:text-white">仪表盘</h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <i class="fa fa-moon-o text-gray-600 dark:text-gray-300"></i>
+                        </button>
+                        <div class="relative">
+                            <button id="userMenuBtn" class="flex items-center gap-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <span class="hidden md:inline text-sm font-medium dark:text-white">zcr</span>
+                                <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
+                                    <i class="fa fa-user"></i>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 页面内容 -->
+            <div class="container mx-auto px-4 py-6">
+                <!-- 仪表盘页面 -->
+                <section id="dashboardPage" class="page-content animate-fade-in">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                        <!-- 总分卡片 -->
+                        <div class="card bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-sm opacity-80">最新总分</p>
+                                    <h3 id="totalScore" class="text-3xl font-bold mt-1">0<span class="text-sm text-gray-400">/1050</span></h3>
+                                </div>
+                                <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                                    <i class="fa fa-trophy text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items items-center">
+                                <span id="totalScoreTrend" class="text-sm flex items-center">
+                                    <i class="fa fa-arrow-up mr-1"></i>
+                                    <span>0%</span>
+                                </span>
+                                <span class="text-sm opacity-80 ml-2">较上次</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 班次卡片 -->
+                        <div class="card bg-gradient-to-br from-green-500 to-green-600 text-white">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-sm opacity-80">班次</p>
+                                    <h3 id="classRank" class="text-3xl font-bold mt-1">0</h3>
+                                </div>
+                                <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                                    <i class="fa fa-users text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center">
+                                <span id="classRankTrend" class="text-sm flex items-center">
+                                    <i class="fa fa-arrow-down mr-1"></i>
+                                    <span>0</span>
+                                </span>
+                                <span class="text-sm opacity-80 ml-2">名次</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 校次卡片 -->
+                        <div class="card bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-sm opacity-80">校次</p>
+                                    <h3 id="schoolRank" class="text-3xl font-bold mt-1">0</h3>
+                                </div>
+                                <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                                    <i class="fa fa-globe text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center">
+                                <span id="schoolRankTrend" class="text-sm flex items-center">
+                                    <i class="fa fa-arrow-down mr-1"></i>
+                                    <span>0</span>
+                                </span>
+                                <span class="text-sm opacity-80 ml-2">名次</span>
+                            </div>
+                        </div>
+
+                        <!-- 成绩趋势图和学科雷达图 - 并排显示 -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 w-full" style="grid-column: 1 / -1;">
+                            <div class="card">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-semibold">成绩趋势</h3>
+                                    <div class="flex gap-2">
+                                        <select id="trendSubjectSelect" class="input-field py-1 px-2 text-sm">
+                                            <option value="total">总分</option>
+                                            <option value="chinese">语文</option>
+                                            <option value="math">数学</option>
+                                            <option value="english">英语</option>
+                                            <option value="physics">物理</option>
+                                            <option value="chemistry">化学</option>
+                                            <option value="biology">生物</option>
+                                            <option value="politics">政治</option>
+                                            <option value="history">历史</option>
+                                            <option value="geography">地理</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="h-64">
+                                    <canvas id="scoreTrendChart"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-semibold">学科分析</h3>
+                                    <div class="flex gap-2">
+                                        <select id="radarExamSelect" class="input-field py-1 px-2 text-sm">
+                                            <option value="latest">最新考试</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="h-64">
+                                    <canvas id="subjectRadarChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 最近考试记录 - 单独一行 -->
+                    <div class="card" style="grid-column: 1 / -1;">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold">最近考试记录</h3>
+                            <a href="#records" class="text-primary hover:underline text-sm flex items-center" data-page-link="records">
+                                <span>查看全部</span>
+                                <i class="fa fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead>
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">科目</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">得分</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">班次</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">校次</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentExamsTable" class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:text-white dark:divide-gray-700">
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-4 text-center text-gray-400">暂无考试考试记录</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 成绩录入页面 -->
+                <section id="inputPage" class="page-content hidden animate-fade-in">
+                    <div class="card">
+                        <h3 class="text-lg font-semibold mb-4">成绩录入</h3>
+                        <form id="gradeInputForm">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label for="examName" class="block text-sm font-medium text-gray-700 mb-1">考试名称</label>
+                                    <input type="text" id="examName" name="examName" class="input-field" placeholder="要录入的考试名称" required>
+                                </div>
+                                <div>
+                                    <label for="examDate" class="block text-sm font-medium text-gray-700 mb-1">考试日期</label>
+                                    <input type="date" id="examDate" name="examDate" class="input-field" required>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto mb-6">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead>
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">科目</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">满分</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">得分</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:text-white dark:divide-gray-700">
+                                        <!-- 语文 -->
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium text-gray-900 dark:text-white">语文</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">150</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <input type="number" min="0" max="150" step="0.5" name="chineseScore" class="input-field py-1 px-2 w-24" required>
+                                            </td>
+                                        </tr>
+                                        <!-- 数学 -->
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium text-gray-900 dark:text-white">数学</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">150</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <input type="number" min="0" max="150" step="0.5" name="mathScore" class="input-field py-1 px-2 w-24" required>
+                                            </td>
+                                        </tr>
+                                        <!-- 英语 -->
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium text-gray-900 dark:text-white">英语</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">150</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <input type="number" min="0" max="150" step="0.5" name="englishScore" class="input-field py-1 px-2 w-24" required>
+                                            </td>
+                                        </tr>
+                                        <!-- 物理 -->
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium text-gray-900 dark:text-white">物理</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">100</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <input type="number" min="0" max="100" step="0.5" name="physicsScore" class="input-field py-1 px-2 w-24" required>
+                                            </td>
+                                        </tr>
+                                        <!-- 化学 -->
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium text-gray-900 dark:text-white">化学</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">100</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <input type="number" min="0" max="100" step="0.5" name="chemistryScore" class="input-field py-1 px-2 w-24" required>
+                                            </td>
+                                        </tr>
+                                        <!-- 生物 -->
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium text-gray-900 dark:text-white">生物</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">100</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <input type="number" min="0" max="100" step="0.5" name="biologyScore" class="input-field py-1 px-2 w-24" required>
+                                            </td>
+                                        </tr>
+                                        <!-- 政治 -->
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium text-gray-900 dark:text-white">政治</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">100</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <input type="number" min="0" max="100" step="0.5" name="politicsScore" class="input-field py-1 px-2 w-24" required>
+                                            </td>
+                                        </tr>
+                                        <!-- 历史 -->
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium text-gray-900 dark:text-white">历史</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">100</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <input type="number" min="0" max="100" step="0.5" name="historyScore" class="input-field py-1 px-2 w-24" required>
+                                            </td>
+                                        </tr>
+                                        <!-- 地理 -->
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium text-gray-900 dark:text-white">地理</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">100</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <input type="number" min="0" max="100" step="0.5" name="geographyScore" class="input-field py-1 px-2 w-24" required>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- 排名信息 -->
+                            <div class="mt-6 p-4 bg-gray-50 rounded-lg dark:bg-gray-800">
+                                <h4 class="text-md font-semibold mb-3">排名信息</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="rankClass" class="block text-sm font-medium text-gray-700 mb-1">班次</label>
+                                        <input type="number" min="1" id="rankClass" name="rankClass" class="input-field" required>
+                                    </div>
+                                    <div>
+                                        <label for="rankSchool" class="block text-sm font-medium text-gray-700 mb-1">校次</label>
+                                        <input type="number" min="1" id="rankSchool" name="rankSchool" class="input-field" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end gap-4">
+                                <button type="button" id="resetFormBtn" class="btn btn-secondary">
+                                    <i class="fa fa-refresh"></i>
+                                    <span>重置</span>
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa fa-save"></i>
+                                    <span>保存成绩</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- 成绩记录页面 -->
+                <section id="recordsPage" class="page-content hidden animate-fade-in">
+                    <div class="card mb-6">
+                        <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-4">
+                            <h3 class="text-lg font-semibold">成绩记录</h3>
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <div class="relative">
+                                    <input type="text" id="searchExams" class="input-field pl-10" placeholder="搜索考试...">
+                                    <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                </div>
+                                <select id="sortExams" class="input-field">
+                                    <option value="date-desc">日期 (最新优先)</option>
+                                    <option value="date-asc">日期 (最早优先)</option>
+                                    <option value="score-desc">总分 (高到低)</option>
+                                    <option value="score-asc">总分 (低到高)</option>
+                                    <option value="rank-desc">班次 (高到低)</option>
+                                    <option value="rank-asc">班次 (低到高)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead>
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">考试名称</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">总分</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">班次</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">校次</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="examsTable" class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">暂无考试记录</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="noExamsMessage" class="py-8 text-center hidden">
+                            <i class="fa fa-folder-open-o text-4xl text-gray-300 mb-2"></i>
+                            <p class="text-gray-500">暂无考试记录</p>
+                            <button id="addFirstExamBtn" class="btn btn-primary mt-4" data-page-link="input">
+                                <i class="fa fa-plus"></i>
+                                <span>添加第一条记录</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 成绩分析页面 -->
+                <section id="analysisPage" class="page-content hidden animate-fade-in">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <!-- 班级与校次对比 -->
+                        <div class="card">
+                            <h3 class="text-lg font-semibold mb-4">排名对比</h3>
+                            <div class="h-64">
+                                <canvas id="rankComparisonChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- 学科强弱分析 -->
+                        <div class="card">
+                            <h3 class="text-lg font-semibold mb-4">学科强弱分析</h3>
+                            <div class="h-64">
+                                <canvas id="subjectStrengthChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 成绩分布 -->
+                    <div class="card mb-6">
+                        <h3 class="text-lg font-semibold mb-4">成绩分布</h3>
+                        <div class="h-64">
+                            <canvas id="scoreDistributionChart"></canvas>
+                        </div>
+                    </div>
+				</section>
+                <!-- 个人档案页面 -->
+                <section id="profilePage" class="page-content hidden animate-fade-in">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- 个人信息 -->
+                        <div class="card lg:col-span-1">
+                            <div class="flex flex-col items-center">
+                                <div class="w-24 h-24 rounded-full bg-primary text-white flex items-center justify-center text-3xl mb-4">
+                                    <i class="fa fa-user"></i>
+                                </div>
+                                <h3 class="text-xl font-bold">zcr</h3>
+                                <p class="text-gray-500 mt-1">高一级</p>
+                                <div class="w-full mt-6">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-sm text-gray-500">数据统计</span>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <div>
+                                            <div class="flex justify-between text-sm mb-1">
+                                                <span>考试记录</span>
+                                                <span id="examCount" class="font-medium">0</span>
+                                            </div>
+                                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                                <div id="examCountProgress" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="flex justify-between text-sm mb-1">
+                                                <span>平均总分</span>
+                                                <span id="avgTotalScore" class="font-medium">0</span>
+                                            </div>
+                                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                                <div id="avgScoreProgress" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="flex justify-between text-sm mb-1">
+                                                <span>平均班次</span>
+                                                <span id="avgClassRank" class="font-medium">0</span>
+                                            </div>
+                                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                                <div id="avgClassRankProgress" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="flex justify-between text-sm mb-1">
+                                                <span>平均校次</span>
+                                                <span id="avgSchoolRank" class="font-medium">0</span>
+                                            </div>
+                                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                                <div id="avgSchoolRankProgress" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 学习建议 -->
+                        <div class="card lg:col-span-2">
+                            <h3 class="text-lg font-semibold mb-4">学习建议</h3>
+                            <div id="noAdviceMessage" class="py-8 text-center">
+                                <i class="fa fa-lightbulb-o text-4xl text-gray-300 mb-2"></i>
+                                <p class="text-gray-500">暂无学习建议，请先添加考试记录</p>
+                            </div>
+                            <div id="adviceContent" class="space-y-4 hidden">
+                                <div class="bg-blue-50 border-l-4 border-blue-500 p-4">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fa fa-info-circle text-blue-500"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm text-blue-700">
+                                                <span class="font-medium">总体表现：</span>
+                                                <span id="overallPerformance">你的成绩总体稳定，在班级中处于中等偏上水平。</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-purple-50 border-l-4 border-purple-500 p-4">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fa fa-line-chart text-purple-500"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm text-purple-700">
+                                                <span class="font-medium">进步空间：</span>
+                                                <span id="improvementAreas">数学成绩有下降趋势，建议加强练习。</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-gray-50 border-l-4 border-gray-500 p-4">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fa fa-book text-gray-500"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm text-gray-700">
+                                                <span class="font-medium">学习建议：</span>
+                                                <span id="studyAdvice">合理安排时间，重点关注薄弱学科，保持优势学科的领先地位。</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 预测分析 -->
+                    <div class="card mt-6">
+                        <h3 class="text-lg font-semibold mb-4">成绩预测</h3>
+                        <div id="noPredictionMessage" class="py-8 text-center">
+                            <i class="fa fa-line-chart text-4xl text-gray-300 mb-2"></i>
+                            <p class="text-gray-500">暂无足够数据进行预测，请至少添加3次考试记录</p>
+                        </div>
+                        <div id="predictionContent" class="hidden">
+                            <div class="h-64 mb-6">
+                                <canvas id="scorePredictionChart"></canvas>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-medium mb-2">预测分析</h4>
+                                <p id="predictionAnalysis" class="text-sm text-gray-700">
+                                    根据历史数据预测，你的总分预计将保持稳定增长趋势，预计下次考试总分在XXX分左右。
+                                    物理和政治仍需加强，否则可能成为拉分科目。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- 详情模态框 -->
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 id="modalExamName" class="text-xl font-bold">考试详情</h3>
+                    <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+                <p id="modalExamDate" class="text-gray-500 mt-1">2023-06-15</p>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500">总分</p>
+                        <p id="modalTotalScore" class="text-2xl font-bold text-blue-600">0<span class="text-sm text-gray-400">/1050</span></p>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500">班次</p>
+                        <p id="modalClassRank" class="text-2xl font-bold text-green-600">0</p>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500">校次</p>
+                        <p id="modalSchoolRank" class="text-2xl font-bold text-purple-600">0</p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">科目</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">满分</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">得分</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">等级</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">得分率</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalScoresTable" class="bg-white divide-y divide-gray-200">
+                            <!-- 动态填充 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="p-6 border-t flex justify-end">
+                <button id="closeModalBtn" class="btn btn-secondary">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑模态框 -->
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold">编辑成绩</h3>
+                    <button id="closeEditModal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <form id="editForm">
+                    <input type="hidden" id="editExamId">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="editExamName" class="block text-sm font-medium text-gray-700 mb-1">考试名称</label>
+                            <input type="text" id="editExamName" name="editExamName" class="input-field" required>
+                        </div>
+                        <div>
+                            <label for="editExamDate" class="block text-sm font-medium text-gray-700 mb-1">考试日期</label>
+                            <input type="date" id="editExamDate" name="editExamDate" class="input-field" required>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">科目</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">得分</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">班次</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">校次</th>
+                                </tr>
+                            </thead>
+                            <tbody id="editScoresTable" class="bg-white divide-y divide-gray-200">
+                                <!-- 动态填充 -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="flex justify-end gap-4">
+                        <button type="button" id="cancelEditBtn" class="btn btn-secondary">取消</button>
+                        <button type="submit" class="btn btn-primary">保存修改</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div class="p-6 border-b">
+                <h3 class="text-xl font-bold">确认删除</h3>
+            </div>
+            <div class="p-6">
+                <p class="text-gray-700 mb-6">你确定要删除这条考试记录吗？此操作不可撤销。</p>
+                <div class="flex justify-end gap-4">
+                    <button id="cancelDeleteBtn" class="btn btn-secondary">取消</button>
+                    <button id="confirmDeleteBtn" class="btn btn-danger">删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知提示 -->
+    <div id="notification" class="fixed top-4 right-4 z-50 max-w-sm bg-white rounded-lg shadow-lg p-4 transform transition-all duration-300 translate-x-full opacity-0">
+        <div class="flex items-start">
+            <div id="notificationIcon" class="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-3">
+                <i class="fa fa-check"></i>
+            </div>
+            <div class="flex-1">
+                <h4 id="notificationTitle" class="text-sm font-medium text-gray-800">操作成功</h4>
+                <p id="notificationMessage" class="text-sm text-gray-500 mt-1">成绩已成功保存</p>
+            </div>
+            <button id="closeNotification" class="text-gray-400 hover:text-gray-600 ml-4">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 存储模块
+        const Storage = {
+            // 获取所有考试记录
+            getExams() {
+                const exams = localStorage.getItem('gradeSystemExams');
+                return exams ? JSON.parse(exams) : [];
+            },
+
+            // 保存考试记录
+            saveExam(exam) {
+                const exams = this.getExams();
+                exam.id = Date.now().toString();
+                exams.push(exam);
+                localStorage.setItem('gradeSystemExams', JSON.stringify(exams));
+                return exam;
+            },
+
+            // 更新考试记录
+            updateExam(updatedExam) {
+                const exams = this.getExams();
+                const index = exams.findIndex(exam => exam.id === updatedExam.id);
+                if (index !== -1) {
+                    exams[index] = updatedExam;
+                    localStorage.setItem('gradeSystemExams', JSON.stringify(exams));
+                    return true;
+                }
+                return false;
+            },
+
+            // 删除考试记录
+            deleteExam(id) {
+                const exams = this.getExams();
+                const newExams = exams.filter(exam => exam.id !== id);
+                if (exams.length !== newExams.length) {
+                    localStorage.setItem('gradeSystemExams', JSON.stringify(newExams));
+                    return true;
+                }
+                return false;
+            },
+
+            // 导出所有数据
+			exportData() {
+				const data = {
+					exams: this.getExams(),
+					exportDate: new Date().toISOString()
+				};
+				const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement('a');
+				a.href = url;
+				a.download = `grade-system-export-${new Date().toISOString().slice(0, 10)}.json`;
+				document.body.appendChild(a);
+				a.click();
+				document.body.removeChild(a);
+				URL.revokeObjectURL(url);
+			},
+
+			// 导入数据
+			importData(data) {
+				try {
+					if (data.exams) {
+						localStorage.setItem('gradeSystemExams', JSON.stringify(data.exams));
+					}
+					return true;
+				} catch (error) {
+					console.error('导入数据失败', error);
+					return false;
+				}
+			}
+		};
+		// 分析模块
+		const Analysis = {
+			// 计算总分
+			calculateTotalScore(subjects) {
+				return Object.values(subjects).reduce((sum, subject) => sum + subject.score, 0);
+			},
+
+			// 计算得分率
+			calculateScoreRate(score, fullMark) {
+				return (score / fullMark * 100).toFixed(1);
+			},
+
+			// 确定等级
+			determineGrade(score, fullMark) {
+				const rate = score / fullMark;
+				if (rate >= 0.85) return '优秀';
+				if (rate >= 0.7) return '良好';
+				if (rate >= 0.6) return '及格';
+				return '不及格';
+			},
+
+			// 获取科目的满分
+			getFullMark(subjectName) {
+				const mainSubjects = ['chinese', 'math', 'english'];
+				return mainSubjects.includes(subjectName) ? 150 : 100;
+			},
+
+			// 获取科目的中文名称
+			getSubjectChineseName(subjectName) {
+				const mapping = {
+					'chinese': '语文',
+					'math': '数学',
+					'english': '英语',
+					'physics': '物理',
+					'chemistry': '化学',
+					'biology': '生物',
+					'politics': '政治',
+					'history': '历史',
+					'geography': '地理'
+				};
+				return mapping[subjectName] || subjectName;
+			},
+
+			// 生成学习建议
+			generateAdvice(exams) {
+				if (exams.length < 2) return null;
+
+				const latestExam = exams[exams.length - 1];
+				const prevExam = exams.length > 1 ? exams[exams.length - 2] : null;
+
+				// 总体表现
+				let overallPerformance = '';
+				if (prevExam) {
+					const rankChange = latestExam.rankClass - prevExam.rankClass;
+					if (rankChange < 0) {
+						overallPerformance = `你的成绩总体呈上升趋势，班次提升了${Math.abs(rankChange)}名，表现不错！`;
+					} else if (rankChange > 0) {
+						overallPerformance = `你的成绩有所下滑，班次下降了${rankChange}名，需要更加努力。`;
+					} else {
+						overallPerformance = `你的成绩总体稳定，班次保持不变。`;
+					}
+				} else {
+					overallPerformance = `你目前只有一次考试记录，建议继续添加更多记录以获得更全面的分析。`;
+				}
+
+				// 进步空间
+				let improvementAreas = '';
+				const subjectNames = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+				const decliningSubjects = [];
+
+				if (prevExam) {
+					subjectNames.forEach(subject => {
+						if (latestExam.subjects[subject] && prevExam.subjects[subject]) {
+							const latestRank = latestExam.subjects[subject].rankClass;
+							const prevRank = prevExam.subjects[subject].rankClass;
+							if (latestRank - prevRank > 3) { // 排名下降超过3名
+								decliningSubjects.push(this.getSubjectChineseName(subject));
+							}
+						}
+					});
+
+					if (decliningSubjects.length > 0) {
+						improvementAreas = `${decliningSubjects.join('、')}成绩有明显下降趋势，建议加强练习。`;
+					} else {
+						improvementAreas = `你的各科成绩相对稳定，建议针对薄弱环节进行针对性训练。`;
+					}
+				} else {
+					improvementAreas = `建议继续添加考试记录，以便更好地分析你的学习情况。`;
+				}
+
+				// 学习建议
+				let studyAdvice = '';
+				if (decliningSubjects.length > 0) {
+					studyAdvice = `合理安排时间，重点关注下降科目，建议制定针对性的学习计划。`;
+				} else {
+					studyAdvice = `继续保持当前的学习状态，建议在各学科均衡发展的基础上，适当拓展知识面，提升综合能力。`;
+				}
+
+				return {
+					overallPerformance,
+					improvementAreas,
+					studyAdvice
+				};
+			},
+
+			// 预测下次成绩
+			predictNextScore(exams) {
+				if (exams.length < 3) return null;
+
+				// 按日期排序
+				const sortedExams = [...exams].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+				// 提取总分数据
+				const scores = sortedExams.map(exam => exam.totalScore);
+
+				// 使用简单线性回归预测下次成绩
+				const n = scores.length;
+				const xValues = Array.from({length: n}, (_, i) => i + 1); // 1, 2, 3, ..., n
+
+				const sumX = xValues.reduce((sum, x) => sum + x, 0);
+				const sumY = scores.reduce((sum, y) => sum + y, 0);
+				const sumXY = xValues.reduce((sum, x, i) => sum + x * scores[i], 0);
+				const sumX2 = xValues.reduce((sum, x) => sum + x * x, 0);
+
+				const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+				const intercept = (sumY - slope * sumX) / n;
+
+				// 预测下次成绩 (x = n + 1)
+				const nextScore = Math.round(intercept + slope * (n + 1));
+
+				// 生成预测分析
+				let analysis = '';
+				if (slope > 0) {
+					analysis = `根据历史数据预测，你的总分预计将保持稳定增长趋势，预计下次考试总分在${nextScore}分左右。`;
+				} else if (slope < 0) {
+					analysis = `根据历史数据预测，你的总分可能会继续下滑，预计下次考试总分在${nextScore}分左右。建议及时调整学习方法，加强薄弱环节。`;
+				} else {
+					analysis = `根据历史数据预测，你的总分预计将保持稳定，预计下次考试总分在${nextScore}分左右。`;
+				}
+
+				return {
+					predictedScore: nextScore,
+					analysis,
+					// 返回历史数据和预测点用于绘图
+					chartData: {
+						labels: [...sortedExams.map(exam => exam.name), '预测'],
+						scores: [...scores, nextScore]
+					}
+				};
+			}
+		};
+
+        // 图表模块
+        const Charts = {
+            // 成绩趋势图
+            renderScoreTrendChart(subject = 'total') {
+                const exams = Storage.getExams();
+                if (exams.length < 2) return;
+
+                // 按日期排序
+                const sortedExams = [...exams].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                const ctx = document.getElementById('scoreTrendChart').getContext('2d');
+
+                // 销毁旧图表
+                if (window.scoreTrendChartInstance) {
+                    window.scoreTrendChartInstance.destroy();
+                }
+
+                let data;
+                let label;
+                let borderColor;
+                let backgroundColor;
+
+                if (subject === 'total') {
+                    data = sortedExams.map(exam => exam.totalScore);
+                    label = '总分';
+                    borderColor = '#3b82f6';
+                    backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                } else {
+                    data = sortedExams.map(exam => exam.subjects[subject] ? exam.subjects[subject].score : 0);
+                    label = Analysis.getSubjectChineseName(subject);
+
+                    // 为不同科目设置不同颜色
+                    const colorMap = {
+                        'chinese': { border: '#ef4444', background: 'rgba(239, 68, 68, 0.1)' },
+                        'math': { border: '#10b981', background: 'rgba(16, 185, 129, 0.1)' },
+                        'english': { border: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)' },
+                        'physics': { border: '#8b5cf6', background: 'rgba(139, 92, 246, 0.1)' },
+                        'chemistry': { border: '#ec4899', background: 'rgba(236, 72, 153, 0.1)' },
+                        'biology': { border: '#06b6d4', background: 'rgba(6, 182, 212, 0.1)' },
+                        'politics': { border: '#14b8a6', background: 'rgba(20, 184, 166, 0.1)' },
+                        'history': { border: '#f97316', background: 'rgba(249, 115, 22, 0.1)' },
+                        'geography': { border: '#6366f1', background: 'rgba(99, 102, 241, 0.1)' }
+                    };
+
+                    borderColor = colorMap[subject].border;
+                    backgroundColor = colorMap[subject].background;
+                }
+
+                window.scoreTrendChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: sortedExams.map(exam => exam.name),
+                        datasets: [{
+                            label: label,
+                            data: data,
+                            borderColor: borderColor,
+                            backgroundColor: backgroundColor,
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: borderColor,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                titleColor: '#1e293b',
+                                bodyColor: '#475569',
+                                borderColor: '#e2e8f0',
+                                borderWidth: 1,
+                                padding: 10,
+                                displayColors: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${label}: ${context.parsed.y}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        animations: {
+                            tension: {
+                                duration: 1000,
+                                easing: 'linear'
+                            }
+                        }
+                    }
+                });
+            },
+
+            // 学科雷达图
+            renderSubjectRadarChart(examId = 'latest') {
+                const exams = Storage.getExams();
+                if (exams.length === 0) return;
+
+                let exam;
+                if (examId === 'latest') {
+                    // 获取最新考试
+                    exam = [...exams].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                } else {
+                    // 根据ID获取考试
+                    exam = exams.find(e => e.id === examId);
+                }
+
+                if (!exam) return;
+
+                const ctx = document.getElementById('subjectRadarChart').getContext('2d');
+
+                // 销毁旧图表
+                if (window.subjectRadarChartInstance) {
+                    window.subjectRadarChartInstance.destroy();
+                }
+
+                const subjectNames = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+                const labels = subjectNames.map(subj => Analysis.getSubjectChineseName(subj));
+
+                // 计算得分率
+                const data = subjectNames.map(subj => {
+                    if (!exam.subjects[subj]) return 0;
+                    const fullMark = Analysis.getFullMark(subj);
+                    return (exam.subjects[subj].score / fullMark) * 100;
+                });
+
+                window.subjectRadarChartInstance = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '得分率',
+                            data: data,
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            borderColor: '#3b82f6',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#3b82f6',
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                titleColor: '#1e293b',
+                                bodyColor: '#475569',
+                                borderColor: '#e2e8f0',
+                                borderWidth: 1,
+                                padding: 10,
+                                displayColors: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `得分率: ${context.parsed.r.toFixed(1)}%`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            r: {
+                                angleLines: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                pointLabels: {
+                                    font: {
+                                        size: 11
+                                    }
+                                },
+                                suggestedMin: 0,
+                                suggestedMax: 100,
+                                ticks: {
+                                    stepSize: 20,
+                                    backdropColor: 'transparent'
+                                }
+                            }
+                        },
+                        elements: {
+                            line: {
+                                tension: 0.1
+                            }
+                        }
+                    }
+                });
+            },
+
+            // 排名对比图
+            renderRankComparisonChart() {
+                const exams = Storage.getExams();
+                if (exams.length < 2) return;
+
+                // 按日期排序
+                const sortedExams = [...exams].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                const ctx = document.getElementById('rankComparisonChart').getContext('2d');
+
+                // 销毁旧图表
+                if (window.rankComparisonChartInstance) {
+                    window.rankComparisonChartInstance.destroy();
+                }
+
+                // 排名数据（注意：排名越小越好）
+                const classRankData = sortedExams.map(exam => exam.rankClass);
+                const schoolRankData = sortedExams.map(exam => exam.rankSchool);
+
+                window.rankComparisonChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: sortedExams.map(exam => exam.name),
+                        datasets: [
+                            {
+                                label: '班次',
+                                data: classRankData,
+                                backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                                borderColor: '#10b981',
+                                borderWidth: 1
+                            },
+                            {
+                                label: '校次',
+                                data: schoolRankData,
+                                backgroundColor: 'rgba(139, 92, 246, 0.7)',
+                                borderColor: '#8b5cf6',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    usePointStyle: true,
+                                    boxWidth: 6
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                titleColor: '#1e293b',
+                                bodyColor: '#475569',
+                                borderColor: '#e2e8f0',
+                                borderWidth: 1,
+                                padding: 10
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                reverse: true, // 反转Y轴，使排名1显示在顶部
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 1000
+                        }
+                    }
+                });
+            },
+
+            // 学科强弱分析图
+            renderSubjectStrengthChart() {
+                const exams = Storage.getExams();
+                if (exams.length === 0) return;
+
+                // 获取最新考试
+                const latestExam = [...exams].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+                const ctx = document.getElementById('subjectStrengthChart').getContext('2d');
+
+                // 销毁旧图表
+                if (window.subjectStrengthChartInstance) {
+                    window.subjectStrengthChartInstance.destroy();
+                }
+
+                const subjectNames = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+                const labels = subjectNames.map(subj => Analysis.getSubjectChineseName(subj));
+
+                // 计算得分率
+                const data = subjectNames.map(subj => {
+                    if (!latestExam.subjects[subj]) return 0;
+                    const fullMark = Analysis.getFullMark(subj);
+                    return (latestExam.subjects[subj].score / fullMark) * 100;
+                });
+
+                // 为不同得分率设置不同颜色
+                const backgroundColors = data.map(rate => {
+                    if (rate >= 85) return 'rgba(16, 185, 129, 0.7)'; // 优秀 - 绿色
+                    if (rate >= 70) return 'rgba(59, 130, 246, 0.7)'; // 良好 - 蓝色
+                    if (rate >= 60) return 'rgba(245, 158, 11, 0.7)'; // 及格 - 黄色
+                    return 'rgba(239, 68, 68, 0.7)'; // 不及格 - 红色
+                });
+
+                window.subjectStrengthChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '得分率',
+                            data: data,
+                            backgroundColor: backgroundColors,
+                            borderColor: 'transparent',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                titleColor: '#1e293b',
+                                bodyColor: '#475569',
+                                borderColor: '#e2e8f0',
+                                borderWidth: 1,
+                                padding: 10,
+                                callbacks: {
+                                    label: function(context) {
+                                        const rate = context.parsed.x;
+                                        let grade = '';
+                                        if (rate >= 85) grade = '优秀';
+                                        else if (rate >= 70) grade = '良好';
+                                        else if (rate >= 60) grade = '及格';
+                                        else grade = '不及格';
+                                        return `得分率: ${rate.toFixed(1)}% (${grade})`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                max: 100,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 1000
+                        }
+                    }
+                });
+            },
+
+            // 成绩分布图
+            renderScoreDistributionChart() {
+                const exams = Storage.getExams();
+                if (exams.length === 0) return;
+
+                // 获取最新考试
+                const latestExam = [...exams].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+                const ctx = document.getElementById('scoreDistributionChart').getContext('2d');
+
+                // 销毁旧图表
+                if (window.scoreDistributionChartInstance) {
+                    window.scoreDistributionChartInstance.destroy();
+                }
+
+                const subjectNames = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+
+                // 计算各分数段的科目数量
+                const ranges = [
+                    { min: 0, max: 59, label: '0-59', count: 0 },
+                    { min: 60, max: 69, label: '60-69', count: 0 },
+                    { min: 70, max: 79, label: '70-79', count: 0 },
+                    { min: 80, max: 89, label: '80-89', count: 0 },
+                    { min: 90, max: 100, label: '90-100', count: 0 }
+                ];
+
+                subjectNames.forEach(subj => {
+                    if (!latestExam.subjects[subj]) return;
+
+                    const fullMark = Analysis.getFullMark(subj);
+                    const scoreRate = (latestExam.subjects[subj].score / fullMark) * 100;
+
+                    for (const range of ranges) {
+                        if (scoreRate >= range.min && scoreRate <= range.max) {
+                            range.count++;
+                            break;
+                        }
+                    }
+                });
+
+                window.scoreDistributionChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ranges.map(range => range.label),
+                        datasets: [{
+                            label: '科目数量',
+                            data: ranges.map(range => range.count),
+                            backgroundColor: [
+                                'rgba(239, 68, 68, 0.7)',  // 0-59 - 红色
+                                'rgba(245, 158, 11, 0.7)',  // 60-69 - 黄色
+                                'rgba(59, 130, 246, 0.7)',  // 70-79 - 蓝色
+                                'rgba(16, 185, 129, 0.7)',  // 80-89 - 绿色
+                                'rgba(139, 92, 246, 0.7)'   // 90-100 - 紫色
+                            ],
+                            borderColor: 'transparent',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                titleColor: '#1e293b',
+                                bodyColor: '#475569',
+                                borderColor: '#e2e8f0',
+                                borderWidth: 1,
+                                padding: 10,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `科目数量: ${context.parsed.y}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 1000
+                        }
+                    }
+                });
+            },
+
+            // 成绩预测图
+            renderScorePredictionChart() {
+                const exams = Storage.getExams();
+                if (exams.length < 3) return;
+
+                const prediction = Analysis.predictNextScore(exams);
+                if (!prediction) return;
+
+                const ctx = document.getElementById('scorePredictionChart').getContext('2d');
+
+                // 销毁旧图表
+                if (window.scorePredictionChartInstance) {
+                    window.scorePredictionChartInstance.destroy();
+                }
+
+                // 分离历史数据和预测数据
+                const historicalData = prediction.chartData.scores.slice(0, -1);
+                const predictedData = prediction.chartData.scores.slice(-1);
+
+                window.scorePredictionChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: prediction.chartData.labels,
+                        datasets: [
+                            {
+                                label: '历史成绩',
+                                data: [...historicalData, null], // 预测点设为null，不连接
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.3,
+                                pointBackgroundColor: '#3b82f6',
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            },
+                            {
+                                label: '预测成绩',
+                                data: [null, ...historicalData.slice(1), ...predictedData], // 只显示预测点
+                                borderColor: '#f59e0b',
+                                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                                fill: false,
+                                tension: 0.3,
+                                pointBackgroundColor: '#f59e0b',
+                                pointRadius: 6,
+                                pointHoverRadius: 8
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    usePointStyle: true,
+                                    boxWidth: 6
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                titleColor: '#1e293b',
+                                bodyColor: '#475569',
+                                borderColor: '#e2e8f0',
+                                borderWidth: 1,
+                                padding: 10
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        animations: {
+                            tension: {
+                                duration: 1000,
+                                easing: 'linear'
+                            }
+                        }
+                    }
+                });
+
+                // 显示预测分析
+                document.getElementById('predictionAnalysis').textContent = prediction.analysis;
+                document.getElementById('noPredictionMessage').classList.add('hidden');
+                document.getElementById('predictionContent').classList.remove('hidden');
+            }
+        };
+
+        // UI模块
+        const UI = {
+            // 初始化页面
+            init() {
+                this.setupEventListeners();
+                this.loadExams();
+                this.updateDashboard();
+                this.updateAnalysisPage();
+                this.updateProfilePage();
+                this.updateExamSelects();
+            },
+
+            // 设置事件监听器
+            setupEventListeners() {
+                // 导航切换
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const page = item.getAttribute('data-page');
+                        this.navigateTo(page);
+
+                        // 关闭移动端菜单
+                        document.getElementById('mobileMenu').classList.add('hidden');
+                        document.getElementById('mobileMenuContent').classList.add('-translate-x-full');
+                    });
+                });
+
+                // 移动端菜单按钮
+                document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+                    document.getElementById('mobileMenu').classList.remove('hidden');
+                    setTimeout(() => {
+                        document.getElementById('mobileMenuContent').classList.remove('-translate-x-full');
+                    }, 10);
+                });
+
+                // 关闭移动端菜单
+                document.getElementById('closeMobileMenu').addEventListener('click', () => {
+                    document.getElementById('mobileMenuContent').classList.add('-translate-x-full');
+                    setTimeout(() => {
+                        document.getElementById('mobileMenu').classList.add('hidden');
+                    }, 300);
+                });
+
+                // 移动端菜单项点击
+                document.querySelectorAll('#mobileMenuContent .nav-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        document.getElementById('mobileMenuContent').classList.add('-translate-x-full');
+                        setTimeout(() => {
+                            document.getElementById('mobileMenu').classList.add('hidden');
+                        }, 300);
+                    });
+                });
+
+                // 页面链接点击
+                document.querySelectorAll('[data-page-link]').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const page = link.getAttribute('data-page-link');
+                        this.navigateTo(page);
+                    });
+                });
+
+                // 成绩录入表单提交
+                document.getElementById('gradeInputForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveExam();
+                });
+
+                // 重置表单按钮
+                document.getElementById('resetFormBtn').addEventListener('click', () => {
+                    document.getElementById('gradeInputForm').reset();
+                });
+
+                // 添加第一条记录按钮
+                document.getElementById('addFirstExamBtn').addEventListener('click', () => {
+                    this.navigateTo('input');
+                });
+
+                // 成绩趋势图科目选择
+                document.getElementById('trendSubjectSelect').addEventListener('change', (e) => {
+                    Charts.renderScoreTrendChart(e.target.value);
+                });
+
+                // 学科雷达图考试选择
+                document.getElementById('radarExamSelect').addEventListener('change', (e) => {
+                    Charts.renderSubjectRadarChart(e.target.value);
+                });
+
+                // 成绩记录搜索
+                document.getElementById('searchExams').addEventListener('input', (e) => {
+                    this.filterExams(e.target.value);
+                });
+
+                // 成绩记录排序
+                document.getElementById('sortExams').addEventListener('change', (e) => {
+                    this.sortExams(e.target.value);
+                });
+
+                // 关闭详情模态框
+                document.getElementById('closeModal').addEventListener('click', () => {
+                    document.getElementById('detailModal').classList.add('hidden');
+                });
+
+                document.getElementById('closeModalBtn').addEventListener('click', () => {
+                    document.getElementById('detailModal').classList.add('hidden');
+                });
+
+                // 关闭编辑模态框
+                document.getElementById('closeEditModal').addEventListener('click', () => {
+                    document.getElementById('editModal').classList.add('hidden');
+                });
+
+                document.getElementById('cancelEditBtn').addEventListener('click', () => {
+                    document.getElementById('editModal').classList.add('hidden');
+                });
+
+                // 编辑表单提交
+                document.getElementById('editForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.updateExam();
+                });
+
+                // 关闭删除确认模态框
+                document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+                    document.getElementById('deleteModal').classList.add('hidden');
+                });
+
+                // 确认删除
+                document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+                    this.confirmDelete();
+                });
+
+                // 关闭通知
+                document.getElementById('closeNotification').addEventListener('click', () => {
+                    this.hideNotification();
+                });
+
+                // 导出数据
+                document.getElementById('exportBtn').addEventListener('click', () => {
+                    Storage.exportData();
+                    this.showNotification('success', '导出成功', '数据已成功导出');
+                });
+
+                document.getElementById('mobileExportBtn').addEventListener('click', () => {
+                    Storage.exportData();
+                    this.showNotification('success', '导出成功', '数据已成功导出');
+
+                    // 关闭移动端菜单
+                    document.getElementById('mobileMenuContent').classList.add('-translate-x-full');
+                    setTimeout(() => {
+                        document.getElementById('mobileMenu').classList.add('hidden');
+                    }, 300);
+                });
+
+                // 导入数据
+                document.getElementById('importBtn').addEventListener('click', () => {
+                    document.getElementById('importFile').click();
+                });
+
+                document.getElementById('mobileImportBtn').addEventListener('click', () => {
+                    document.getElementById('importFile').click();
+
+                    // 关闭移动端菜单
+                    document.getElementById('mobileMenuContent').classList.add('-translate-x-full');
+                    setTimeout(() => {
+                        document.getElementById('mobileMenu').classList.add('hidden');
+                    }, 300);
+                });
+
+                // 导入文件选择
+                document.getElementById('importFile').addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const data = JSON.parse(event.target.result);
+                            if (Storage.importData(data)) {
+                                this.showNotification('success', '导入成功', '数据已成功导入');
+                                this.loadExams();
+                                this.updateDashboard();
+                                this.updateAnalysisPage();
+                                this.updateProfilePage();
+                                this.updateExamSelects();
+                            } else {
+                                this.showNotification('error', '导入失败', '数据格式错误');
+                            }
+                        } catch (error) {
+                            console.error('导入失败', error);
+                            this.showNotification('error', '导入失败', '数据格式错误');
+                        }
+                    };
+                    reader.readAsText(file);
+
+                    // 重置文件输入
+                    e.target.value = '';
+                });
+
+                // 主题切换
+                document.getElementById('themeToggle').addEventListener('click', () => {
+                    this.toggleTheme();
+                });
+            },
+
+            // 导航到指定页面
+            navigateTo(page) {
+                // 更新导航项状态
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    if (item.getAttribute('data-page') === page) {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+
+                // 更新页面标题
+                const pageTitles = {
+                    'dashboard': '仪表盘',
+                    'input': '成绩录入',
+                    'records': '成绩记录',
+                    'analysis': '成绩分析',
+                    'profile': '个人档案'
+                };
+                document.getElementById('pageTitle').textContent = pageTitles[page];
+
+                // 显示对应页面内容
+                document.querySelectorAll('.page-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+                document.getElementById(`${page}Page`).classList.remove('hidden');
+
+                // 如果是仪表盘页面，更新图表
+                if (page === 'dashboard') {
+                    Charts.renderScoreTrendChart();
+                    Charts.renderSubjectRadarChart();
+                }
+
+                // 如果是分析页面，更新图表
+                if (page === 'analysis') {
+                    Charts.renderRankComparisonChart();
+                    Charts.renderSubjectStrengthChart();
+                    Charts.renderScoreDistributionChart();
+                }
+            },
+
+            // 加载考试记录
+            loadExams() {
+                const exams = Storage.getExams();
+
+                // 更新成绩记录表格
+                this.updateExamsTable(exams);
+
+                // 更新最近考试记录
+                this.updateRecentExamsTable(exams);
+
+                // 如果没有考试记录，显示提示信息
+                if (exams.length === 0) {
+                    document.getElementById('noExamsMessage').classList.remove('hidden');
+                } else {
+                    document.getElementById('noExamsMessage').classList.add('hidden');
+                }
+            },
+
+            // 更新成绩记录表格
+            updateExamsTable(exams) {
+                const tableBody = document.getElementById('examsTable');
+
+                if (exams.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">暂无考试记录</td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                // 按日期排序（最新的在前面）
+                const sortedExams = [...exams].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                tableBody.innerHTML = sortedExams.map(exam => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${exam.name}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-500">${this.formatDate(exam.date)}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${exam.totalScore}<span class="text-xs text-gray-400">/1050</span></div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-500">${exam.rankClass}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-500">${exam.rankSchool}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button class="text-blue-600 hover:text-blue-900 mr-3 view-btn" data-id="${exam.id}">
+                                <i class="fa fa-eye"></i> 查看
+                            </button>
+                            <button class="text-green-600 hover:text-green-900 mr-3 edit-btn" data-id="${exam.id}">
+                                <i class="fa fa-pencil"></i> 编辑
+                            </button>
+                            <button class="text-red-600 hover:text-red-900 delete-btn" data-id="${exam.id}">
+                                <i class="fa fa-trash"></i> 删除
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                // 添加查看按钮事件
+                tableBody.querySelectorAll('.view-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        this.showExamDetail(btn.getAttribute('data-id'));
+                    });
+                });
+
+                // 添加编辑按钮事件
+                tableBody.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        this.showEditExam(btn.getAttribute('data-id'));
+                    });
+                });
+
+                // 添加删除按钮事件
+                tableBody.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        this.showDeleteConfirm(btn.getAttribute('data-id'));
+                    });
+                });
+            },
+
+            // 更新最近考试记录表格
+            updateRecentExamsTable(exams) {
+                const tableBody = document.getElementById('recentExamsTable');
+
+                if (exams.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">暂无考试记录</td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                // 按日期排序（最新的在前面）并取前3条
+                const recentExams = [...exams].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 3);
+
+                tableBody.innerHTML = recentExams.map(exam => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${exam.name}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-500">${this.formatDate(exam.date)}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${exam.totalScore}<span class="text-xs text-gray-400">/1050</span></div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-500">${exam.rankClass}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-500">${exam.rankSchool}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button class="text-blue-600 hover:text-blue-900 view-btn" data-id="${exam.id}">
+                                <i class="fa fa-eye"></i> 查看
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                // 添加查看按钮事件
+                tableBody.querySelectorAll('.view-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        this.showExamDetail(btn.getAttribute('data-id'));
+                    });
+                });
+            },
+
+            // 更新仪表盘
+            updateDashboard() {
+                const exams = Storage.getExams();
+
+                if (exams.length === 0) {
+                    document.getElementById('totalScore').textContent = '0';
+                    document.getElementById('classRank').textContent = '0';
+                    document.getElementById('schoolRank').textContent = '0';
+                    return;
+                }
+
+                // 按日期排序（最新的在前面）
+                const sortedExams = [...exams].sort((a, b) => new Date(b.date) - new Date(a.date));
+                const latestExam = sortedExams[0];
+                const prevExam = sortedExams.length > 1 ? sortedExams[1] : null;
+
+                // 更新总分
+                document.getElementById('totalScore').innerHTML = `${latestExam.totalScore}<span class="text-sm text-gray-400">/1050</span>`;
+
+                // 更新总分趋势
+                const totalScoreTrend = document.getElementById('totalScoreTrend');
+                if (prevExam) {
+                    const scoreChange = latestExam.totalScore - prevExam.totalScore;
+                    const scoreChangePercent = ((scoreChange / prevExam.totalScore) * 100).toFixed(1);
+
+                    if (scoreChange > 0) {
+                        totalScoreTrend.innerHTML = `<i class="fa fa-arrow-up mr-1 text-green-500"></i><span class="text-green-500">+${scoreChangePercent}%</span>`;
+                    } else if (scoreChange < 0) {
+                        totalScoreTrend.innerHTML = `<i class="fa fa-arrow-down mr-1 text-red-500"></i><span class="text-red-500">${scoreChangePercent}%</span>`;
+                    } else {
+                        totalScoreTrend.innerHTML = `<i class="fa fa-minus mr-1 text-gray-500"></i><span class="text-gray-500">0%</span>`;
+                    }
+                } else {
+                    totalScoreTrend.innerHTML = `<i class="fa fa-minus mr-1 text-gray-500"></i><span class="text-gray-500">无对比</span>`;
+                }
+
+                // 更新班次
+                document.getElementById('classRank').textContent = latestExam.rankClass;
+
+                // 更新班次趋势
+                const classRankTrend = document.getElementById('classRankTrend');
+                if (prevExam) {
+                    const rankChange = latestExam.rankClass - prevExam.rankClass;
+
+                    if (rankChange < 0) {
+                        // 排名上升（数值值减小）
+                        classRankTrend.innerHTML = `<i class="fa fa-arrow-up mr-1 text-green-500"></i><span class="text-green-500">${Math.abs(rankChange)}</span>`;
+                    } else if (rankChange > 0) {
+                        // 排名下降（数值增大）
+                        classRankTrend.innerHTML = `<i class="fa fa-arrow-down mr-1 text-red-500"></i><span class="text-red-500">${rankChange}</span>`;
+                    } else {
+                        classRankTrend.innerHTML = `<i class="fa fa-minus mr-1 text-gray-500"></i><span class="text-gray-500">0</span>`;
+                    }
+                } else {
+                    classRankTrend.innerHTML = `<i class="fa fa-minus mr-1 text-gray-500"></i><span class="text-gray-500">无对比</span>`;
+                }
+
+                // 更新校次
+                document.getElementById('schoolRank').textContent = latestExam.rankSchool;
+
+                // 更新校次趋势
+                const schoolRankTrend = document.getElementById('schoolRankTrend');
+                if (prevExam) {
+                    const rankChange = latestExam.rankSchool - prevExam.rankSchool;
+
+                    if (rankChange < 0) {
+                        // 排名上升（数值减小）
+                        schoolRankTrend.innerHTML = `<i class="fa fa-arrow-up mr-1 text-green-500"></i><span class="text-green-500">${Math.abs(rankChange)}</span>`;
+                    } else if (rankChange > 0) {
+                        // 排名下降（数值增大）
+                        schoolRankTrend.innerHTML = `<i class="fa fa-arrow-down mr-1 text-red-500"></i><span class="text-red-500">${rankChange}</span>`;
+                    } else {
+                        schoolRankTrend.innerHTML = `<i class="fa fa-minus mr-1 text-gray-500"></i><span class="text-gray-500">0</span>`;
+                    }
+                } else {
+                    schoolRankTrend.innerHTML = `<i class="fa fa-minus mr-1 text-gray-500"></i><span class="text-gray-500">无对比</span>`;
+                }
+
+                // 更新图表
+                Charts.renderScoreTrendChart();
+                Charts.renderSubjectRadarChart();
+            },
+
+			// 更新分析页面
+			updateAnalysisPage() {
+				const exams = Storage.getExams();
+
+				// 更新图表
+				Charts.renderRankComparisonChart();
+				Charts.renderSubjectStrengthChart();
+				Charts.renderScoreDistributionChart();
+			},
+            // 更新个人档案页面
+            updateProfilePage() {
+                const exams = Storage.getExams();
+
+                if (exams.length === 0) {
+                    // 显示提示信息
+                    document.getElementById('noAdviceMessage').classList.remove('hidden');
+                    document.getElementById('adviceContent').classList.add('hidden');
+                    document.getElementById('noPredictionMessage').classList.remove('hidden');
+                    document.getElementById('predictionContent').classList.add('hidden');
+                    return;
+                }
+
+                // 更新统计数据
+                document.getElementById('examCount').textContent = exams.length;
+
+                // 计算平均总分
+                const totalScores = exams.map(exam => exam.totalScore);
+                const avgTotalScore = Math.round(totalScores.reduce((sum, score) => sum + score, 0) / totalScores.length);
+                document.getElementById('avgTotalScore').textContent = avgTotalScore;
+
+                // 计算平均班次
+                const classRanks = exams.map(exam => exam.rankClass);
+                const avgClassRank = Math.round(classRanks.reduce((sum, rank) => sum + rank, 0) / classRanks.length);
+                document.getElementById('avgClassRank').textContent = avgClassRank;
+
+                // 计算平均校次
+                const schoolRanks = exams.map(exam => exam.rankSchool);
+                const avgSchoolRank = Math.round(schoolRanks.reduce((sum, rank) => sum + rank, 0) / schoolRanks.length);
+                document.getElementById('avgSchoolRank').textContent = avgSchoolRank;
+
+                // 生成学习建议
+				if (exams.length >= 2) {
+					const advice = Analysis.generateAdvice(exams);
+
+					if (advice) {
+						document.getElementById('overallPerformance').textContent = advice.overallPerformance;
+						document.getElementById('improvementAreas').textContent = advice.improvementAreas;
+						document.getElementById('studyAdvice').textContent = advice.studyAdvice;
+
+						document.getElementById('noAdviceMessage').classList.add('hidden');
+						document.getElementById('adviceContent').classList.remove('hidden');
+					} else {
+						document.getElementById('noAdviceMessage').classList.remove('hidden');
+						document.getElementById('adviceContent').classList.add('hidden');
+					}
+				} else {
+					document.getElementById('noAdviceMessage').classList.remove('hidden');
+					document.getElementById('adviceContent').classList.add('hidden');
+				}
+
+                // 生成成绩预测
+                if (exams.length >= 3) {
+                    Charts.renderScorePredictionChart();
+                } else {
+                    document.getElementById('noPredictionMessage').classList.remove('hidden');
+                    document.getElementById('predictionContent').classList.add('hidden');
+                }
+            },
+
+            // 更新考试选择下拉框
+            updateExamSelects() {
+                const exams = Storage.getExams();
+
+                if (exams.length === 0) return;
+
+                // 按日期排序（最新的在前面）
+                const sortedExams = [...exams].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                // 更新学科雷达图考试选择
+                const radarExamSelect = document.getElementById('radarExamSelect');
+
+                // 保留"最新考试"选项
+                const latestOption = radarExamSelect.querySelector('option[value="latest"]');
+
+                // 清空其他选项
+                radarExamSelect.innerHTML = '';
+                radarExamSelect.appendChild(latestOption);
+
+                // 添加考试选项
+                sortedExams.forEach(exam => {
+                    const option = document.createElement('option');
+                    option.value = exam.id;
+                    option.textContent = `${exam.name} (${this.formatDate(exam.date)})`;
+                    radarExamSelect.appendChild(option);
+                });
+            },
+
+				// 保存考试记录
+				saveExam() {
+					const form = document.getElementById('gradeInputForm');
+					const formData = new FormData(form);
+
+					// 获取表单数据
+					const examName = formData.get('examName');
+					const examDate = formData.get('examDate');
+
+					// 验证日期
+					if (!examDate) {
+						this.showNotification('error', '保存失败', '请选择考试日期');
+						return;
+					}
+
+					// 构建科目成绩对象
+					const subjects = {
+						chinese: { score: parseFloat(formData.get('chineseScore')) },
+						math: { score: parseFloat(formData.get('mathScore')) },
+						english: { score: parseFloat(formData.get('englishScore')) },
+						physics: { score: parseFloat(formData.get('physicsScore')) },
+						chemistry: { score: parseFloat(formData.get('chemistryScore')) },
+						biology: { score: parseFloat(formData.get('biologyScore')) },
+						politics: { score: parseFloat(formData.get('politicsScore')) },
+						history: { score: parseFloat(formData.get('historyScore')) },
+						geography: { score: parseFloat(formData.get('geographyScore')) }
+					};
+
+					// 计算总分
+					const totalScore = Analysis.calculateTotalScore(subjects);
+
+					// 获取总分的班次和校次
+					const rankClass = parseInt(formData.get('rankClass'));
+					const rankSchool = parseInt(formData.get('rankSchool'));
+
+					// 构建考试对象
+					const exam = {
+						name: examName,
+						date: examDate,
+						subjects: subjects,
+						totalScore: totalScore,
+						rankClass: rankClass,
+						rankSchool: rankSchool
+					};
+
+					// 保存考试记录
+					Storage.saveExam(exam);
+
+					// 显示成功通知
+					this.showNotification('success', '保存成功', '成绩已成功保存');
+
+					// 重置表单
+					form.reset();
+
+					// 更新页面
+					this.loadExams();
+					this.updateDashboard();
+					this.updateAnalysisPage();
+					this.updateProfilePage();
+					this.updateExamSelects();
+
+					// 导航到仪表盘
+					this.navigateTo('dashboard');
+				},
+            // 显示考试详情
+            showExamDetail(id) {
+                const exams = Storage.getExams();
+                const exam = exams.find(e => e.id === id);
+
+                if (!exam) return;
+
+                // 填充模态框内容
+                document.getElementById('modalExamName').textContent = exam.name;
+                document.getElementById('modalExamDate').textContent = this.formatDate(exam.date);
+                document.getElementById('modalTotalScore').textContent = exam.totalScore;
+                document.getElementById('modalClassRank').textContent = exam.rankClass;
+                document.getElementById('modalSchoolRank').textContent = exam.rankSchool;
+
+                // 填充科目成绩表格
+                const subjectNames = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+                const scoresTable = document.getElementById('modalScoresTable');
+
+                // 在 showExamDetail 方法中，修改模态框表格的HTML结构
+				// 移除班次和校次的列
+				scoresTable.innerHTML = subjectNames.map(subj => {
+					const subjectData = exam.subjects[subj];
+					const fullMark = Analysis.getFullMark(subj);
+					const scoreRate = Analysis.calculateScoreRate(subjectData.score, fullMark);
+					const grade = Analysis.determineGrade(subjectData.score, fullMark);
+
+					let gradeClass = '';
+					switch (grade) {
+						case '优秀': gradeClass = 'badge-excellent'; break;
+						case '良好': gradeClass = 'badge-good'; break;
+						case '及格': gradeClass = 'badge-passed'; break;
+						case '不及格': gradeClass = 'badge-failed'; break;
+					}
+
+					return `
+						<tr>
+							<td class="px-6 py-4 whitespace-nowrap">
+								<div class="text-sm font-medium text-gray-900">${Analysis.getSubjectChineseName(subj)}</div>
+							</td>
+							<td class="px-6 py-4 whitespace-nowrap">
+								<div class="text-sm text-gray-500">${fullMark}</div>
+							</td>
+							<td class="px-6 py-4 whitespace-nowrap">
+								<div class="text-sm font-medium text-gray-900">${subjectData.score}</div>
+							</td>
+							<td class="px-6 py-4 whitespace-nowrap">
+								<span class="badge ${gradeClass}">${grade}</span>
+							</td>
+							<td class="px-6 py-4 whitespace-nowrap">
+								<div class="text-sm text-gray-500">${scoreRate}%</div>
+							</td>
+						</tr>
+					`;
+				}).join('');
+
+                // 显示模态框
+                document.getElementById('detailModal').classList.remove('hidden');
+            },
+
+            // 显示编辑考试
+            showEditExam(id) {
+                const exams = Storage.getExams();
+                const exam = exams.find(e => e.id === id);
+
+                if (!exam) return;
+
+                // 填充表单数据
+                document.getElementById('editExamId').value = exam.id;
+                document.getElementById('editExamName').value = exam.name;
+                document.getElementById('editExamDate').value = exam.date;
+
+                // 填充科目成绩表格
+                const subjectNames = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+                const scoresTable = document.getElementById('editScoresTable');
+
+                scoresTable.innerHTML = subjectNames.map(subj => {
+                    const subjectData = exam.subjects[subj];
+                    const fullMark = Analysis.getFullMark(subj);
+
+                    return `
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">${Analysis.getSubjectChineseName(subj)}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">${fullMark}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="number" min="0" max="${fullMark}" step="0.5" name="${subj}Score" class="input-field py-1 px-2 w-24" value="${subjectData.score}" required>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="number" min="1" name="${subj}RankClass" class="input-field py-1 px-2 w-24" value="${subjectData.rankClass}" required>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="number" min="1" name="${subj}RankSchool" class="input-field py-1 px-2 w-24" value="${subjectData.rankSchool}" required>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // 显示模态框
+                document.getElementById('editModal').classList.remove('hidden');
+            },
+
+            // 更新考试记录
+            updateExam() {
+                const form = document.getElementById('editForm');
+                const formData = new FormData(form);
+
+                // 获取表单数据
+                const examId = document.getElementById('editExamId').value;
+                const examName = formData.get('editExamName');
+                const examDate = formData.get('editExamDate');
+
+                // 验证日期
+                if (!examDate) {
+                    this.showNotification('error', '更新失败', '请选择考试日期');
+                    return;
+                }
+
+                // 构建科目成绩对象
+                // 构建科目成绩对象 - 只包含分数，不包含排名
+				const subjects = {
+					chinese: { score: parseFloat(formData.get('chineseScore')) },
+					math: { score: parseFloat(formData.get('mathScore')) },
+					english: { score: parseFloat(formData.get('englishScore')) },
+					physics: { score: parseFloat(formData.get('physicsScore')) },
+					chemistry: { score: parseFloat(formData.get('chemistryScore')) },
+					biology: { score: parseFloat(formData.get('biologyScore')) },
+					politics: { score: parseFloat(formData.get('politicsScore')) },
+					history: { score: parseFloat(formData.get('historyScore')) },
+					geography: { score: parseFloat(formData.get('geographyScore')) }
+				};
+
+				// 计算总分
+				const totalScore = Analysis.calculateTotalScore(subjects);
+
+				// 获取班次和校次（从排名信息部分获取）
+				const rankClass = parseInt(formData.get('rankClass'));
+				const rankSchool = parseInt(formData.get('rankSchool'));
+
+                // 构建考试对象
+                const updatedExam = {
+                    id: examId,
+                    name: examName,
+                    date: examDate,
+                    subjects: subjects,
+                    totalScore: totalScore,
+                    rankClass: rankClass,
+                    rankSchool: rankSchool
+                };
+
+                // 更新考试记录
+                if (Storage.updateExam(updatedExam)) {
+                    // 显示成功通知
+                    this.showNotification('success', '更新成功', '成绩已成功更新');
+
+                    // 关闭模态框
+                    document.getElementById('editModal').classList.add('hidden');
+
+                    // 更新页面
+                    this.loadExams();
+                    this.updateDashboard();
+                    this.updateAnalysisPage();
+                    this.updateProfilePage();
+                    this.updateExamSelects();
+                } else {
+                    // 显示失败通知
+                    this.showNotification('error', '更新失败', '未能找到考试记录');
+                }
+            },
+
+            // 显示删除确认
+            showDeleteConfirm(id) {
+                // 保存要删除的考试ID
+                this.deleteExamId = id;
+
+                // 显示模态框
+                document.getElementById('deleteModal').classList.remove('hidden');
+            },
+
+            // 确认删除
+            confirmDelete() {
+                if (!this.deleteExamId) return;
+
+                // 删除考试记录
+                if (Storage.deleteExam(this.deleteExamId)) {
+                    // 显示成功通知
+                    this.showNotification('success', '删除成功', '考试记录已成功删除');
+
+                    // 关闭模态框
+                    document.getElementById('deleteModal').classList.add('hidden');
+
+                    // 更新页面
+                    this.loadExams();
+                    this.updateDashboard();
+                    this.updateAnalysisPage();
+                    this.updateProfilePage();
+                    this.updateExamSelects();
+                } else {
+                    // 显示失败通知
+                    this.showNotification('error', '删除失败', '未能找到考试记录');
+                }
+
+                // 清除删除ID
+                this.deleteExamId = null;
+            },
+
+            // 过滤考试记录
+            filterExams(keyword) {
+                const exams = Storage.getExams();
+
+                if (!keyword) {
+                    this.updateExamsTable(exams);
+                    return;
+                }
+
+                keyword = keyword.toLowerCase();
+
+                const filteredExams = exams.filter(exam =>
+                    exam.name.toLowerCase().includes(keyword) ||
+                    this.formatDate(exam.date).includes(keyword)
+                );
+
+                this.updateExamsTable(filteredExams);
+            },
+
+            // 排序考试记录
+            sortExams(sortBy) {
+                const exams = Storage.getExams();
+
+                let sortedExams = [...exams];
+
+                switch (sortBy) {
+                    case 'date-desc':
+                        sortedExams.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        break;
+                    case 'date-asc':
+                        sortedExams.sort((a, b) => new Date(a.date) - new Date(b.date));
+                        break;
+                    case 'score-desc':
+                        sortedExams.sort((a, b) => b.totalScore - a.totalScore);
+                        break;
+                    case 'score-asc':
+                        sortedExams.sort((a, b) => a.totalScore - b.totalScore);
+                        break;
+                    case 'rank-desc':
+                        sortedExams.sort((a, b) => b.rankClass - a.rankClass);
+                        break;
+                    case 'rank-asc':
+                        sortedExams.sort((a, b) => a.rankClass - b.rankClass);
+                        break;
+                }
+
+                this.updateExamsTable(sortedExams);
+            },
+
+            // 显示通知
+            showNotification(type, title, message) {
+                const notification = document.getElementById('notification');
+                const notificationIcon = document.getElementById('notificationIcon');
+                const notificationTitle = document.getElementById('notificationTitle');
+                const notificationMessage = document.getElementById('notificationMessage');
+
+                // 设置通知类型
+                switch (type) {
+                    case 'success':
+                        notificationIcon.className = 'flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-3';
+                        notificationIcon.innerHTML = '<i class="fa fa-check"></i>';
+                        break;
+                    case 'error':
+                        notificationIcon.className = 'flex-shrink-0 w-6 h-6 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-3';
+                        notificationIcon.innerHTML = '<i class="fa fa-times"></i>';
+                        break;
+                    case 'warning':
+                        notificationIcon.className = 'flex-shrink-0 w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 mr-3';
+                        notificationIcon.innerHTML = '<i class="fa fa-exclamation-triangle"></i>';
+                        break;
+                    case 'info':
+                        notificationIcon.className = 'flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-3';
+                        notificationIcon.innerHTML = '<i class="fa fa-info-circle"></i>';
+                        break;
+                }
+
+                // 设置通知内容
+                notificationTitle.textContent = title;
+                notificationMessage.textContent = message;
+
+                // 显示通知
+                notification.classList.remove('translate-x-full', 'opacity-0');
+
+                // 3秒后自动隐藏
+                setTimeout(() => {
+                    this.hideNotification();
+                }, 3000);
+            },
+
+            // 隐藏通知
+            hideNotification() {
+                const notification = document.getElementById('notification');
+                notification.classList.add('translate-x-full', 'opacity-0');
+            },
+
+            // 切换主题
+            toggleTheme() {
+                const body = document.body;
+                const themeToggle = document.getElementById('themeToggle');
+
+                if (body.classList.contains('dark')) {
+                    // 切换到亮色主题
+                    body.classList.remove('dark');
+                    themeToggle.innerHTML = '<i class="fa fa-moon-o text-gray-600"></i>';
+                } else {
+                    // 切换到暗色主题
+                    body.classList.add('dark');
+                    themeToggle.innerHTML = '<i class="fa fa-sun-o text-yellow-400"></i>';
+                }
+            },
+
+            // 格式化日期
+            formatDate(dateString) {
+                const date = new Date(dateString);
+                return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            }
+        };
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            UI.init();
+        });
+    </script>
+</body>
+</html>
