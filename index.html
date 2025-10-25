@@ -354,7 +354,7 @@
     <div class="container">
         <header>
             <h1>项目导航中心</h1>
-            <p>快速访问和管理您的项目资源，提高工作效率</p>
+            <p>快速访问和管理您的项目资源</p>
         </header>
 
         <div class="tabs-container">
@@ -389,7 +389,7 @@
         </div>
 
         <footer>
-            <p>© 2023 项目导航中心 | 动态配置，高效工作</p>
+            <p>© 2025 项目导航中心 | Quilluna</p>
         </footer>
     </div>
 
@@ -399,7 +399,7 @@
             try {
                 // 在实际应用中，这里应该是您的JSON文件路径
                 // 为了演示，我们使用一个模拟的URL，实际使用时请替换为真实路径
-                const response = await fetch('projects-data.json');
+                const response = await fetch('projects.json');
                 if (!response.ok) {
                     throw new Error('网络响应不正常');
                 }
@@ -415,73 +415,6 @@
         // 默认数据（在无法加载外部JSON时使用）
         function getDefaultData() {
             return {
-                "public": [
-                    {
-                        "id": 1,
-                        "name": "设计资源库",
-                        "description": "汇集优秀设计资源和模板，提升设计效率",
-                        "icon": "fas fa-palette",
-                        "link": "#",
-                        "tags": ["设计", "资源", "模板"],
-                        "date": "2023-10-15"
-                    },
-                    {
-                        "id": 2,
-                        "name": "开发文档中心",
-                        "description": "前端、后端开发技术文档和最佳实践指南",
-                        "icon": "fas fa-book",
-                        "link": "#",
-                        "tags": ["文档", "开发", "技术"],
-                        "date": "2023-09-28"
-                    },
-                    {
-                        "id": 3,
-                        "name": "团队协作平台",
-                        "description": "提高团队协作效率的在线工具集合",
-                        "icon": "fas fa-users",
-                        "link": "#",
-                        "tags": ["协作", "工具", "团队"],
-                        "date": "2023-11-05"
-                    },
-                    {
-                        "id": 4,
-                        "name": "开源项目集",
-                        "description": "公司内部开源项目展示和贡献指南",
-                        "icon": "fas fa-code-branch",
-                        "link": "#",
-                        "tags": ["开源", "代码", "贡献"],
-                        "date": "2023-08-12"
-                    }
-                ],
-                "personal": [
-                    {
-                        "id": 1,
-                        "name": "个人工作台",
-                        "description": "个性化工作空间，快速访问常用工具和资源",
-                        "icon": "fas fa-desktop",
-                        "link": "#",
-                        "tags": ["工作", "个人", "工具"],
-                        "date": "2023-11-20"
-                    },
-                    {
-                        "id": 2,
-                        "name": "项目进度追踪",
-                        "description": "跟踪个人项目的进度和任务状态",
-                        "icon": "fas fa-tasks",
-                        "link": "#",
-                        "tags": ["进度", "任务", "跟踪"],
-                        "date": "2023-10-30"
-                    },
-                    {
-                        "id": 3,
-                        "name": "学习笔记库",
-                        "description": "个人学习笔记和技术总结归档",
-                        "icon": "fas fa-sticky-note",
-                        "link": "#",
-                        "tags": ["学习", "笔记", "技术"],
-                        "date": "2023-11-15"
-                    }
-                ]
             };
         }
 
