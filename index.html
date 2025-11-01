@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>项目导航中心</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary: #4361ee;
@@ -280,8 +279,9 @@
             color: var(--gray);
         }
 
-        .no-projects i {
-            font-size: 3rem;
+        .no-projects svg {
+            width: 48px;
+            height: 48px;
             margin-bottom: 15px;
             color: #dee2e6;
         }
@@ -348,6 +348,13 @@
                 padding: 20px;
             }
         }
+        
+        /* SVG图标样式 */
+        .icon {
+            width: 1em;
+            height: 1em;
+            fill: currentColor;
+        }
     </style>
 </head>
 <body>
@@ -360,11 +367,15 @@
         <div class="tabs-container">
             <div class="tabs">
                 <button class="tab-button active" data-tab="public">
-                    <i class="fas fa-globe"></i>
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                    </svg>
                     公共项目
                 </button>
                 <button class="tab-button" data-tab="personal">
-                    <i class="fas fa-user"></i>
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
                     我的项目
                 </button>
             </div>
@@ -393,36 +404,36 @@
         </footer>
     </div>
 
-    <script>
-        // 加载外部JSON数据
-        async function loadProjectsData() {
-            try {
-                // 在实际应用中，这里应该是您的JSON文件路径
-                // 为了演示，我们使用一个模拟的URL，实际使用时请替换为真实路径
-                const response = await fetch('projects.json');
-                if (!response.ok) {
-                    throw new Error('网络响应不正常');
-                }
-                const data = await response.json();
-                return data;
-            } catch (error) {
-                console.error('加载项目数据时出错:', error);
-                // 如果加载失败，使用默认数据
-                return getDefaultData();
-            }
-        }
+    <!-- SVG图标定义 -->
+    <svg style="display: none;">
+        <symbol id="globe-icon" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+        </symbol>
+        <symbol id="user-icon" viewBox="0 0 24 24">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+        </symbol>
+        <symbol id="code-icon" viewBox="0 0 24 24">
+            <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
+        </symbol>
+        <symbol id="dashboard-icon" viewBox="0 0 24 24">
+            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+        </symbol>
+        <symbol id="chart-icon" viewBox="0 0 24 24">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+        </symbol>
+        <symbol id="inbox-icon" viewBox="0 0 24 24">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5v-3h3.56c.69 1.19 1.97 2 3.45 2s2.75-.81 3.45-2H19v3zm0-5h-4.99c0 1.1-.9 2-2 2s-2-.9-2-2H5V5h14v9z"/>
+        </symbol>
+        <symbol id="arrow-right-icon" viewBox="0 0 24 24">
+            <path d="M10 17l5-5-5-5v10z"/>
+        </symbol>
+    </svg>
 
-        // 默认数据（在无法加载外部JSON时使用）
-        function getDefaultData() {
-            return {
-            };
-        }
+    <script>
+        const projectsData = {};
 
         // 初始化页面
-        document.addEventListener('DOMContentLoaded', async function() {
-            // 加载项目数据
-            const projectsData = await loadProjectsData();
-
+        document.addEventListener('DOMContentLoaded', function() {
             // 渲染项目卡片
             renderProjects('public', projectsData.public);
             renderProjects('personal', projectsData.personal);
@@ -460,7 +471,9 @@
             if (!projects || projects.length === 0) {
                 container.innerHTML = `
                     <div class="no-projects">
-                        <i class="fas fa-inbox"></i>
+                        <svg class="icon" viewBox="0 0 24 24">
+                            <use xlink:href="#inbox-icon"></use>
+                        </svg>
                         <h3>暂无项目</h3>
                         <p>当前没有${type === 'public' ? '公共' : '个人'}项目可显示</p>
                     </div>
@@ -473,7 +486,9 @@
                 html += `
                     <div class="project-card" onclick="window.location.href='${project.link}'">
                         <div class="card-icon">
-                            <i class="${project.icon}"></i>
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <use xlink:href="#${project.icon}"></use>
+                            </svg>
                         </div>
                         <div class="card-content">
                             <h3>${project.name}</h3>
@@ -483,7 +498,10 @@
                             </div>
                             <div class="card-footer">
                                 <a href="${project.link}" class="card-link">
-                                    访问项目 <i class="fas fa-arrow-right"></i>
+                                    访问项目 
+                                    <svg class="icon" viewBox="0 0 24 24">
+                                        <use xlink:href="#arrow-right-icon"></use>
+                                    </svg>
                                 </a>
                                 <span class="card-date">${project.date}</span>
                             </div>
