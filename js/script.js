@@ -536,6 +536,10 @@ const UI = {
         this.loadProfile();
         this.loadGoals();
         this.updateDashboard();
+        
+        // 初始化图表（确保第一次打开页面时图表也能显示）
+        Charts.renderScoreTrendChart();
+        Charts.renderSubjectRadarChart();
 
         // 绑定事件
         this.bindEvents();
@@ -1584,11 +1588,7 @@ const UI = {
         const notification = document.getElementById('notification');
         notification.classList.add('translate-x-full', 'opacity-0');
         
-        // 清除撤销栈（如果通知超时自动隐藏且有可撤销操作）
-        if (this.undoStack && (this.undoStack.type === 'update' || this.undoStack.type === 'delete')) {
-            // 操作已确认执行，清除撤销栈
-            this.undoStack = null;
-        }
+        // 不再在通知超时时自动清除撤销栈，让延迟执行的操作自己处理撤销栈
     },
 
     // 撤销操作
@@ -1902,6 +1902,20 @@ const UI = {
         
         // 为通知关闭按钮添加点击事件
         document.getElementById('closeNotification').addEventListener('click', () => {
+            // 如果有延迟执行的操作（如删除），立即执行它
+            if (UI.undoStack && UI.undoStack.execute && (UI.undoStack.type === 'delete' || UI.undoStack.type === 'clear')) {
+                // 清除定时器，防止重复执行
+                if (window.clearUndoTimer) {
+                    clearTimeout(window.clearUndoTimer);
+                    window.clearUndoTimer = null;
+                }
+                
+                // 立即执行操作
+                UI.undoStack.execute();
+                
+                // 清除撤销栈
+                UI.undoStack = null;
+            }
             UI.hideNotification();
         });
         
