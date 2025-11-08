@@ -120,6 +120,12 @@ const Storage = {
             profile: this.getProfile(),
             goals: this.getGoals()
         };
+    },
+    
+    // 获取满分设置
+    getFullMarks() {
+        const fullMarks = localStorage.getItem('fullMarks');
+        return fullMarks ? JSON.parse(fullMarks) : null;
     }
 };
 
@@ -807,17 +813,31 @@ const UI = {
         };
         document.getElementById('pageTitle').textContent = pageTitles[page];
 
-        // 简化的页面切换逻辑，配合绝对定位实现平滑过渡
-        // 先隐藏所有页面
-        document.querySelectorAll('.page-content').forEach(content => {
+        // 获取所有页面元素
+        const allPages = document.querySelectorAll('.page-content');
+        const targetPage = document.getElementById(`${page}Page`);
+        
+        if (!targetPage) return;
+        
+        // 立即隐藏所有页面（减少切换延迟）
+        allPages.forEach(content => {
             content.classList.add('hidden');
         });
         
-        // 直接显示目标页面
-        const targetPage = document.getElementById(`${page}Page`);
-        if (targetPage) {
-            targetPage.classList.remove('hidden');
-        }
+        // 显示目标页面
+        targetPage.classList.remove('hidden');
+        
+        // 添加淡入动画
+        targetPage.style.opacity = '0';
+        targetPage.style.transform = 'translateY(10px)';
+        
+        // 触发重排
+        void targetPage.offsetWidth;
+        
+        // 应用动画
+        targetPage.style.opacity = '1';
+        targetPage.style.transform = 'translateY(0)';
+        targetPage.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
 
         // 如果是仪表盘页面，更新图表
         if (page === 'dashboard') {
@@ -840,6 +860,10 @@ const UI = {
 
         // 保存当前页面
         this.currentPage = page;
+        
+        // 移除卡片动画逻辑，避免与全局页面动画重复播放
+        // 页面切换的全局动画已经包含了整个页面的淡入效果
+        // 不需要再为卡片单独添加动画
     },
 
     // 更新个人档案页面
@@ -1286,11 +1310,9 @@ const UI = {
             }
         };
         
-        // 立即在界面上隐藏删除的记录 - 只在UI上隐藏，不修改存储
         const tempExams = [...exams];
         tempExams.splice(deleteIndex, 1);
         
-        // 刷新界面，只修改显示，不修改存储
         this.loadExams(tempExams);
         this.updateDashboard();
         this.updateAnalysisPage();
@@ -1300,7 +1322,6 @@ const UI = {
         const modalContent = deleteModal.querySelector('div');
         if (modalContent) {
             modalContent.classList.add('pop-out');
-            // 动画完成后隐藏
             setTimeout(() => {
                 deleteModal.classList.add('hidden');
                 modalContent.classList.remove('pop-out');
@@ -1409,6 +1430,22 @@ const UI = {
         
         document.getElementById('averageScoreCard').textContent = averageScore.toFixed(1);
         document.getElementById('highestScoreCard').textContent = highestScore.toFixed(1);
+        
+        // 更新考试总结
+        const summaryElement = document.getElementById('latestExamSummary');
+        if (latestExam.summary && latestExam.summary.trim() !== '') {
+            const date = new Date(latestExam.date);
+            const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            summaryElement.innerHTML = `
+                <div class="mb-2 flex justify-between items-center">
+                    <span class="font-medium text-primary dark:text-blue-400">${latestExam.name}</span>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">${formattedDate}</span>
+                </div>
+                <p>${latestExam.summary}</p>
+            `;
+        } else {
+            summaryElement.innerHTML = '<p class="text-center text-gray-400 dark:text-gray-500">最近的考试没有添加总结</p>';
+        }
     },
 
     // 更新分析页面
@@ -1511,12 +1548,28 @@ const UI = {
 
     // 显示通知
     showNotification(type, title, message, canUndo = false) {
+        // 非空检查，确保title和message都存在
+        if (!title || !message) {
+            console.warn('通知标题和内容不能为空');
+            return;
+        }
+        
         const notification = document.getElementById('notification');
         const notificationIcon = document.getElementById('notificationIcon');
         const notificationTitle = document.getElementById('notificationTitle');
         const notificationMessage = document.getElementById('notificationMessage');
         const undoButton = document.getElementById('undoNotificationBtn');
         const progressBar = document.getElementById('notificationProgress');
+        
+        // 检查是否与当前显示的通知内容完全相同，避免重复显示
+        if (notificationTitle && notificationMessage && 
+            notificationTitle.textContent === title && 
+            notificationMessage.textContent === message &&
+            !notification.classList.contains('translate-x-full') &&
+            !notification.classList.contains('opacity-0')) {
+            console.log('相同通知已在显示中，跳过显示');
+            return;
+        }
 
         // 清除之前的定时器
         if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
@@ -1557,7 +1610,8 @@ const UI = {
         progressBar.style.width = '100%';
 
         // 显示通知
-        notification.classList.remove('translate-x-full', 'opacity-0');
+        notification.classList.remove('translate-x-full', 'opacity-0', 'hide');
+        notification.classList.add('show');
 
         // 设置进度条动画
         let startTime = Date.now();
@@ -1586,9 +1640,37 @@ const UI = {
     // 隐藏通知
     hideNotification() {
         const notification = document.getElementById('notification');
-        notification.classList.add('translate-x-full', 'opacity-0');
-        
-        // 不再在通知超时时自动清除撤销栈，让延迟执行的操作自己处理撤销栈
+        if (notification) {
+            // 立即清除所有通知相关元素内容
+            const notificationTitle = document.getElementById('notificationTitle');
+            const notificationMessage = document.getElementById('notificationMessage');
+            const notificationIcon = document.getElementById('notificationIcon');
+            const progressBar = document.getElementById('notificationProgress');
+            const undoButton = document.getElementById('undoNotificationBtn');
+            
+            if (notificationTitle) notificationTitle.textContent = '';
+            if (notificationMessage) notificationMessage.textContent = '';
+            if (notificationIcon) notificationIcon.innerHTML = '';
+            if (progressBar) progressBar.style.width = '0%';
+            if (undoButton) undoButton.classList.add('hidden');
+            
+            // 立即清除所有计时器
+            if (this.notificationTimeout) {
+                clearTimeout(this.notificationTimeout);
+                this.notificationTimeout = null;
+            }
+            if (this.progressInterval) {
+                clearInterval(this.progressInterval);
+                this.progressInterval = null;
+            }
+            
+            // 移除所有可能导致显示的类
+            notification.classList.remove('show');
+            
+            // 添加确保隐藏的类
+            notification.classList.add('hide');
+            notification.classList.add('translate-x-full', 'opacity-0');
+        }
     },
 
     // 撤销操作
@@ -1835,13 +1917,15 @@ const UI = {
 };
 
 // 页面加载完成后初始化
-    document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
+        // 定义倒计时变量
+        let countdownInterval = null;
         UI.init();
         
         // 数据管理下拉菜单交互
         const dataMenuBtn = document.getElementById('dataMenuBtn');
         const dataMenuDropdown = document.getElementById('dataMenuDropdown');
-        const dropdownIcon = dataMenuBtn?.querySelector('.fa-chevron-down');
+        const dropdownIcon = dataMenuBtn ? dataMenuBtn.querySelector('.fa-chevron-down') : null;
         
         // 切换下拉菜单显示状态
         function toggleDropdown() {
@@ -1929,7 +2013,6 @@ const UI = {
         const clearDataModal = document.getElementById('clearDataModal');
         const cancelClearDataBtn = document.getElementById('cancelClearDataBtn');
         const confirmClearDataBtn = document.getElementById('confirmClearDataBtn');
-        let countdownInterval;
         
         // 显示清空数据确认对话框
         if (clearDataBtn && clearDataModal) {
@@ -2124,4 +2207,5 @@ const UI = {
                 }
             });
         }
+        
     });
