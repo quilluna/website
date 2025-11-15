@@ -47,26 +47,37 @@
             </nav>
             <div class="absolute bottom-0 w-64 p-4 border-t">
                 <div class="relative">
-                    <button id="dataMenuBtn" class="btn btn-secondary w-full flex items-center justify-between">
-                        <span class="flex items-center">
-                            <i class="fa fa-exchange mr-2"></i>
-                            <span>数据管理</span>
-                        </span>
-                        <i class="fa fa-chevron-down transition-transform duration-300"></i>
+                    <button id="dataMenuBtn" class="btn btn-secondary w-12 h-12 flex items-center justify-center rounded-full">
+                        <i class="fa fa-bars text-xl"></i>
                     </button>
                     <div id="dataMenuDropdown" class="absolute bottom-full left-0 right-0 mb-1 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 overflow-hidden transform translate-y-2 opacity-0 invisible transition-all duration-300">
-                        <button id="exportBtn" class="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
-                            <i class="fa fa-download mr-2 text-gray-600 dark:text-gray-400"></i>
-                            <span>导出数据</span>
-                        </button>
-                        <button id="importBtn" class="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
-                            <i class="fa fa-upload mr-2 text-gray-600 dark:text-gray-400"></i>
-                            <span>导入数据</span>
-                        </button>
-                        <button id="clearDataBtn" class="w-full text-left p-3 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center border-t border-gray-200 dark:border-gray-700">
-                            <i class="fa fa-trash-o mr-2 text-red-500"></i>
-                            <span class="text-red-500">清空数据</span>
-                        </button>
+                        <!-- 设置栏目 -->
+                        <div class="border-b border-gray-200 dark:border-gray-700">
+                            <div class="px-3 py-2 font-semibold text-sm text-gray-500 dark:text-gray-400">功能</div>
+                            <button id="settingsBtn" class="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                                <i class="fa fa-cog mr-2 text-gray-600 dark:text-gray-400"></i>
+                                <span>设置</span>
+                            </button>
+                        </div>
+                        
+                        <!-- 关于栏目 -->
+                        <div>
+                            <div class="px-3 py-3 font-semibold text-sm text-gray-500 dark:text-gray-400">关于</div>
+                            <div class="px-3 py-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm">版本号</span>
+                                    <span class="text-sm font-medium">0.1.0-alpha.1</span>
+                                </div>
+                                <div class="flex justify-between items-center mt-1">
+                                    <span class="text-sm">构建时间</span>
+                                    <span class="text-sm font-medium">2025-11-16</span>
+                                </div>
+                                <div class="flex justify-between items-center mt-3">
+                                    <span class="text-sm">构建作者</span>
+                                    <span class="text-sm font-medium">Quilluna</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <input type="file" id="importFile" accept=".json" class="hidden">
@@ -126,10 +137,6 @@
                         <h2 id="pageTitle" class="text-lg font-semibold">仪表盘</h2>
                     </div>
                     <div class="flex items-center gap-4">
-                        <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
-                            <i class="fa fa-moon-o text-gray-600"></i>
-                        </button>
-
                     </div>
                 </div>
             </header>
@@ -434,18 +441,7 @@
                                 <input type="text" id="searchInput" class="input-field pl-10" placeholder="搜索考试名称...">
                                 <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                             </div>
-                            <select id="filterSubject" class="input-field">
-                                <option value="all">全部科目</option>
-                                <option value="chinese">语文</option>
-                                <option value="math">数学</option>
-                                <option value="english">英语</option>
-                                <option value="physics">物理</option>
-                                <option value="chemistry">化学</option>
-                                <option value="biology">生物</option>
-                                <option value="politics">政治</option>
-                                <option value="history">历史</option>
-                                <option value="geography">地理</option>
-                            </select>
+
                         </div>
                         <div class="flex items-center gap-2">
                             <select id="sortSelect" class="input-field">
@@ -673,8 +669,8 @@
     </div>
 
     <!-- 考试详情模态框 -->
-    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl shadow-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto dark:bg-gray-800 dark:text-white">
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden modal-backdrop">
+        <div class="bg-white rounded-xl shadow-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto dark:bg-gray-800 dark:text-white modal-content">
             <!-- 查看模式容器 -->
             <div id="viewModeContainer" class="p-6">
                 <div class="flex justify-between items-center mb-6">
@@ -818,8 +814,50 @@
             </div>
         </div>
     </div>
+    <!-- 设置对话框 -->
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden modal-backdrop">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">设置</h3>
+                <button id="closeSettingsModal" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <!-- 数据管理 -->
+            <div class="mb-6">
+                <h4 class="text-lg font-medium mb-4 text-gray-900 dark:text-white">数据管理</h4>
+                <div class="space-y-2">
+                    <button id="exportBtn" class="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md flex items-center text-gray-800 dark:text-gray-200">
+                        <i class="fa fa-download mr-2 text-gray-600 dark:text-gray-400"></i>
+                        <span>导出数据</span>
+                    </button>
+                    <button id="importBtn" class="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md flex items-center text-gray-800 dark:text-gray-200">
+                        <i class="fa fa-upload mr-2 text-gray-600 dark:text-gray-400"></i>
+                        <span>导入数据</span>
+                    </button>
+                    <button id="clearDataBtn" class="w-full text-left p-3 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md flex items-center text-red-500">
+                        <i class="fa fa-trash-o mr-2 text-red-500"></i>
+                        <span>清空数据</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 颜色模式设置 -->
+            <div class="mb-6">
+                <h4 class="text-lg font-medium mb-4 text-gray-900 dark:text-white">颜色模式</h4>
+                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+                    <span class="text-sm text-gray-800 dark:text-gray-200">深色模式</span>
+                    <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600">
+                        <i class="fa fa-moon-o text-gray-600 dark:text-yellow-400"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div id="clearDataModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden modal-backdrop">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full modal-content">
                 <div class="text-center mb-6">
                     <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 text-red-500 mb-4">
                         <i class="fa fa-warning text-2xl"></i>

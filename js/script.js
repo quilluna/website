@@ -523,6 +523,32 @@ const Charts = {
     }
 };
 
+// 通用模态框处理函数
+function showModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+}
+
+function hideModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        // 添加消失动画
+        const modalContent = modal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.classList.add('pop-out');
+            // 动画完成后隐藏
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modalContent.classList.remove('pop-out', 'active');
+            }, 300);
+        } else {
+            modal.classList.add('hidden');
+        }
+    }
+}
+
 // 用户界面管理
 const UI = {
     currentPage: 'dashboard',
@@ -606,21 +632,20 @@ const UI = {
             this.updateExam();
         });
 
+        // 通用视图模式切换函数
+        function switchToViewMode() {
+            document.getElementById('editModeContainer').classList.add('hidden');
+            document.getElementById('viewModeContainer').classList.remove('hidden');
+        }
+
+        function switchToEditMode() {
+            document.getElementById('viewModeContainer').classList.add('hidden');
+            document.getElementById('editModeContainer').classList.remove('hidden');
+        }
+
         // 关闭详情模态框
         document.getElementById('closeDetailModal').addEventListener('click', () => {
-            // 添加消失动画
-            const detailModal = document.getElementById('detailModal');
-            const modalContent = detailModal.querySelector('div');
-            if (modalContent) {
-                modalContent.classList.add('pop-out');
-                // 动画完成后隐藏
-                setTimeout(() => {
-                    detailModal.classList.add('hidden');
-                    modalContent.classList.remove('pop-out');
-                }, 300);
-            } else {
-                detailModal.classList.add('hidden');
-            }
+            hideModal('detailModal');
         });
 
         // 撤销按钮点击事件
@@ -630,51 +655,25 @@ const UI = {
 
         // 关闭编辑模态框
         document.getElementById('closeEditModal').addEventListener('click', () => {
-            // 添加消失动画
-            const detailModal = document.getElementById('detailModal');
-            const modalContent = detailModal.querySelector('div');
-            if (modalContent) {
-                modalContent.classList.add('pop-out');
-                // 动画完成后隐藏
-                setTimeout(() => {
-                    detailModal.classList.add('hidden');
-                    modalContent.classList.remove('pop-out');
-                }, 300);
-            } else {
-                detailModal.classList.add('hidden');
-            }
+            hideModal('detailModal');
         });
 
         // 取消编辑
         document.getElementById('cancelEditBtn').addEventListener('click', () => {
             // 切换回查看模式
-            document.getElementById('editModeContainer').classList.add('hidden');
-            document.getElementById('viewModeContainer').classList.remove('hidden');
+            switchToViewMode();
         });
 
         // 编辑按钮点击事件
         document.getElementById('editExamBtn').addEventListener('click', () => {
             // 切换到编辑模式
-            document.getElementById('viewModeContainer').classList.add('hidden');
-            document.getElementById('editModeContainer').classList.remove('hidden');
+            switchToEditMode();
             this.showEditExam(this.editingExamIndex);
         });
 
         // 关闭删除确认模态框
         document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
-            // 添加消失动画
-            const deleteModal = document.getElementById('deleteModal');
-            const modalContent = deleteModal.querySelector('div');
-            if (modalContent) {
-                modalContent.classList.add('pop-out');
-                // 动画完成后隐藏
-                setTimeout(() => {
-                    deleteModal.classList.add('hidden');
-                    modalContent.classList.remove('pop-out');
-                }, 300);
-            } else {
-                deleteModal.classList.add('hidden');
-            }
+            hideModal('deleteModal');
         });
 
         // 确认删除
@@ -738,19 +737,7 @@ const UI = {
 
         // 取消编辑满分
         document.getElementById('cancelFullMarkBtn').addEventListener('click', () => {
-            // 添加消失动画
-            const editFullMarkModal = document.getElementById('editFullMarkModal');
-            const modalContent = editFullMarkModal.querySelector('div');
-            if (modalContent) {
-                modalContent.classList.add('pop-out');
-                // 动画完成后隐藏
-                setTimeout(() => {
-                    editFullMarkModal.classList.add('hidden');
-                    modalContent.classList.remove('pop-out');
-                }, 300);
-            } else {
-                editFullMarkModal.classList.add('hidden');
-            }
+            hideModal('editFullMarkModal');
         });
 
         // 保存满分设置
@@ -773,10 +760,7 @@ const UI = {
             this.filterExams();
         });
 
-        // 科目筛选事件
-        document.getElementById('filterSubject').addEventListener('change', () => {
-            this.filterExams();
-        });
+
 
         // 排序选择事件
         document.getElementById('sortSelect').addEventListener('change', () => {
@@ -1063,12 +1047,10 @@ const UI = {
         });
         
         // 先切换到查看模式并显示模态框
-        document.getElementById('editModeContainer').classList.add('hidden');
-        document.getElementById('viewModeContainer').classList.remove('hidden');
-        const detailModal = document.getElementById('detailModal');
+        switchToViewMode();
         // 确保动画能够正常触发
         setTimeout(() => {
-            detailModal.classList.remove('hidden');
+            showModal('detailModal');
         }, 10);
         
         // 然后渲染科目分布雷达图（放在模态框显示之后，避免阻塞UI）
@@ -1130,12 +1112,10 @@ const UI = {
         });
         
         // 切换到编辑模式并显示模态框
-        document.getElementById('viewModeContainer').classList.add('hidden');
-        document.getElementById('editModeContainer').classList.remove('hidden');
-        const detailModal = document.getElementById('detailModal');
+        switchToEditMode();
         // 确保动画能够正常触发
         setTimeout(() => {
-            detailModal.classList.remove('hidden');
+            showModal('detailModal');
         }, 10);
     },
 
@@ -1276,10 +1256,9 @@ const UI = {
     // 显示删除确认
     showDeleteConfirm(index) {
         this.editingExamIndex = index;
-        const deleteModal = document.getElementById('deleteModal');
-        // 确保动画能够正常触发
+        // 使用通用函数显示模态框，并确保动画能够正常触发
         setTimeout(() => {
-            deleteModal.classList.remove('hidden');
+            showModal('deleteModal');
         }, 10);
     },
 
@@ -1317,18 +1296,8 @@ const UI = {
         this.updateDashboard();
         this.updateAnalysisPage();
         
-        // 添加消失动画
-        const deleteModal = document.getElementById('deleteModal');
-        const modalContent = deleteModal.querySelector('div');
-        if (modalContent) {
-            modalContent.classList.add('pop-out');
-            setTimeout(() => {
-                deleteModal.classList.add('hidden');
-                modalContent.classList.remove('pop-out');
-            }, 300);
-        } else {
-            deleteModal.classList.add('hidden');
-        }
+        // 使用通用函数关闭删除模态框
+        hideModal('deleteModal');
         
         // 显示可撤销的通知
         this.showNotification('success', '已删除', '5秒后将永久删除，点击撤销可恢复', true);
@@ -1831,15 +1800,15 @@ const UI = {
             scoreInput.value = '';
         }
 
-        // 添加消失动画
+        // 使用通用函数关闭模态框
         const editFullMarkModal = document.getElementById('editFullMarkModal');
-        const modalContent = editFullMarkModal.querySelector('div');
+        const modalContent = editFullMarkModal.querySelector('.modal-content');
         if (modalContent) {
             modalContent.classList.add('pop-out');
             // 动画完成后隐藏
             setTimeout(() => {
                 editFullMarkModal.classList.add('hidden');
-                modalContent.classList.remove('pop-out');
+                modalContent.classList.remove('pop-out', 'active');
                 this.showNotification('success', '设置成功', '满分已更新');
             }, 300);
         } else {
@@ -1859,7 +1828,6 @@ const UI = {
     // 筛选考试记录
     filterExams() {
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        const filterSubject = document.getElementById('filterSubject').value;
         
         let filteredExams = Storage.getExams();
         
@@ -1867,13 +1835,6 @@ const UI = {
         if (searchTerm) {
             filteredExams = filteredExams.filter(exam => 
                 exam.name.toLowerCase().includes(searchTerm)
-            );
-        }
-        
-        // 科目筛选
-        if (filterSubject !== 'all') {
-            filteredExams = filteredExams.filter(exam => 
-                exam.subjects[filterSubject] !== undefined
             );
         }
         
@@ -1922,65 +1883,83 @@ document.addEventListener('DOMContentLoaded', () => {
         let countdownInterval = null;
         UI.init();
         
-        // 数据管理下拉菜单交互
+        // 显示测试版本通知
+        UI.showNotification('info', '测试版本', '当前为测试版本，可能存在不稳定性,请悉知');
+        
+        // 交互元素获取
         const dataMenuBtn = document.getElementById('dataMenuBtn');
         const dataMenuDropdown = document.getElementById('dataMenuDropdown');
-        const dropdownIcon = dataMenuBtn ? dataMenuBtn.querySelector('.fa-chevron-down') : null;
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsModal = document.getElementById('settingsModal');
+        const closeSettingsModal = document.getElementById('closeSettingsModal');
         
-        // 切换下拉菜单显示状态
+        // 切换下拉菜单显示/隐藏
         function toggleDropdown() {
-            if (!dataMenuDropdown || !dropdownIcon) return;
-            
-            const isOpen = dataMenuDropdown.classList.contains('opacity-100');
-            
-            if (isOpen) {
-                // 关闭菜单
-                dataMenuDropdown.classList.remove('opacity-100', 'translate-y-0', 'visible');
-                dataMenuDropdown.classList.add('opacity-0', 'translate-y-2', 'invisible');
-                dropdownIcon.style.transform = 'rotate(0deg)';
-            } else {
-                // 打开菜单
-                dataMenuDropdown.classList.remove('opacity-0', 'translate-y-2', 'invisible');
-                dataMenuDropdown.classList.add('opacity-100', 'translate-y-0', 'visible');
-                dropdownIcon.style.transform = 'rotate(180deg)';
+            if (dataMenuDropdown) {
+                if (dataMenuDropdown.classList.contains('invisible')) {
+                    // 显示菜单
+                    dataMenuDropdown.classList.remove('invisible', 'opacity-0', 'translate-y-2');
+                    dataMenuDropdown.classList.add('opacity-100', 'translate-y-0');
+                } else {
+                    // 隐藏菜单
+                    dataMenuDropdown.classList.remove('opacity-100', 'translate-y-0');
+                    dataMenuDropdown.classList.add('invisible', 'opacity-0', 'translate-y-2');
+                }
             }
         }
         
-        // 点击菜单按钮切换显示状态
+        // 打开设置对话框
+        function openSettingsModal() {
+            showModal('settingsModal');
+        }
+        
+        // 关闭设置对话框
+        function closeSettingsModalFunc() {
+            hideModal('settingsModal');
+        }
+        
+        // 点击菜单按钮显示/隐藏下拉菜单
         if (dataMenuBtn) {
             dataMenuBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // 阻止事件冒泡
+                e.stopPropagation();
                 toggleDropdown();
             });
         }
         
-        // 点击菜单外部关闭菜单
+        // 点击设置按钮打开设置对话框
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openSettingsModal();
+            });
+        }
+        
+        // 点击关闭按钮关闭设置对话框
+        if (closeSettingsModal) {
+            closeSettingsModal.addEventListener('click', closeSettingsModalFunc);
+        }
+        
+        // 点击对话框外部关闭设置对话框
+        if (settingsModal) {
+            settingsModal.addEventListener('click', (event) => {
+                if (event.target === settingsModal) {
+                    closeSettingsModalFunc();
+                }
+            });
+        }
+        
+        // 点击菜单外部关闭下拉菜单
         document.addEventListener('click', () => {
-            if (dataMenuDropdown && dropdownIcon && dataMenuDropdown.classList.contains('opacity-100')) {
-                dataMenuDropdown.classList.remove('opacity-100', 'translate-y-0', 'visible');
-                dataMenuDropdown.classList.add('opacity-0', 'translate-y-2', 'invisible');
-                dropdownIcon.style.transform = 'rotate(0deg)';
+            if (dataMenuDropdown && !dataMenuDropdown.classList.contains('invisible')) {
+                dataMenuDropdown.classList.remove('opacity-100', 'translate-y-0');
+                dataMenuDropdown.classList.add('invisible', 'opacity-0', 'translate-y-2');
             }
         });
         
-        // 点击菜单内部项目时关闭菜单
+        // 点击菜单内部项目不关闭菜单
         if (dataMenuDropdown) {
             dataMenuDropdown.addEventListener('click', (e) => {
-                e.stopPropagation(); // 阻止事件冒泡
-            });
-            
-            // 为菜单项添加点击事件监听，点击后关闭菜单
-            const menuItems = dataMenuDropdown.querySelectorAll('button');
-            menuItems.forEach(item => {
-                item.addEventListener('click', () => {
-                    setTimeout(() => {
-                        if (dataMenuDropdown && dropdownIcon) {
-                            dataMenuDropdown.classList.remove('opacity-100', 'translate-y-0', 'visible');
-                            dataMenuDropdown.classList.add('opacity-0', 'translate-y-2', 'invisible');
-                            dropdownIcon.style.transform = 'rotate(0deg)';
-                        }
-                    }, 100);
-                });
+                e.stopPropagation();
             });
         }
         
@@ -2178,20 +2157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 关闭清空数据模态框函数
         function closeClearDataModal() {
-            if (clearDataModal) {
-                // 添加消失动画
-                const modalContent = clearDataModal.querySelector('div');
-                if (modalContent) {
-                    modalContent.classList.add('pop-out');
-                    // 动画完成后隐藏
-                    setTimeout(() => {
-                        clearDataModal.classList.add('hidden');
-                        modalContent.classList.remove('pop-out', 'active');
-                    }, 300);
-                } else {
-                    clearDataModal.classList.add('hidden');
-                }
-            }
+            hideModal('clearDataModal');
             
             // 清除倒计时
             if (countdownInterval) {

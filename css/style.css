@@ -167,28 +167,30 @@ body {
     transform: translateX(4px);
     box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0.3);
 }
-/* 导航项底部色块 - 平滑移动效果 */
+/* 导航项底部色块已移除 */
 .nav-item::after {
     content: '';
     position: absolute;
     bottom: 0;
     left: 0;
-    height: 3px;
+    height: 0;
     width: 0;
-    background-color: #ffffff;
     transition: all 0.3s ease;
     border-radius: 3px 3px 0 0;
 }
 .nav-item.active::after {
-    width: 100%;
-    animation: pulse 2s infinite;
+    width: 0;
+    height: 0;
+    animation: none;
 }
 .dark .nav-item:not(.active):hover {
     box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0.4);
 }
-/* 深色模式下的导航项底部色块 */
+/* 深色模式下的导航项底部色块已移除 */
 .dark .nav-item.active::after {
-    background-color: #93c5fd;
+    background-color: transparent;
+    width: 0;
+    height: 0;
 }
 @keyframes pulse {
     0% {
@@ -274,6 +276,45 @@ i {
 /* 一般button元素过渡效果 - 移除发光 */
 button:not(.btn) {
     transition: all 0.3s ease;
+}
+
+/* 设置页面按钮发光效果 */
+#exportBtn, #importBtn, #themeToggle, #clearDataBtn, #closeSettingsModal {
+    transition: all 0.3s ease;
+    box-shadow: none;
+}
+
+/* 导出和导入按钮悬停效果 */
+#exportBtn:hover, #importBtn:hover {
+    box-shadow: 0 0 20px 8px rgba(59, 130, 246, 0.3), 0 0 40px 15px rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px);
+}
+
+/* 主题切换按钮悬停效果 */
+#themeToggle:hover {
+    box-shadow: 0 0 15px 5px rgba(245, 158, 11, 0.4);
+}
+
+/* 清空数据按钮悬停效果 */
+#clearDataBtn:hover {
+    box-shadow: 0 0 20px 8px rgba(239, 68, 68, 0.3), 0 0 40px 15px rgba(239, 68, 68, 0.1);
+    transform: translateY(-1px);
+}
+
+/* 数据菜单项目发光效果 */
+#dataMenuDropdown button {
+    transition: all 0.3s ease;
+    box-shadow: none;
+}
+
+#dataMenuDropdown button:hover {
+    box-shadow: 0 0 20px 8px rgba(59, 130, 246, 0.3), 0 0 40px 15px rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px);
+}
+
+/* 关闭设置按钮悬停效果 */
+#closeSettingsModal:hover {
+    box-shadow: 0 0 15px 5px rgba(156, 163, 175, 0.4);
 }
 
 /* 清空数据对话框按钮样式 */
@@ -672,7 +713,7 @@ table th {
 }
 
 /* 模态框样式 - 带背景模糊效果和放大动画 */
-.modal-overlay {
+.modal-backdrop {
     position: fixed;
     inset: 0;
     background-color: rgba(0, 0, 0, 0.5);
@@ -684,12 +725,11 @@ table th {
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
 }
-.modal-overlay.active {
+.modal-backdrop:not(.hidden) {
     opacity: 1;
     visibility: visible;
 }
 /* 模态框显示时的页面行为 */
-body:has(.modal-overlay.active),
 body:has(.fixed.inset-0.bg-black.bg-opacity-50:not(.hidden)),
 body:has(.modal-backdrop:not(.hidden)) {
     overflow: hidden;
@@ -701,7 +741,6 @@ main {
 }
 
 /* 当有模态框显示时，只对主内容区域应用模糊 */
-body:has(.modal-overlay.active) main,
 body:has(.fixed.inset-0.bg-black.bg-opacity-50:not(.hidden)) main,
 body:has(.modal-backdrop:not(.hidden)) main {
     filter: blur(4px);
@@ -718,11 +757,7 @@ body:has(.modal-backdrop:not(.hidden)) main {
     opacity: 0;
     transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55), opacity 0.3s ease;
 }
-.modal-overlay.active .modal-content {
-    transform: scale(1.05); /* 先放大到稍大尺寸 */
-    opacity: 1;
-}
-.modal-overlay.active .modal-content {
+.modal-backdrop:not(.hidden) .modal-content {
     animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; /* 应用弹出动画 */
 }
 @keyframes popIn {
@@ -754,6 +789,7 @@ body:has(.modal-backdrop:not(.hidden)) main {
 
 /* 消失动画类 */
 .modal-content.pop-out,
+#settingsModal .modal-content.pop-out,
 .fixed.inset-0.bg-black.bg-opacity-50:not(.hidden) > div.pop-out {
     animation: popOut 0.3s ease forwards !important;
 }
@@ -795,25 +831,17 @@ body:has(.modal-backdrop:not(.hidden)) main {
     opacity: 1;
     visibility: visible;
 }
-/* 为现有模态框内容添加动画 */
-.fixed.inset-0.bg-black.bg-opacity-50.flex.items-center.justify-center.z-50.hidden > div {
+/* 统一模态框动画样式 */
+.modal-backdrop.hidden > .modal-content,
+.fixed.inset-0.bg-black.bg-opacity-50.hidden > div {
     transform: scale(0.9);
     opacity: 0;
-    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55), opacity 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
 }
-.fixed.inset-0.bg-black.bg-opacity-50.flex.items-center.justify-center.z-50:not(.hidden) > div {
+
+.modal-backdrop:not(.hidden) > .modal-content,
+.fixed.inset-0.bg-black.bg-opacity-50:not(.hidden) > div {
     animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
-}
-.fixed.inset-0.bg-black.bg-opacity-50.flex.items-center.justify-center.z-50 > div {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.fixed.inset-0.bg-black.bg-opacity-50.flex.items-center.justify-center.z-50:not(.hidden) > div {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-}
-.fixed.inset-0.bg-black.bg-opacity-50.flex.items-center.justify-center.z-50.hidden > div {
-    transform: scale(0.95) translateY(20px);
-    opacity: 0;
 }
 .dark .modal-content {
     background-color: #1f2937;
