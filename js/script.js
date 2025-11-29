@@ -1,31 +1,192 @@
-// Tailwind 配置
-window.tailwind.config = {
-    darkMode: 'class',
-    theme: {
-        extend: {
-            colors: {
-                primary: '#3b82f6',
-                secondary: '#64748b',
-                success: '#10b981',
-                warning: '#f59e0b',
-                danger: '#ef4444',
-                info: '#06b6d4',
-                light: '#f8fafc',
-                dark: '#1e293b'
-            },
-            fontFamily: {
-                sans: ['Inter', 'system-ui', 'sans-serif']
-            },
-            boxShadow: {
-                card: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+// 导航菜单数据 - 统一管理移动端和桌面端导航项
+const navItems = [
+    { id: 'dashboard', name: '仪表盘', icon: 'fa-solid fa-chart-line', href: '#dashboard' },
+    { id: 'input', name: '成绩录入', icon: 'fa-solid fa-pen-to-square', href: '#input' },
+    { id: 'records', name: '成绩记录', icon: 'fa-solid fa-list', href: '#records' },
+    { id: 'analysis', name: '成绩分析', icon: 'fa-solid fa-chart-bar', href: '#analysis' },
+    { id: 'profile', name: '个人档案', icon: 'fa-solid fa-user-circle', href: '#profile' }
+];
+
+// 主题色管理工具
+const ThemeColors = {
+    // 获取当前主题的主色调
+    getPrimaryColor() {
+        return getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
+    },
+    
+    // 获取当前主题的主色调（深色）
+    getPrimaryDarkColor() {
+        return getComputedStyle(document.documentElement).getPropertyValue('--primary-dark').trim();
+    },
+    
+    // 获取当前主题的主色调（浅色）
+    getPrimaryLightColor() {
+        return getComputedStyle(document.documentElement).getPropertyValue('--primary-light').trim();
+    },
+    
+    // 获取当前主题的主色调（带透明度）
+    getPrimaryColorWithOpacity(opacity = 0.2) {
+        const primaryColor = this.getPrimaryColor();
+        // 转换为rgba格式
+        if (primaryColor.startsWith('#')) {
+            const r = parseInt(primaryColor.slice(1, 3), 16);
+            const g = parseInt(primaryColor.slice(3, 5), 16);
+            const b = parseInt(primaryColor.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        }
+        return primaryColor;
+    },
+    
+    // 获取辅助颜色
+    getSecondaryColor() {
+        return '#64748b'; // 可以考虑也将其添加到CSS变量中
+    },
+    
+    // 获取状态颜色
+    getSuccessColor() {
+        return '#10b981';
+    },
+    
+    getWarningColor() {
+        return '#f59e0b';
+    },
+    
+    getDangerColor() {
+        return '#ef4444';
+    },
+    
+    getInfoColor() {
+        return '#06b6d4';
+    }
+};
+
+// 全局函数：计算排名率（返回数字，不包含百分号）
+const calculateRankRate = (rank, total) => {
+    // 如果rank是'-'或其他非数字值，返回null
+    if (rank === '-' || isNaN(rank) || !rank || rank <= 0 || !total || total <= 0) {
+        return null;
+    }
+    return parseFloat(((rank / total) * 100).toFixed(2));
+};
+
+// 全局函数：根据优先级获取科目的综合评估分数
+const getSubjectPriorityScore = (subjectData, fullMark) => {
+    // 数据优先级：1.年级排名率 2.班级排名率 3.得分率
+    const gradeRankRate = calculateRankRate(subjectData.rankGrade, 650);
+    const classRankRate = calculateRankRate(subjectData.rankClass, 51);
+    const scoreRate = subjectData.score && fullMark ? parseFloat(((subjectData.score / fullMark) * 100).toFixed(2)) : null;
+
+    // 返回综合评估分数，优先使用排名率，排名率为空时使用得分率
+    // 注意：排名率数值越小表现越好，得分率数值越大表现越好
+    // 为了统一比较标准，将排名率转换为100-排名率，这样数值越大表现越好
+    if (gradeRankRate !== null) {
+        return 100 - gradeRankRate;
+    } else if (classRankRate !== null) {
+        return 100 - classRankRate;
+    } else if (scoreRate !== null) {
+        return scoreRate;
+    } else {
+        return null;
+    }
+};
+
+// Tailwind 配置 - 仅在Tailwind对象存在时设置
+if (window.tailwind) {
+    window.tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                colors: {
+                    primary: 'var(--primary-color)',
+                    'primary-dark': 'var(--primary-dark)',
+                    'primary-light': 'var(--primary-light)',
+                    secondary: '#64748b',
+                    success: '#10b981',
+                    warning: '#f59e0b',
+                    danger: '#ef4444',
+                    info: '#06b6d4',
+                    light: '#f8fafc',
+                    dark: '#1e293b'
+                },
+                fontFamily: {
+                    sans: ['Inter', 'system-ui', 'sans-serif']
+                },
+                boxShadow: {
+                    card: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+                }
             }
+        }
+    };
+}
+
+// 密码加密辅助函数
+const PasswordUtils = {
+    // 简单的加密算法（实际项目中应使用更安全的加密方式）
+    encrypt(password) {
+        if (!password) return '';
+        // 使用简单的Base64编码+字符串反转实现基本加密
+        return btoa(password.split('').reverse().join(''));
+    },
+    
+    // 解密算法
+    decrypt(encryptedPassword) {
+        if (!encryptedPassword) return '';
+        // 解密：Base64解码+字符串反转
+        try {
+            return atob(encryptedPassword).split('').reverse().join('');
+        } catch (e) {
+            console.error('密码解密失败:', e);
+            return '';
         }
     }
 };
 
 // 存储管理
 const Storage = {
+    // 获取用户信息
+    getUser() {
+        const user = localStorage.getItem('user');
+        if (user) {
+            const parsedUser = JSON.parse(user);
+            // 解密密码
+            if (parsedUser.password) {
+                parsedUser.password = PasswordUtils.decrypt(parsedUser.password);
+            }
+            return parsedUser;
+        }
+        return null;
+    },
+
+    // 保存用户信息
+    saveUser(user) {
+        // 创建用户信息的副本，避免修改原始对象
+        const userCopy = { ...user };
+        // 加密密码
+        if (userCopy.password) {
+            userCopy.password = PasswordUtils.encrypt(userCopy.password);
+        }
+        localStorage.setItem('user', JSON.stringify(userCopy));
+        return true;
+    },
+
+    // 删除用户信息
+    removeUser() {
+        localStorage.removeItem('user');
+        return true;
+    },
+
+    // 检查是否登录
+    isLoggedIn() {
+        return localStorage.getItem('isLoggedIn') === 'true' && this.getUser() !== null;
+    },
+
+    // 设置登录状态
+    setLoggedIn(isLoggedIn) {
+        localStorage.setItem('isLoggedIn', isLoggedIn ? 'true' : 'false');
+        return true;
+    },
+
     // 获取所有考试记录
     getExams() {
         const exams = localStorage.getItem('exams');
@@ -73,7 +234,7 @@ const Storage = {
         return profile ? JSON.parse(profile) : {
             name: '',
             className: '',
-            grade: '',
+            school: '',
             targetUniversity: ''
         };
     },
@@ -106,6 +267,7 @@ const Storage = {
             if (data.exams) localStorage.setItem('exams', JSON.stringify(data.exams));
             if (data.profile) localStorage.setItem('profile', JSON.stringify(data.profile));
             if (data.goals) localStorage.setItem('goals', JSON.stringify(data.goals));
+            if (data.fullMarks) localStorage.setItem('fullMarks', JSON.stringify(data.fullMarks));
             return true;
         } catch (error) {
             console.error('导入数据失败', error);
@@ -118,7 +280,8 @@ const Storage = {
         return {
             exams: this.getExams(),
             profile: this.getProfile(),
-            goals: this.getGoals()
+            goals: this.getGoals(),
+            fullMarks: this.getFullMarks()
         };
     },
     
@@ -126,6 +289,12 @@ const Storage = {
     getFullMarks() {
         const fullMarks = localStorage.getItem('fullMarks');
         return fullMarks ? JSON.parse(fullMarks) : null;
+    },
+    
+    // 保存满分设置
+    saveFullMarks(fullMarks) {
+        localStorage.setItem('fullMarks', JSON.stringify(fullMarks));
+        return true;
     }
 };
 
@@ -153,13 +322,14 @@ const Charts = {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: '总分',
-                    data: scores,
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
+                        label: '总分',
+                        data: scores,
+                        // 使用ThemeColors工具类获取主题色
+                        borderColor: ThemeColors.getPrimaryColor(),
+                        backgroundColor: ThemeColors.getPrimaryColorWithOpacity(0.1),
+                        tension: 0.4,
+                        fill: true
+                    }]
             },
             options: {
                 responsive: true,
@@ -205,13 +375,48 @@ const Charts = {
             const latestExam = exams.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
             const subjects = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
             const subjectNames = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
-            const scores = subjects.map(subject => {
-                const score = latestExam.subjects[subject] || 0;
-                const fullMark = latestExam.fullMarks[subject] || 100;
-                return fullMark > 0 ? (score / fullMark) * 100 : 0;
+            
+            // 获取数据优先级：1.年级排名率 2.班级排名率 3.得分率
+            const getSubjectPriorityData = (subject) => {
+                // 年级排名率
+                const gradeRank = latestExam.subjectRankGrade && latestExam.subjectRankGrade[subject];
+                if (gradeRank) {
+                    return 100 - parseFloat(((gradeRank / 650) * 100).toFixed(2));
+                }
+                
+                // 班级排名率
+                const classRank = latestExam.subjectRankClass && latestExam.subjectRankClass[subject];
+                if (classRank) {
+                    return 100 - parseFloat(((classRank / 51) * 100).toFixed(2));
+                }
+                
+                // 得分率
+                const score = latestExam.subjects && latestExam.subjects[subject] || 0;
+                const fullMark = latestExam.fullMarks && latestExam.fullMarks[subject] || 100;
+                return fullMark > 0 ? parseFloat(((score / fullMark) * 100).toFixed(2)) : 0;
+            };
+            
+            // 计算各项数据
+            const gradeRankRates = subjects.map(subject => {
+                const gradeRank = latestExam.subjectRankGrade && latestExam.subjectRankGrade[subject];
+                return gradeRank ? 100 - parseFloat(((gradeRank / 650) * 100).toFixed(2)) : 0;
             });
+            
+            const classRankRates = subjects.map(subject => {
+                const classRank = latestExam.subjectRankClass && latestExam.subjectRankClass[subject];
+                return classRank ? 100 - parseFloat(((classRank / 51) * 100).toFixed(2)) : 0;
+            });
+            
+            const scoreRates = subjects.map(subject => {
+                const score = latestExam.subjects && latestExam.subjects[subject] || 0;
+                const fullMark = latestExam.fullMarks && latestExam.fullMarks[subject] || 100;
+                return fullMark > 0 ? parseFloat(((score / fullMark) * 100).toFixed(2)) : 0;
+            });
+            
+            // 获取优先级数据
+            const priorityData = subjects.map(getSubjectPriorityData);
 
-            console.log('雷达图数据:', { subjects, subjectNames, scores });
+            console.log('雷达图数据:', { subjects, subjectNames, priorityData, gradeRankRates, classRankRates, scoreRates });
 
             if (window.subjectRadarChart && typeof window.subjectRadarChart.destroy === 'function') {
                 window.subjectRadarChart.destroy();
@@ -222,10 +427,11 @@ const Charts = {
                 data: {
                     labels: subjectNames,
                     datasets: [{
-                        label: '得分率(%)',
-                        data: scores,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                        label: '科目表现(优先级:年级排名率>班级排名率>得分率)',
+                        data: priorityData,
+                        // 使用ThemeColors工具类获取主题色
+                        borderColor: ThemeColors.getPrimaryColor(),
+                        backgroundColor: ThemeColors.getPrimaryColorWithOpacity(0.2)
                     }]
                 },
                 options: {
@@ -263,11 +469,29 @@ const Charts = {
 
             const subjects = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
             const subjectNames = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
-            const scores = subjects.map(subject => {
+            
+            // 获取数据优先级：1.年级排名率 2.班级排名率 3.得分率
+            const getSubjectPriorityData = (subject) => {
+                // 年级排名率
+                const gradeRank = examData.subjectRankGrade && examData.subjectRankGrade[subject];
+                if (gradeRank) {
+                    return 100 - parseFloat(((gradeRank / 650) * 100).toFixed(2));
+                }
+                
+                // 班级排名率
+                const classRank = examData.subjectRankClass && examData.subjectRankClass[subject];
+                if (classRank) {
+                    return 100 - parseFloat(((classRank / 51) * 100).toFixed(2));
+                }
+                
+                // 得分率
                 const score = examData.subjects[subject] || 0;
                 const fullMark = examData.fullMarks ? (examData.fullMarks[subject] || 100) : 100;
-                return fullMark > 0 ? (score / fullMark) * 100 : 0;
-            });
+                return fullMark > 0 ? parseFloat(((score / fullMark) * 100).toFixed(2)) : 0;
+            };
+            
+            // 获取优先级数据
+            const priorityData = subjects.map(getSubjectPriorityData);
 
             // 销毁旧图表
             if (window.detailSubjectRadarChart && typeof window.detailSubjectRadarChart.destroy === 'function') {
@@ -279,12 +503,13 @@ const Charts = {
                 data: {
                     labels: subjectNames,
                     datasets: [{
-                        label: '得分率(%)',
-                        data: scores,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        label: '科目表现(优先级:年级排名率>班级排名率>得分率)',
+                        data: priorityData,
+                        // 使用ThemeColors工具类获取主题色
+                        borderColor: ThemeColors.getPrimaryColor(),
+                        backgroundColor: ThemeColors.getPrimaryColorWithOpacity(0.2),
                         borderWidth: 2,
-                        pointBackgroundColor: '#3b82f6',
+                        pointBackgroundColor: ThemeColors.getPrimaryColor(),
                         pointRadius: 3
                     }]
                 },
@@ -383,19 +608,25 @@ const Charts = {
         const subjects = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
         const subjectNames = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
         const avgScores = subjects.map(subject => {
-            let totalScore = 0;
-            let totalFullMark = 0;
+            let totalPriorityScore = 0;
             let count = 0;
 
             exams.forEach(exam => {
-                if (exam.subjects[subject] !== undefined && exam.fullMarks[subject] > 0) {
-                    totalScore += exam.subjects[subject];
-                    totalFullMark += exam.fullMarks[subject];
-                    count++;
+                if (exam.subjects && exam.fullMarks && exam.subjects[subject] !== undefined && exam.fullMarks[subject] > 0) {
+                    const subjectData = {
+                        score: exam.subjects[subject],
+                        rankClass: exam.subjectRankClass ? exam.subjectRankClass[subject] : null,
+                        rankGrade: exam.subjectRankGrade ? exam.subjectRankGrade[subject] : null
+                    };
+                    const priorityScore = getSubjectPriorityScore(subjectData, exam.fullMarks[subject]);
+                    if (priorityScore !== null) {
+                        totalPriorityScore += priorityScore;
+                        count++;
+                    }
                 }
             });
 
-            return count > 0 ? (totalScore / totalFullMark) * 100 : 0;
+            return count > 0 ? totalPriorityScore / count : 0;
         });
 
         if (window.subjectStrengthChart && typeof window.subjectStrengthChart.destroy === 'function') {
@@ -528,6 +759,11 @@ function showModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.classList.remove('hidden');
+        // 触发淡入动画
+        const modalContent = modal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.classList.add('active');
+        }
     }
 }
 
@@ -549,8 +785,57 @@ function hideModal(modalId) {
     }
 }
 
+// 主题色切换功能
+function setThemeColor(theme) {
+    // 设置主题色数据属性
+    document.body.dataset.theme = theme || '';
+    
+    // 更新按钮的active状态
+    document.querySelectorAll('.theme-color-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === theme);
+    });
+    
+    // 保存到localStorage
+    try {
+        localStorage.setItem('themeColor', theme);
+    } catch (e) {
+        console.warn('无法保存主题设置到localStorage:', e);
+    }
+}
+
+// 初始化主题色设置
+function initThemeColor() {
+    // 从localStorage读取保存的主题色
+    try {
+        const savedTheme = localStorage.getItem('themeColor');
+        if (savedTheme) {
+            setThemeColor(savedTheme);
+            return;
+        }
+    } catch (e) {
+        console.warn('无法从localStorage读取主题设置:', e);
+    }
+    
+    // 默认为蓝色主题
+    setThemeColor('blue');
+}
+
+// 通用视图模式切换函数
+function switchToViewMode() {
+    document.getElementById('editModeContainer').classList.add('hidden');
+    document.getElementById('viewModeContainer').classList.remove('hidden');
+}
+
+function switchToEditMode() {
+    document.getElementById('viewModeContainer').classList.add('hidden');
+    document.getElementById('editModeContainer').classList.remove('hidden');
+}
+
 // 用户界面管理
 const UI = {
+    // 存储当前排序后的数据，用于详情查看和删除操作
+    currentExams: [],
+
     currentPage: 'dashboard',
     editingExamIndex: -1,
     editingSubject: '',
@@ -560,18 +845,40 @@ const UI = {
 
     // 初始化
     init() {
-        // 设置默认日期为今天
-        document.getElementById('examDate').valueAsDate = new Date();
+        // 如果当前是登录页面，直接返回，不执行任何初始化操作
+        if (window.location.pathname === '/login.html' || window.location.pathname === '/login') {
+            return;
+        }
+        
+        // 设置默认日期为今天（仅在有examDate元素的页面）
+        const examDateElement = document.getElementById('examDate');
+        if (examDateElement) {
+            try {
+                examDateElement.valueAsDate = new Date();
+            } catch (error) {
+                console.error('无法设置考试日期:', error);
+            }
+        }
+
+        // 生成导航菜单
+        this.generateNavMenu();
 
         // 加载数据
         this.loadExams();
         this.loadProfile();
         this.loadGoals();
+        this.loadFullMarks();
+        this.loadStudentInfo();
         this.updateDashboard();
         
         // 初始化图表（确保第一次打开页面时图表也能显示）
-        Charts.renderScoreTrendChart();
-        Charts.renderSubjectRadarChart();
+        // 但只在有图表容器的页面执行
+        if (document.getElementById('scoreTrendChart')) {
+            Charts.renderScoreTrendChart();
+        }
+        if (document.getElementById('subjectRadarChart')) {
+            Charts.renderSubjectRadarChart();
+        }
 
         // 绑定事件
         this.bindEvents();
@@ -580,7 +887,35 @@ const UI = {
         if (localStorage.getItem('theme') === 'dark' || 
             (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.body.classList.add('dark');
-            document.getElementById('themeToggle').innerHTML = '<i class="fa fa-sun-o text-yellow-400"></i>';
+            const themeToggleElement = document.getElementById('themeToggle');
+            if (themeToggleElement) {
+                themeToggleElement.innerHTML = '<i class="fa-solid fa-sun text-yellow-400"></i>';
+            }
+        }
+    },
+    
+    // 生成导航菜单
+    generateNavMenu() {
+        // 渲染桌面端导航菜单
+        const desktopNav = document.querySelector('.nav-container-desktop');
+        if (desktopNav) {
+            desktopNav.innerHTML = navItems.map(item => `
+                <a href="${item.href}" class="nav-item ${item.id === 'dashboard' ? 'active' : ''}" data-page="${item.id}">
+                    <i class="${item.icon} w-5 text-center"></i>
+                    <span>${item.name}</span>
+                </a>
+            `).join('');
+        }
+        
+        // 渲染移动端导航菜单
+        const mobileNav = document.querySelector('.nav-container-mobile');
+        if (mobileNav) {
+            mobileNav.innerHTML = navItems.map(item => `
+                <a href="${item.href}" class="nav-item ${item.id === 'dashboard' ? 'active' : ''}" data-page="${item.id}">
+                    <i class="${item.icon} w-5 text-center"></i>
+                    <span>${item.name}</span>
+                </a>
+            `).join('');
         }
     },
 
@@ -601,130 +936,174 @@ const UI = {
         });
 
         // 移动端菜单按钮点击事件
-        document.getElementById('mobileMenuBtn').addEventListener('click', () => {
-            document.getElementById('mobileMenu').classList.remove('hidden');
-            setTimeout(() => {
-                document.getElementById('mobileMenuContent').classList.remove('-translate-x-full');
-            }, 10);
-        });
-
-        // 关闭移动端菜单按钮点击事件
-        document.getElementById('closeMobileMenu').addEventListener('click', () => {
-            this.closeMobileMenu();
-        });
-
-        // 移动端菜单背景点击事件
-        document.getElementById('mobileMenu').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('mobileMenu')) {
-                this.closeMobileMenu();
-            }
-        });
-
-        // 考试表单提交事件
-        document.getElementById('examForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.addExam();
-        });
-
-        // 编辑考试表单提交事件
-        document.getElementById('editExamForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.updateExam();
-        });
-
-        // 通用视图模式切换函数
-        function switchToViewMode() {
-            document.getElementById('editModeContainer').classList.add('hidden');
-            document.getElementById('viewModeContainer').classList.remove('hidden');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                const mobileMenu = document.getElementById('mobileMenu');
+                const mobileMenuContent = document.getElementById('mobileMenuContent');
+                if (mobileMenu && mobileMenuContent) {
+                    mobileMenu.classList.remove('hidden');
+                    setTimeout(() => {
+                        mobileMenuContent.classList.remove('-translate-x-full');
+                    }, 10);
+                }
+            });
         }
 
-        function switchToEditMode() {
-            document.getElementById('viewModeContainer').classList.add('hidden');
-            document.getElementById('editModeContainer').classList.remove('hidden');
+        // 关闭移动端菜单按钮点击事件
+        const closeMobileMenu = document.getElementById('closeMobileMenu');
+        if (closeMobileMenu) {
+            closeMobileMenu.addEventListener('click', () => {
+                this.closeMobileMenu();
+            });
+        }
+
+        // 移动端菜单背景点击事件
+        const mobileMenu = document.getElementById('mobileMenu');
+        if (mobileMenu) {
+            mobileMenu.addEventListener('click', (e) => {
+                if (e.target === mobileMenu) {
+                    this.closeMobileMenu();
+                }
+            });
+        }
+
+        // 考试表单提交事件
+        const examForm = document.getElementById('examForm');
+        if (examForm) {
+            examForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.addExam();
+            });
+        }
+
+        // 编辑考试表单提交事件
+        const editExamForm = document.getElementById('editExamForm');
+        if (editExamForm) {
+            editExamForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.updateExam();
+            });
         }
 
         // 关闭详情模态框
-        document.getElementById('closeDetailModal').addEventListener('click', () => {
-            hideModal('detailModal');
-        });
+        const closeDetailModal = document.getElementById('closeDetailModal');
+        if (closeDetailModal) {
+            closeDetailModal.addEventListener('click', () => {
+                hideModal('detailModal');
+            });
+        }
 
         // 撤销按钮点击事件
-        document.getElementById('undoNotificationBtn').addEventListener('click', () => {
-            this.undoAction();
-        });
+        const undoNotificationBtn = document.getElementById('undoNotificationBtn');
+        if (undoNotificationBtn) {
+            undoNotificationBtn.addEventListener('click', () => {
+                this.undoAction();
+            });
+        }
 
         // 关闭编辑模态框
-        document.getElementById('closeEditModal').addEventListener('click', () => {
-            hideModal('detailModal');
-        });
+        const closeEditModal = document.getElementById('closeEditModal');
+        if (closeEditModal) {
+            closeEditModal.addEventListener('click', () => {
+                hideModal('detailModal');
+            });
+        }
 
         // 取消编辑
-        document.getElementById('cancelEditBtn').addEventListener('click', () => {
-            // 切换回查看模式
-            switchToViewMode();
-        });
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        if (cancelEditBtn) {
+            cancelEditBtn.addEventListener('click', () => {
+                // 切换回查看模式
+                switchToViewMode();
+            });
+        }
 
         // 编辑按钮点击事件
-        document.getElementById('editExamBtn').addEventListener('click', () => {
-            // 切换到编辑模式
-            switchToEditMode();
-            this.showEditExam(this.editingExamIndex);
-        });
+        const editExamBtn = document.getElementById('editExamBtn');
+        if (editExamBtn) {
+            editExamBtn.addEventListener('click', () => {
+                // 切换到编辑模式
+                switchToEditMode();
+                this.showEditExam(this.editingExamIndex);
+            });
+        }
 
         // 关闭删除确认模态框
-        document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
-            hideModal('deleteModal');
-        });
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+        if (cancelDeleteBtn) {
+            cancelDeleteBtn.addEventListener('click', () => {
+                hideModal('deleteModal');
+            });
+        }
 
         // 确认删除
-        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
-            this.deleteExam();
-        });
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        if (confirmDeleteBtn) {
+            confirmDeleteBtn.addEventListener('click', () => {
+                this.deleteExam();
+            });
+        }
 
         // 导出按钮点击事件
-        document.getElementById('exportBtn').addEventListener('click', () => {
-            this.exportData();
-        });
+        const exportBtn = document.getElementById('exportBtn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                this.exportData();
+            });
+        }
 
         // 导入按钮点击事件
-        document.getElementById('importBtn').addEventListener('click', () => {
-            document.getElementById('importFile').click();
-        });
+        const importBtn = document.getElementById('importBtn');
+        if (importBtn) {
+            importBtn.addEventListener('click', () => {
+                const importFile = document.getElementById('importFile');
+                if (importFile) {
+                    importFile.click();
+                }
+            });
+        }
 
         // 导入文件选择
-        document.getElementById('importFile').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+        const importFile = document.getElementById('importFile');
+        if (importFile) {
+            importFile.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const data = JSON.parse(event.target.result);
-                    if (Storage.importData(data)) {
-                        this.showNotification('success', '导入成功', '数据已成功导入');
-                        this.loadExams();
-                        this.updateDashboard();
-                        this.updateAnalysisPage();
-                        this.updateProfilePage();
-                        this.updateExamSelects();
-                    } else {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        if (Storage.importData(data)) {
+                            this.showNotification('success', '导入成功', '数据已成功导入');
+                            this.loadExams();
+                            this.updateDashboard();
+                            this.updateAnalysisPage();
+                            this.updateProfilePage();
+                            this.updateExamSelects();
+                        } else {
+                            this.showNotification('error', '导入失败', '数据格式错误');
+                        }
+                    } catch (error) {
+                        console.error('导入失败', error);
                         this.showNotification('error', '导入失败', '数据格式错误');
                     }
-                } catch (error) {
-                    console.error('导入失败', error);
-                    this.showNotification('error', '导入失败', '数据格式错误');
-                }
-            };
-            reader.readAsText(file);
+                };
+                reader.readAsText(file);
 
-            // 重置文件输入
-            e.target.value = '';
-        });
+                // 重置文件输入
+                e.target.value = '';
+            });
+        }
 
         // 主题切换
-        document.getElementById('themeToggle').addEventListener('click', () => {
-            this.toggleTheme();
-        });
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                this.toggleTheme();
+            });
+        }
 
         // 编辑满分按钮点击事件
         document.querySelectorAll('.edit-fullmark-btn').forEach(btn => {
@@ -736,36 +1115,52 @@ const UI = {
         });
 
         // 取消编辑满分
-        document.getElementById('cancelFullMarkBtn').addEventListener('click', () => {
-            hideModal('editFullMarkModal');
-        });
+        const cancelFullMarkBtn = document.getElementById('cancelFullMarkBtn');
+        if (cancelFullMarkBtn) {
+            cancelFullMarkBtn.addEventListener('click', () => {
+                hideModal('editFullMarkModal');
+            });
+        }
 
         // 保存满分设置
-        document.getElementById('saveFullMarkBtn').addEventListener('click', () => {
-            this.saveFullMark();
-        });
+        const saveFullMarkBtn = document.getElementById('saveFullMarkBtn');
+        if (saveFullMarkBtn) {
+            saveFullMarkBtn.addEventListener('click', () => {
+                this.saveFullMark();
+            });
+        }
 
         // 保存个人信息
-        document.getElementById('saveProfileBtn').addEventListener('click', () => {
-            this.saveProfile();
-        });
+        const saveProfileBtn = document.getElementById('saveProfileBtn');
+        if (saveProfileBtn) {
+            saveProfileBtn.addEventListener('click', () => {
+                this.saveProfile();
+            });
+        }
 
         // 保存学习目标
-        document.getElementById('saveGoalsBtn').addEventListener('click', () => {
-            this.saveGoals();
-        });
+        const saveGoalsBtn = document.getElementById('saveGoalsBtn');
+        if (saveGoalsBtn) {
+            saveGoalsBtn.addEventListener('click', () => {
+                this.saveGoals();
+            });
+        }
 
         // 搜索输入事件
-        document.getElementById('searchInput').addEventListener('input', () => {
-            this.filterExams();
-        });
-
-
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                this.filterExams();
+            });
+        }
 
         // 排序选择事件
-        document.getElementById('sortSelect').addEventListener('change', () => {
-            this.sortExams();
-        });
+        const sortSelect = document.getElementById('sortSelect');
+        if (sortSelect) {
+            sortSelect.addEventListener('change', () => {
+                this.sortExams();
+            });
+        }
     },
 
     // 关闭移动端菜单
@@ -854,23 +1249,11 @@ const UI = {
     updateProfilePage() {
         // 获取存储的个人信息
         const profile = Storage.getProfile();
+        const isLoggedIn = Storage.isLoggedIn();
         
         if (profile) {
-            // 更新表单字段 - 使用传统方式检查元素是否存在
-            const studentNameEl = document.getElementById('studentName');
-            if (studentNameEl) studentNameEl.value = profile.name || '';
-            
-            const studentClassEl = document.getElementById('studentClass');
-            if (studentClassEl) studentClassEl.value = profile.className || '';
-            
-            const studentGradeEl = document.getElementById('studentGrade');
-            if (studentGradeEl) studentGradeEl.value = profile.grade || '';
-            
-            const studentIdEl = document.getElementById('studentId');
-            if (studentIdEl) studentIdEl.value = profile.id || '';
-            
-            const studentGenderEl = document.getElementById('studentGender');
-            if (studentGenderEl) studentGenderEl.value = profile.gender || 'male';
+            // 重新调用loadProfile方法，确保完整的动态渲染
+            this.loadProfile();
         }
     },
 
@@ -888,16 +1271,34 @@ const UI = {
             return;
         }
 
+        // 验证排名输入
+        const validateRank = (rank, total, fieldName) => {
+            if (rank && (isNaN(rank) || rank < 1 || rank > total)) {
+                this.showNotification('error', '输入错误', `${fieldName}必须是1到${total}之间的正整数`);
+                return false;
+            }
+            return true;
+        };
+
+        // 验证班级排名和年级排名
+        if (!validateRank(rankClass, 51, '班级排名')) return;
+        if (!validateRank(rankGrade, 650, '年级排名')) return;
+
         // 获取科目成绩
         const subjects = {};
+        const subjectRankClass = {};
+        const subjectRankGrade = {};
         const fullMarks = {};
         let totalScore = 0;
         let totalFullMark = 0;
 
         const subjectFields = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+        let isValid = true;
         subjectFields.forEach(subject => {
             const scoreInput = document.querySelector(`input[name="${subject}Score"]`);
             const fullMarkInput = document.querySelector(`input[name="${subject}FullMark"]`);
+            const rankClassInput = document.querySelector(`input[name="${subject}RankClass"]`);
+            const rankGradeInput = document.querySelector(`input[name="${subject}RankGrade"]`);
             
             if (scoreInput.value) {
                 subjects[subject] = parseFloat(scoreInput.value);
@@ -912,13 +1313,35 @@ const UI = {
                     totalFullMark += fullMark;
                 }
             }
+            
+            if (rankClassInput && rankClassInput.value) {
+                const rank = parseInt(rankClassInput.value);
+                if (!validateRank(rank, 51, `${subject}班级排名`)) {
+                    isValid = false;
+                } else {
+                    subjectRankClass[subject] = rank;
+                }
+            }
+            
+            if (rankGradeInput && rankGradeInput.value) {
+                const rank = parseInt(rankGradeInput.value);
+                if (!validateRank(rank, 650, `${subject}年级排名`)) {
+                    isValid = false;
+                } else {
+                    subjectRankGrade[subject] = rank;
+                }
+            }
         });
+
+        if (!isValid) return;
 
         // 创建考试对象
         const exam = {
             name: examName,
             date: examDate,
             subjects: subjects,
+            subjectRankClass: subjectRankClass,
+            subjectRankGrade: subjectRankGrade,
             fullMarks: fullMarks,
             totalScore: totalScore,
             totalFullMark: totalFullMark,
@@ -947,6 +1370,11 @@ const UI = {
         const examsTable = document.getElementById('examsTable');
         const noRecords = document.getElementById('noRecords');
 
+        // 检查元素是否存在，避免在登录页面调用时出错
+        if (!examsTable || !noRecords) {
+            return;
+        }
+
         if (exams.length === 0) {
             examsTable.innerHTML = '';
             noRecords.classList.remove('hidden');
@@ -960,6 +1388,12 @@ const UI = {
     // 更新考试表格
     updateExamsTable(exams) {
         const examsTable = document.getElementById('examsTable');
+        // 检查元素是否存在，避免在登录页面调用时出错
+        if (!examsTable) {
+            return;
+        }
+        // 存储当前显示的数据
+        this.currentExams = exams;
         examsTable.innerHTML = '';
 
         exams.forEach((exam, index) => {
@@ -977,8 +1411,8 @@ const UI = {
                 <td class="py-3 px-4">${exam.rankGrade || '-'}</td>
                 <td class="py-3 px-4">
                     <div class="flex gap-2">
-                        <button class="btn btn-secondary btn-sm" onclick="UI.showExamDetail(${index})"><i class="fa fa-eye"></i></button>
-                        <button class="btn btn-danger btn-sm" onclick="UI.showDeleteConfirm(${index})"><i class="fa fa-trash"></i></button>
+                        <button class="btn btn-secondary btn-sm" onclick="UI.showExamDetail(${index})"><i class="fa-solid fa-eye"></i></button>
+                    <button class="btn btn-danger btn-sm" onclick="UI.showDeleteConfirm(${index})"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </td>
             `;
@@ -989,11 +1423,13 @@ const UI = {
 
     // 显示考试详情
     showExamDetail(index) {
-        const exams = Storage.getExams();
-        const exam = exams[index];
+        // 使用当前显示的数据（排序后）
+        const exam = this.currentExams[index];
         if (!exam) return;
 
-        this.editingExamIndex = index;
+        // 查找原始数据中的索引，用于后续操作
+        const originalExams = Storage.getExams();
+        this.editingExamIndex = originalExams.findIndex(e => e.date === exam.date && e.name === exam.name);
         
         // 填充详情数据
         document.getElementById('detailExamName').textContent = exam.name;
@@ -1027,11 +1463,24 @@ const UI = {
             'geography': '地理'
         };
         
-        Object.keys(exam.subjects).forEach(subject => {
-            const score = exam.subjects[subject];
-            const fullMark = exam.fullMarks[subject] || 100;
-            const rate = fullMark > 0 ? (score / fullMark) * 100 : 0;
-            const grade = this.getGrade(rate);
+        if (exam.subjects) {
+            Object.keys(exam.subjects).forEach(subject => {
+                const score = exam.subjects[subject];
+                const fullMark = (exam.fullMarks && exam.fullMarks[subject]) || 100;
+                const rate = fullMark > 0 ? (score / fullMark) * 100 : 0;
+                const grade = this.getGrade(rate);
+                const rankClass = (exam.subjectRankClass && exam.subjectRankClass[subject]) || '-';
+                const rankGrade = (exam.subjectRankGrade && exam.subjectRankGrade[subject]) || '-';
+            
+            // 计算排名率
+            const calculateRankRate = (rank, total) => {
+                // 如果rank是'-'或其他非数字值，直接返回'-'
+                if (rank === '-' || isNaN(rank) || !rank || rank <= 0 || total <= 0) return '-';
+                return ((rank / total) * 100).toFixed(2) + '%';
+            };
+            
+            const rankClassRate = calculateRankRate(rankClass, 51);
+            const rankGradeRate = calculateRankRate(rankGrade, 650);
             
             const row = document.createElement('tr');
             row.className = 'border-b dark:border-gray-700';
@@ -1041,10 +1490,15 @@ const UI = {
                 <td class="py-3 px-4">${fullMark}</td>
                 <td class="py-3 px-4"><span class="badge badge-${grade.toLowerCase()}">${grade}</span></td>
                 <td class="py-3 px-4">${rate.toFixed(1)}%</td>
+                <td class="py-3 px-4">${rankClass}</td>
+                <td class="py-3 px-4">${rankGrade}</td>
+                <td class="py-3 px-4">${rankClassRate}</td>
+                <td class="py-3 px-4">${rankGradeRate}</td>
             `;
             
             tbody.appendChild(row);
         });
+        }
         
         // 先切换到查看模式并显示模态框
         switchToViewMode();
@@ -1091,8 +1545,10 @@ const UI = {
         };
         
         Object.keys(subjectNames).forEach(subject => {
-            const score = exam.subjects[subject] || '';
-            const fullMark = exam.fullMarks[subject] || (subject === 'chinese' || subject === 'math' || subject === 'english' ? 150 : 100);
+            const score = (exam.subjects && exam.subjects[subject]) || '';
+            const fullMark = (exam.fullMarks && exam.fullMarks[subject]) || (subject === 'chinese' || subject === 'math' || subject === 'english' ? 150 : 100);
+            const rankClass = (exam.subjectRankClass && exam.subjectRankClass[subject]) || '';
+            const rankGrade = (exam.subjectRankGrade && exam.subjectRankGrade[subject]) || '';
             
             const row = document.createElement('tr');
             row.className = 'border-b dark:border-gray-700';
@@ -1105,6 +1561,14 @@ const UI = {
                 <td class="py-3 px-4">
                     <input type="number" name="edit${subject.charAt(0).toUpperCase() + subject.slice(1)}FullMark" 
                            class="input-field" value="${fullMark}" min="0" step="0.1">
+                </td>
+                <td class="py-3 px-4">
+                    <input type="number" name="edit${subject.charAt(0).toUpperCase() + subject.slice(1)}RankClass" 
+                           class="input-field" value="${rankClass}" placeholder="班级排名" min="1" max="51">
+                </td>
+                <td class="py-3 px-4">
+                    <input type="number" name="edit${subject.charAt(0).toUpperCase() + subject.slice(1)}RankGrade" 
+                           class="input-field" value="${rankGrade}" placeholder="年级排名" min="1" max="650">
                 </td>
             `;
             
@@ -1136,16 +1600,34 @@ const UI = {
             return;
         }
 
+        // 验证排名输入
+        const validateRank = (rank, total, fieldName) => {
+            if (rank && (isNaN(rank) || rank < 1 || rank > total)) {
+                this.showNotification('error', '输入错误', `${fieldName}必须是1到${total}之间的正整数`);
+                return false;
+            }
+            return true;
+        };
+
+        // 验证班级排名和年级排名
+        if (!validateRank(rankClass, 51, '班级排名')) return;
+        if (!validateRank(rankGrade, 650, '年级排名')) return;
+
         // 获取科目成绩
         const subjects = {};
+        const subjectRankClass = {};
+        const subjectRankGrade = {};
         const fullMarks = {};
         let totalScore = 0;
         let totalFullMark = 0;
 
         const subjectFields = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+        let isValid = true;
         subjectFields.forEach(subject => {
             const scoreInput = document.querySelector(`input[name="edit${subject.charAt(0).toUpperCase() + subject.slice(1)}Score"]`);
             const fullMarkInput = document.querySelector(`input[name="edit${subject.charAt(0).toUpperCase() + subject.slice(1)}FullMark"]`);
+            const rankClassInput = document.querySelector(`input[name="edit${subject.charAt(0).toUpperCase() + subject.slice(1)}RankClass"]`);
+            const rankGradeInput = document.querySelector(`input[name="edit${subject.charAt(0).toUpperCase() + subject.slice(1)}RankGrade"]`);
             
             if (scoreInput.value) {
                 subjects[subject] = parseFloat(scoreInput.value);
@@ -1160,13 +1642,35 @@ const UI = {
                     totalFullMark += fullMark;
                 }
             }
+            
+            if (rankClassInput && rankClassInput.value) {
+                const rank = parseInt(rankClassInput.value);
+                if (!validateRank(rank, 51, `${subject}班级排名`)) {
+                    isValid = false;
+                } else {
+                    subjectRankClass[subject] = rank;
+                }
+            }
+            
+            if (rankGradeInput && rankGradeInput.value) {
+                const rank = parseInt(rankGradeInput.value);
+                if (!validateRank(rank, 650, `${subject}年级排名`)) {
+                    isValid = false;
+                } else {
+                    subjectRankGrade[subject] = rank;
+                }
+            }
         });
+
+        if (!isValid) return;
 
         // 创建更新后的考试对象
         const updatedExam = {
             name: examName,
             date: examDate,
             subjects: subjects,
+            subjectRankClass: subjectRankClass,
+            subjectRankGrade: subjectRankGrade,
             fullMarks: fullMarks,
             totalScore: totalScore,
             totalFullMark: totalFullMark,
@@ -1209,19 +1713,8 @@ const UI = {
         this.updateDashboard();
         this.updateAnalysisPage();
         
-        // 添加消失动画
-        const detailModal = document.getElementById('detailModal');
-        const modalContent = detailModal.querySelector('div');
-        if (modalContent) {
-            modalContent.classList.add('pop-out');
-            // 动画完成后隐藏
-            setTimeout(() => {
-                detailModal.classList.add('hidden');
-                modalContent.classList.remove('pop-out');
-            }, 300);
-        } else {
-            detailModal.classList.add('hidden');
-        }
+        // 关闭当前打开的编辑模态框
+        hideModal('detailModal');
         
         // 显示可撤销的通知
         this.showNotification('success', '已更新', '5秒后将永久保存，点击撤销可恢复', true);
@@ -1255,7 +1748,11 @@ const UI = {
 
     // 显示删除确认
     showDeleteConfirm(index) {
-        this.editingExamIndex = index;
+        // 查找原始数据中的索引，用于后续操作
+        const originalExams = Storage.getExams();
+        const examToDelete = this.currentExams[index];
+        this.editingExamIndex = originalExams.findIndex(e => e.date === examToDelete.date && e.name === examToDelete.name);
+        
         // 使用通用函数显示模态框，并确保动画能够正常触发
         setTimeout(() => {
             showModal('deleteModal');
@@ -1312,6 +1809,10 @@ const UI = {
 
     // 更新仪表盘
     updateDashboard() {
+        // 检查仪表盘元素是否存在，避免在登录页面调用时出错
+        const totalScoreCard = document.getElementById('totalScoreCard');
+        if (!totalScoreCard) return;
+
         const exams = Storage.getExams();
         if (exams.length === 0) {
             document.getElementById('totalScoreCard').textContent = '--';
@@ -1320,8 +1821,8 @@ const UI = {
             document.getElementById('averageScoreCard').textContent = '--';
             document.getElementById('highestScoreCard').textContent = '--';
             document.getElementById('monthlyExamCount').textContent = '0';
-            document.getElementById('totalScoreTrend').innerHTML = '<i class="fa fa-minus"></i> 0%相比上次';
-            document.getElementById('rankTrend').innerHTML = '<i class="fa fa-minus"></i> 0位相比上次';
+            document.getElementById('totalScoreTrend').innerHTML = '<i class="fa-solid fa-minus"></i> 0%相比上次';
+            document.getElementById('rankTrend').innerHTML = '<i class="fa-solid fa-minus"></i> 0位相比上次';
             return;
         }
 
@@ -1353,16 +1854,16 @@ const UI = {
             
             if (scoreDiff > 0) {
                 trendElement.className = 'text-success';
-                trendElement.innerHTML = `<i class="fa fa-arrow-up"></i> ${Math.abs(scorePercent).toFixed(1)}%`;
+                trendElement.innerHTML = `<i class="fa-solid fa-arrow-up"></i> ${Math.abs(scorePercent).toFixed(1)}%`;
             } else if (scoreDiff < 0) {
                 trendElement.className = 'text-danger';
-                trendElement.innerHTML = `<i class="fa fa-arrow-down"></i> ${Math.abs(scorePercent).toFixed(1)}%`;
+                trendElement.innerHTML = `<i class="fa-solid fa-arrow-down"></i> ${Math.abs(scorePercent).toFixed(1)}%`;
             } else {
                 trendElement.className = 'text-gray-500';
-                trendElement.innerHTML = '<i class="fa fa-minus"></i> 0%';
+                trendElement.innerHTML = '<i class="fa-solid fa-minus"></i> 0%';
             }
         } else {
-            document.getElementById('totalScoreTrend').innerHTML = '<i class="fa fa-minus"></i> 0%';
+            document.getElementById('totalScoreTrend').innerHTML = '<i class="fa-solid fa-minus"></i> 0%';
         }
         
         // 更新排名
@@ -1378,13 +1879,13 @@ const UI = {
                     
                     if (rankDiff < 0) {
                         trendElement.className = 'text-success';
-                        trendElement.innerHTML = `<i class="fa fa-arrow-up"></i> ${Math.abs(rankDiff)}位`;
+                        trendElement.innerHTML = `<i class="fa-solid fa-arrow-up"></i> ${Math.abs(rankDiff)}位`;
                     } else if (rankDiff > 0) {
                         trendElement.className = 'text-danger';
-                        trendElement.innerHTML = `<i class="fa fa-arrow-down"></i> ${rankDiff}位`;
+                        trendElement.innerHTML = `<i class="fa-solid fa-arrow-down"></i> ${rankDiff}位`;
                     } else {
                         trendElement.className = 'text-gray-500';
-                        trendElement.innerHTML = '<i class="fa fa-minus"></i> 0位';
+                        trendElement.innerHTML = '<i class="fa-solid fa-minus"></i> 0位';
                     }
                 }
             }
@@ -1419,6 +1920,10 @@ const UI = {
 
     // 更新分析页面
     updateAnalysisPage() {
+        // 检查分析页面元素是否存在，避免在登录页面调用时出错
+        const chineseAvgScore = document.getElementById('chineseAvgScore');
+        if (!chineseAvgScore) return;
+
         const exams = Storage.getExams();
         if (exams.length === 0) return;
 
@@ -1428,41 +1933,167 @@ const UI = {
         subjects.forEach((subject, index) => {
             let totalScore = 0;
             let totalFullMark = 0;
-            let count = 0;
+            let totalClassRank = 0;
+            let totalGradeRank = 0;
+            let countScore = 0;
+            let countClassRank = 0;
+            let countGradeRank = 0;
+            
+            // 计算排名率的总和和计数
+            let totalClassRankRate = 0;
+            let totalGradeRankRate = 0;
+            let countClassRankRate = 0;
+            let countGradeRankRate = 0;
             
             exams.forEach(exam => {
-                if (exam.subjects[subject] !== undefined && exam.fullMarks[subject] > 0) {
+                // 计算平均分和得分率
+                if (exam.subjects && exam.fullMarks && exam.subjects[subject] !== undefined && exam.fullMarks[subject] > 0) {
                     totalScore += exam.subjects[subject];
                     totalFullMark += exam.fullMarks[subject];
-                    count++;
+                    countScore++;
+                }
+                
+                // 计算班级排名和班级排名率
+                if (exam.subjectRankClass && exam.subjectRankClass[subject] !== undefined && exam.subjectRankClass[subject] > 0) {
+                    const classRank = exam.subjectRankClass[subject];
+                    totalClassRank += classRank;
+                    countClassRank++;
+                    
+                    // 计算班级排名率
+                    const classRankRate = ((classRank / 51) * 100);
+                    totalClassRankRate += classRankRate;
+                    countClassRankRate++;
+                }
+                
+                // 计算年级排名和年级排名率
+                if (exam.subjectRankGrade && exam.subjectRankGrade[subject] !== undefined && exam.subjectRankGrade[subject] > 0) {
+                    const gradeRank = exam.subjectRankGrade[subject];
+                    totalGradeRank += gradeRank;
+                    countGradeRank++;
+                    
+                    // 计算年级排名率
+                    const gradeRankRate = ((gradeRank / 650) * 100);
+                    totalGradeRankRate += gradeRankRate;
+                    countGradeRankRate++;
                 }
             });
             
-            const avgScore = count > 0 ? totalScore / count : 0;
-            const avgRate = count > 0 ? (totalScore / totalFullMark) * 100 : 0;
+            const avgScore = countScore > 0 ? totalScore / countScore : 0;
+            const avgRate = countScore > 0 ? (totalScore / totalFullMark) * 100 : 0;
+            const avgClassRank = countClassRank > 0 ? totalClassRank / countClassRank : '--';
+            const avgGradeRank = countGradeRank > 0 ? totalGradeRank / countGradeRank : '--';
             
+            // 计算平均班级排名率和平均年级排名率
+            const avgClassRankRate = countClassRankRate > 0 ? totalClassRankRate / countClassRankRate : '--';
+            const avgGradeRankRate = countGradeRankRate > 0 ? totalGradeRankRate / countGradeRankRate : '--';
+            
+            // 更新平均分和得分率
             document.getElementById(`${subject}AvgScore`).textContent = avgScore.toFixed(1);
+            document.getElementById(`${subject}ScoreRate`).textContent = avgRate.toFixed(1);
             document.getElementById(`${subject}ScoreBar`).style.width = `${Math.min(avgRate, 100)}%`;
+            
+            // 更新班级排名和年级排名
+            document.getElementById(`${subject}ClassRank`).textContent = typeof avgClassRank === 'number' ? avgClassRank.toFixed(1) : avgClassRank;
+            document.getElementById(`${subject}GradeRank`).textContent = typeof avgGradeRank === 'number' ? avgGradeRank.toFixed(1) : avgGradeRank;
+            
+            // 更新班级排名率和年级排名率
+            document.getElementById(`${subject}ClassRankRate`).textContent = typeof avgClassRankRate === 'number' ? avgClassRankRate.toFixed(1) + '%' : avgClassRankRate;
+            document.getElementById(`${subject}GradeRankRate`).textContent = typeof avgGradeRankRate === 'number' ? avgGradeRankRate.toFixed(1) + '%' : avgGradeRankRate;
         });
     },
 
     // 加载个人信息
     loadProfile() {
         const profile = Storage.getProfile();
-        document.getElementById('profileName').textContent = profile.name || '未设置';
-        document.getElementById('profileClass').textContent = profile.className || '未设置';
-        document.getElementById('editProfileName').value = profile.name || '';
-        document.getElementById('editProfileClass').value = profile.className || '';
-        document.getElementById('editProfileGrade').value = profile.grade || '';
-        document.getElementById('editProfileTargetUniversity').value = profile.targetUniversity || '';
+        const isLoggedIn = Storage.isLoggedIn();
+        // 检查元素是否存在，避免在登录页面调用时出错
+        const profileName = document.getElementById('profileName');
+        if (profileName) {
+            profileName.textContent = profile.name || '未设置';
+        }
+        
+        const profileClass = document.getElementById('profileClass');
+        if (profileClass) {
+            profileClass.textContent = (profile.className ? profile.className + '班' : '未设置');
+        }
+        
+        // 处理姓名字段
+        const editProfileName = document.querySelector('#editProfileName');
+        if (editProfileName) {
+            const editProfileNameContainer = editProfileName.closest('div');
+            if (editProfileNameContainer) {
+                if (isLoggedIn) {
+                    // 已登录，替换为纯文本显示
+                    editProfileNameContainer.innerHTML = `
+                        <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">姓名</label>
+                        <div class="text-lg font-medium text-gray-800 dark:text-gray-200">${profile.name || '未设置'}</div>
+                    `;
+                } else {
+                    // 未登录，显示输入框
+                    editProfileName.value = profile.name || '';
+                    editProfileName.disabled = false;
+                }
+            }
+        }
+        
+        // 处理班级字段
+        const editProfileClass = document.querySelector('#editProfileClass');
+        if (editProfileClass) {
+            const editProfileClassContainer = editProfileClass.closest('div');
+            if (editProfileClassContainer) {
+                if (isLoggedIn) {
+                    // 已登录，替换为纯文本显示
+                    editProfileClassContainer.innerHTML = `
+                        <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">班级</label>
+                        <div class="text-lg font-medium text-gray-800 dark:text-gray-200">${profile.className || '未设置'}</div>
+                    `;
+                } else {
+                    // 未登录，显示输入框
+                    editProfileClass.value = profile.className || '';
+                    editProfileClass.disabled = false;
+                }
+            }
+        }
+        
+        // 处理学校字段
+        const editProfileSchool = document.querySelector('#editProfileSchool');
+        if (editProfileSchool) {
+            const editProfileSchoolContainer = editProfileSchool.closest('div');
+            if (editProfileSchoolContainer) {
+                if (isLoggedIn) {
+                    // 已登录，替换为纯文本显示
+                    editProfileSchoolContainer.innerHTML = `
+                        <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">学校</label>
+                        <div class="text-lg font-medium text-gray-800 dark:text-gray-200">${profile.school || '未设置'}</div>
+                    `;
+                } else {
+                    // 未登录，显示输入框
+                    editProfileSchool.value = profile.school || '';
+                    editProfileSchool.disabled = false;
+                }
+            }
+        }
+        
+        // 处理目标大学字段（始终显示输入框）
+        const editProfileTargetUniversity = document.getElementById('editProfileTargetUniversity');
+        if (editProfileTargetUniversity) {
+            editProfileTargetUniversity.value = profile.targetUniversity || '';
+            editProfileTargetUniversity.disabled = false;
+        }
     },
 
     // 保存个人信息
     saveProfile() {
+        const isLoggedIn = Storage.isLoggedIn();
+        const currentProfile = Storage.getProfile();
+        
+        // 根据登录状态决定哪些字段可以修改
         const profile = {
-            name: document.getElementById('editProfileName').value.trim(),
-            className: document.getElementById('editProfileClass').value.trim(),
-            grade: document.getElementById('editProfileGrade').value.trim(),
+            // 已登录用户保留原有姓名、班级和学校，未登录用户可修改
+            name: isLoggedIn ? currentProfile.name : document.getElementById('editProfileName').value.trim(),
+            className: isLoggedIn ? currentProfile.className : document.getElementById('editProfileClass').value.trim(),
+            school: isLoggedIn ? currentProfile.school : document.getElementById('editProfileSchool').value.trim(),
+            // 目标大学始终允许修改
             targetUniversity: document.getElementById('editProfileTargetUniversity').value.trim()
         };
         
@@ -1477,9 +2108,21 @@ const UI = {
     // 加载学习目标
     loadGoals() {
         const goals = Storage.getGoals();
-        document.getElementById('targetTotalScore').value = goals.targetTotalScore || '';
-        document.getElementById('targetRank').value = goals.targetRank || '';
-        document.getElementById('weakSubjectPlan').value = goals.weakSubjectPlan || '';
+        // 检查元素是否存在，避免在登录页面调用时出错
+        const targetTotalScore = document.getElementById('targetTotalScore');
+        if (targetTotalScore) {
+            targetTotalScore.value = goals.targetTotalScore || '';
+        }
+        
+        const targetRank = document.getElementById('targetRank');
+        if (targetRank) {
+            targetRank.value = goals.targetRank || '';
+        }
+        
+        const weakSubjectPlan = document.getElementById('weakSubjectPlan');
+        if (weakSubjectPlan) {
+            weakSubjectPlan.value = goals.weakSubjectPlan || '';
+        }
     },
 
     // 保存学习目标
@@ -1548,19 +2191,19 @@ const UI = {
         switch (type) {
             case 'success':
                 notificationIcon.className = 'flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-3 dark:bg-green-900 dark:text-green-400';
-                notificationIcon.innerHTML = '<i class="fa fa-check"></i>';
+                notificationIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
                 break;
             case 'error':
                 notificationIcon.className = 'flex-shrink-0 w-6 h-6 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-3 dark:bg-red-900 dark:text-red-400';
-                notificationIcon.innerHTML = '<i class="fa fa-times"></i>';
+                notificationIcon.innerHTML = '<i class="fa-solid fa-times"></i>';
                 break;
             case 'warning':
                 notificationIcon.className = 'flex-shrink-0 w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 mr-3 dark:bg-yellow-900 dark:text-yellow-400';
-                notificationIcon.innerHTML = '<i class="fa fa-exclamation-triangle"></i>';
+                notificationIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
                 break;
             case 'info':
                 notificationIcon.className = 'flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-3 dark:bg-blue-900 dark:text-blue-400';
-                notificationIcon.innerHTML = '<i class="fa fa-info-circle"></i>';
+                notificationIcon.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
                 break;
         }
 
@@ -1675,12 +2318,12 @@ const UI = {
         if (body.classList.contains('dark')) {
             // 切换到亮色主题
             body.classList.remove('dark');
-            themeToggle.innerHTML = '<i class="fa fa-moon-o text-gray-600"></i>';
+            themeToggle.innerHTML = '<i class="fa-solid fa-moon text-gray-600"></i>';
             localStorage.setItem('theme', 'light');
         } else {
             // 切换到暗色主题
             body.classList.add('dark');
-            themeToggle.innerHTML = '<i class="fa fa-sun-o text-yellow-400"></i>';
+            themeToggle.innerHTML = '<i class="fa-solid fa-sun text-yellow-400"></i>';
             localStorage.setItem('theme', 'dark');
         }
     },
@@ -1754,7 +2397,7 @@ const UI = {
         if (profileNameEl) profileNameEl.textContent = profile.name || '--';
         
         const profileClassEl = document.getElementById('profileClass');
-        if (profileClassEl) profileClassEl.textContent = profile.className || '--';
+        if (profileClassEl) profileClassEl.textContent = (profile.className ? profile.className + '班' : '--');
         
         // 更新编辑表单的默认值
         const editProfileNameEl = document.getElementById('editProfileName');
@@ -1763,8 +2406,8 @@ const UI = {
         const editProfileClassEl = document.getElementById('editProfileClass');
         if (editProfileClassEl) editProfileClassEl.value = profile.className || '';
         
-        const editProfileGradeEl = document.getElementById('editProfileGrade');
-        if (editProfileGradeEl) editProfileGradeEl.value = profile.grade || '';
+        const editProfileSchoolEl = document.getElementById('editProfileSchool');
+            if (editProfileSchoolEl) editProfileSchoolEl.value = profile.school || '';
         
         const editProfileTargetUniversityEl = document.getElementById('editProfileTargetUniversity');
         if (editProfileTargetUniversityEl) editProfileTargetUniversityEl.value = profile.targetUniversity || '';
@@ -1799,22 +2442,16 @@ const UI = {
             scoreInput.placeholder = '不统计';
             scoreInput.value = '';
         }
+        
+        // 更新fullMarks对象并保存到localStorage
+        const currentFullMarks = this.fullMarks || {};
+        currentFullMarks[subject] = newMark;
+        this.fullMarks = currentFullMarks;
+        Storage.saveFullMarks(currentFullMarks);
 
-        // 使用通用函数关闭模态框
-        const editFullMarkModal = document.getElementById('editFullMarkModal');
-        const modalContent = editFullMarkModal.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.classList.add('pop-out');
-            // 动画完成后隐藏
-            setTimeout(() => {
-                editFullMarkModal.classList.add('hidden');
-                modalContent.classList.remove('pop-out', 'active');
-                this.showNotification('success', '设置成功', '满分已更新');
-            }, 300);
-        } else {
-            editFullMarkModal.classList.add('hidden');
-            this.showNotification('success', '设置成功', '满分已更新');
-        }
+        // 关闭满分设置模态框
+        hideModal('editFullMarkModal');
+        this.showNotification('success', '设置成功', '满分已更新');
     },
 
     // 获取等级
@@ -1878,13 +2515,95 @@ const UI = {
 };
 
 // 页面加载完成后初始化
-document.addEventListener('DOMContentLoaded', () => {
-        // 定义倒计时变量
-        let countdownInterval = null;
-        UI.init();
+        document.addEventListener('DOMContentLoaded', () => {
+                // 检查登录状态
+                const checkLoginStatus = async () => {
+                    // 如果当前不是登录页面且未登录，允许访客模式访问
+                    // 不再强制跳转到登录页面，而是允许访客模式使用
+                    
+                    // 更新用户信息显示
+                    const user = Storage.getUser();
+                    const nameElement = document.querySelector('.user-info .name');
+                    const schoolElement = document.querySelector('.user-info .school');
+                    const classElement = document.querySelector('.user-info .class');
+                    
+                    if (user && Storage.isLoggedIn()) {
+                        // 已登录用户，从数据库同步数据到本地
+                        try {
+                            await apiService.syncDatabaseToLocal();
+                            console.log('数据已从数据库同步到本地');
+                            
+                            // 数据库同步后，仍然用登录信息覆盖姓名、班级和学校
+                            const currentProfile = Storage.getProfile();
+                            const updatedProfile = {
+                                ...currentProfile,
+                                name: user.username,
+                                className: user.class || '',
+                                school: user.school || ''
+                            };
+                            Storage.saveProfile(updatedProfile);
+                        } catch (error) {
+                            console.error('从数据库同步数据失败:', error);
+                        }
+                        
+                        if (nameElement) {
+                            nameElement.textContent = user.username;
+                        }
+                        // 学校和班级暂时隐藏，不显示
+                        /*if (user.school) {
+                            if (schoolElement) {
+                                schoolElement.textContent = user.school;
+                                schoolElement.classList.remove('hidden');
+                            }
+                        }
+                        if (user.class) {
+                            if (classElement) {
+                                classElement.textContent = user.class + '班';
+                                classElement.classList.remove('hidden');
+                            }
+                        }*/
+                    } else {
+                        // 访客模式，显示访客信息
+                        if (nameElement) {
+                            nameElement.textContent = '访客';
+                        }
+                        if (schoolElement) {
+                            schoolElement.classList.add('hidden');
+                        }
+                        if (classElement) {
+                            classElement.classList.add('hidden');
+                        }
+                    }
+                    return true;
+                };
+
+        // 登出功能
+        const logout = () => {
+            Storage.setLoggedIn(false);
+            Storage.removeUser();
+            window.location.href = 'login.html';
+        };
+
+        // 页面加载时检查登录状态
+        (async () => {
+            if (!(await checkLoginStatus())) {
+                return;
+            }
+        })();
         
-        // 显示测试版本通知
-        UI.showNotification('info', '测试版本', '当前为测试版本，可能存在不稳定性,请悉知');
+        // 只有当当前不是登录页面和管理页面时，才初始化UI
+        if (window.location.pathname !== '/login.html' && window.location.pathname !== '/login' && window.location.pathname !== '/admin.html' && window.location.pathname !== '/admin') {
+            UI.init();
+            
+            // 初始化主题色设置
+            initThemeColor();
+            
+            // 显示测试版本通知
+            UI.showNotification('info', '测试版本', '当前为测试版本，可能存在不稳定性,请悉知');
+        }
+        
+        // 绑定登出事件
+        document.getElementById('logoutBtn')?.addEventListener('click', logout);
         
         // 交互元素获取
         const dataMenuBtn = document.getElementById('dataMenuBtn');
@@ -1912,6 +2631,14 @@ document.addEventListener('DOMContentLoaded', () => {
         function openSettingsModal() {
             showModal('settingsModal');
         }
+        
+        // 主题色选择按钮事件监听
+        document.querySelectorAll('.theme-color-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const theme = btn.dataset.theme;
+                setThemeColor(theme);
+            });
+        });
         
         // 关闭设置对话框
         function closeSettingsModalFunc() {
@@ -1964,41 +2691,51 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // 为通知关闭按钮添加点击事件
-        document.getElementById('closeNotification').addEventListener('click', () => {
-            // 如果有延迟执行的操作（如删除），立即执行它
-            if (UI.undoStack && UI.undoStack.execute && (UI.undoStack.type === 'delete' || UI.undoStack.type === 'clear')) {
-                // 清除定时器，防止重复执行
-                if (window.clearUndoTimer) {
-                    clearTimeout(window.clearUndoTimer);
-                    window.clearUndoTimer = null;
+        const closeNotificationBtn = document.getElementById('closeNotification');
+        if (closeNotificationBtn) {
+            closeNotificationBtn.addEventListener('click', () => {
+                // 如果有延迟执行的操作（如删除），立即执行它
+                if (UI.undoStack && UI.undoStack.execute && (UI.undoStack.type === 'delete' || UI.undoStack.type === 'clear')) {
+                    // 清除定时器，防止重复执行
+                    if (window.clearUndoTimer) {
+                        clearTimeout(window.clearUndoTimer);
+                        window.clearUndoTimer = null;
+                    }
+                    
+                    // 立即执行操作
+                    UI.undoStack.execute();
+                    
+                    // 清除撤销栈
+                    UI.undoStack = null;
                 }
-                
-                // 立即执行操作
-                UI.undoStack.execute();
-                
-                // 清除撤销栈
-                UI.undoStack = null;
-            }
-            UI.hideNotification();
-        });
+                UI.hideNotification();
+            });
+        }
         
         // 为撤销按钮添加点击事件
-        document.getElementById('undoNotificationBtn').addEventListener('click', () => {
-            UI.undoAction();
-        });
+        const undoNotificationBtn = document.getElementById('undoNotificationBtn');
+        if (undoNotificationBtn) {
+            undoNotificationBtn.addEventListener('click', () => {
+                UI.undoAction();
+            });
+        }
         
         // 清空数据功能
         const clearDataBtn = document.getElementById('clearDataBtn');
         const clearDataModal = document.getElementById('clearDataModal');
         const cancelClearDataBtn = document.getElementById('cancelClearDataBtn');
         const confirmClearDataBtn = document.getElementById('confirmClearDataBtn');
+        const closeClearDataModalBtn = document.getElementById('closeClearDataModal');
+        
+        // 定义清空数据倒计时变量
+        let countdownInterval = null;
         
         // 显示清空数据确认对话框
         if (clearDataBtn && clearDataModal) {
             clearDataBtn.addEventListener('click', () => {
                 // 显示模态框并应用动画
                 clearDataModal.classList.remove('hidden');
-                const modalContent = clearDataModal.querySelector('.modal-content');
+                const modalContent = clearDataModal.querySelector('.clear-data-modal-content');
                 if (modalContent) {
                     // 先设置初始状态（缩小和透明度降低）
                     modalContent.style.transform = 'scale(0.9) translateY(-20px)';
@@ -2055,6 +2792,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         
+        // 关闭清空数据模态框
+        if (closeClearDataModalBtn) {
+            closeClearDataModalBtn.addEventListener('click', () => {
+                closeClearDataModal();
+            });
+        }
+        
         // 确认清空数据
         if (confirmClearDataBtn) {
             confirmClearDataBtn.addEventListener('click', () => {
@@ -2063,8 +2807,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const backupData = {
                         exams: localStorage.getItem('exams'),
                         fullMarks: localStorage.getItem('fullMarks'),
-                        studentInfo: localStorage.getItem('studentInfo'),
-                        gradeSystemExams: localStorage.getItem('gradeSystemExams'),
                         profile: localStorage.getItem('profile'),
                         goals: localStorage.getItem('goals')
                     };
@@ -2072,8 +2814,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 清空所有数据
                     localStorage.removeItem('exams');
                     localStorage.removeItem('fullMarks');
-                    localStorage.removeItem('studentInfo');
-                    localStorage.removeItem('gradeSystemExams');
                     localStorage.removeItem('profile');
                     localStorage.removeItem('goals');
                     
@@ -2115,8 +2855,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             // 执行撤销操作 - 恢复所有备份的数据
                             if (backupData.exams) localStorage.setItem('exams', backupData.exams);
                             if (backupData.fullMarks) localStorage.setItem('fullMarks', backupData.fullMarks);
-                            if (backupData.studentInfo) localStorage.setItem('studentInfo', backupData.studentInfo);
-                            if (backupData.gradeSystemExams) localStorage.setItem('gradeSystemExams', backupData.gradeSystemExams);
                             if (backupData.profile) localStorage.setItem('profile', backupData.profile);
                             if (backupData.goals) localStorage.setItem('goals', backupData.goals);
                             

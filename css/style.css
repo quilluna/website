@@ -3,6 +3,59 @@
 /* 设置颜色方案，支持深色模式和浅色模式 */
 :root {
     color-scheme: light dark;
+    
+    /* 主题色CSS变量 - 默认蓝色主题 */
+    --primary-color: #3b82f6;
+    --primary-dark: #2563eb;
+    --primary-darker: #1d4ed8;
+    --primary-light: #60a5fa;
+    --primary-glow: rgba(59, 130, 246, 0.3);
+    --primary-glow-active: rgba(59, 130, 246, 0.6);
+}
+
+/* 进度条背景色类 */
+.bg-primary {
+    background-color: var(--primary-color);
+}
+
+/* 绿色主题 */
+body[data-theme="green"] {
+    --primary-color: #10b981;
+    --primary-dark: #059669;
+    --primary-darker: #047857;
+    --primary-light: #34d399;
+    --primary-glow: rgba(16, 185, 129, 0.3);
+    --primary-glow-active: rgba(16, 185, 129, 0.6);
+}
+
+/* 紫色主题 */
+body[data-theme="purple"] {
+    --primary-color: #8b5cf6;
+    --primary-dark: #7c3aed;
+    --primary-darker: #6d28d9;
+    --primary-light: #a78bfa;
+    --primary-glow: rgba(139, 92, 246, 0.3);
+    --primary-glow-active: rgba(139, 92, 246, 0.6);
+}
+
+/* 红色主题 */
+body[data-theme="red"] {
+    --primary-color: #ef4444;
+    --primary-dark: #dc2626;
+    --primary-darker: #b91c1c;
+    --primary-light: #f87171;
+    --primary-glow: rgba(239, 68, 68, 0.3);
+    --primary-glow-active: rgba(239, 68, 68, 0.6);
+}
+
+/* 琥珀色主题 */
+body[data-theme="amber"] {
+    --primary-color: #f59e0b;
+    --primary-dark: #d97706;
+    --primary-darker: #b45309;
+    --primary-light: #fbbf24;
+    --primary-glow: rgba(245, 158, 11, 0.3);
+    --primary-glow-active: rgba(245, 158, 11, 0.6);
 }
 
 /* 全局样式和背景 */
@@ -22,8 +75,8 @@ body {
 
 .dark, .dark body {
     color: #f1f5f9;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
-    background-attachment: fixed !important;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    background-attachment: fixed;
 }
 
 /* 全局过渡动画类 */
@@ -52,27 +105,6 @@ body {
 /* 平滑过渡类 */
 .smooth-transition {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 玻璃效果 */
-.glass-effect {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    transition: all 0.3s ease;
-}
-.glass-effect:hover {
-    background: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 0 25px 10px rgba(59, 130, 246, 0.2);
-}
-.dark .glass-effect {
-    background: rgba(30, 41, 59, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-.dark .glass-effect:hover {
-    background: rgba(30, 41, 59, 0.95);
-    box-shadow: 0 0 25px 10px rgba(59, 130, 246, 0.3);
 }
 
 /* 过渡效果 */
@@ -155,17 +187,17 @@ body {
     text-decoration: none;
 }
 .nav-item.active {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
     color: white;
-    box-shadow: 0 0 30px 15px rgba(59, 130, 246, 0.6);
+    box-shadow: 0 0 30px 15px var(--primary-glow-active);
 }
 .nav-item:not(.active) {
     color: #64748b;
 }
 .nav-item:not(.active):hover {
-    color: #3b82f6;
+    color: var(--primary-color);
     transform: translateX(4px);
-    box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 15px 5px var(--primary-glow);
 }
 /* 导航项底部色块已移除 */
 .nav-item::after {
@@ -184,7 +216,31 @@ body {
     animation: none;
 }
 .dark .nav-item:not(.active):hover {
-    box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 15px 5px var(--primary-glow);
+}
+
+/* 主题色选择器按钮样式 */
+.theme-color-btn {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.theme-color-btn:hover {
+    transform: scale(1.1);
+}
+
+.theme-color-btn.active {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 3px white, 0 0 0 5px currentColor;
+}
+
+.dark .theme-color-btn {
+    border-color: #1e293b;
+}
+
+.dark .theme-color-btn.active {
+    box-shadow: 0 0 0 3px #1e293b, 0 0 0 5px currentColor;
 }
 /* 深色模式下的导航项底部色块已移除 */
 .dark .nav-item.active::after {
@@ -218,56 +274,7 @@ body {
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-/* 数据管理页面的按钮样式 - 与普通按钮保持一致 */
-.btn-icon {
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
 
-/* 编辑按钮样式 - 使用成功按钮的样式 */
-.btn-icon.edit {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-}
-
-.btn-icon.edit:hover {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    box-shadow: 0 0 20px 8px rgba(16, 185, 129, 0.4), 0 0 40px 15px rgba(16, 185, 129, 0.2);
-}
-
-.btn-icon.edit:active {
-    background: linear-gradient(135deg, #047857 0%, #065f46 100%);
-}
-
-/* 删除按钮样式 - 使用危险按钮的样式 */
-.btn-icon.delete {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    color: white;
-}
-
-.btn-icon.delete:hover {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    box-shadow: 0 0 20px 8px rgba(239, 68, 68, 0.4), 0 0 40px 15px rgba(239, 68, 68, 0.2);
-}
-
-.btn-icon.delete:active {
-    background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
-}
-
-/* 点击效果与普通按钮保持一致 */
-.btn-icon:active {
-    transform: scale(0.97);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
 
 /* i元素过渡效果 - 移除发光 */
 i {
@@ -286,13 +293,13 @@ button:not(.btn) {
 
 /* 导出和导入按钮悬停效果 */
 #exportBtn:hover, #importBtn:hover {
-    box-shadow: 0 0 20px 8px rgba(59, 130, 246, 0.3), 0 0 40px 15px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 20px 8px var(--primary-glow), 0 0 40px 15px var(--primary-glow);
     transform: translateY(-1px);
 }
 
 /* 主题切换按钮悬停效果 */
 #themeToggle:hover {
-    box-shadow: 0 0 15px 5px rgba(245, 158, 11, 0.4);
+    box-shadow: 0 0 15px 5px var(--primary-glow-active);
 }
 
 /* 清空数据按钮悬停效果 */
@@ -308,13 +315,23 @@ button:not(.btn) {
 }
 
 #dataMenuDropdown button:hover {
-    box-shadow: 0 0 20px 8px rgba(59, 130, 246, 0.3), 0 0 40px 15px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 20px 8px var(--primary-glow), 0 0 40px 15px var(--primary-glow);
     transform: translateY(-1px);
 }
 
 /* 关闭设置按钮悬停效果 */
 #closeSettingsModal:hover {
     box-shadow: 0 0 15px 5px rgba(156, 163, 175, 0.4);
+}
+
+/* 设置按钮悬停发光效果 */
+#settingsBtn {
+    transition: all 0.3s ease;
+}
+
+#settingsBtn:hover {
+    box-shadow: 0 0 20px 8px var(--primary-glow), 0 0 40px 15px var(--primary-glow);
+    transform: translateY(-1px);
 }
 
 /* 清空数据对话框按钮样式 */
@@ -338,21 +355,21 @@ button:not(.btn) {
 #confirmClearDataBtn:hover {
     /* 悬停时加强红光 */
     box-shadow: 0 0 60px 8px rgba(239, 68, 68, 0.6);
-}
+} */
 .btn:active {
     transform: scale(0.97);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 .btn-primary {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
     color: white;
 }
 .btn-primary:hover {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    box-shadow: 0 0 20px 8px rgba(59, 130, 246, 0.4), 0 0 40px 15px rgba(59, 130, 246, 0.2);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    box-shadow: 0 0 20px 8px var(--primary-glow-active), 0 0 40px 15px var(--primary-glow);
 }
 .btn-primary:active {
-    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-darker) 100%);
 }
 .btn-secondary {
     background-color: #e5e7eb;
@@ -582,6 +599,7 @@ table tbody tr:last-child {
     font-size: 0.75rem;
     font-weight: 500;
     border-radius: 9999px;
+    white-space: nowrap;
 }
 .badge-excellent,
 .badge-优秀 {
@@ -628,10 +646,6 @@ table tbody tr:last-child {
 .animate-fade-in {
     animation: fadeIn 0.5s ease-in-out;
 }
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
 /* 主内容区域样式 */
 main {
     position: relative;
@@ -669,10 +683,6 @@ main {
 .animate-pulse-slow {
     animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-}
 
 /* 页面布局 */
 .content-wrapper {
@@ -684,7 +694,7 @@ main {
 
 /* 深色模式下的内容容器背景 - 确保与整体背景一致 */
 .dark .content-wrapper {
-    background-color: #0f172a !important;
+    background-color: #0f172a;
 }
 
 /* 表格样式 */
@@ -757,7 +767,8 @@ body:has(.modal-backdrop:not(.hidden)) main {
     opacity: 0;
     transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55), opacity 0.3s ease;
 }
-.modal-backdrop:not(.hidden) .modal-content {
+.modal-backdrop:not(.hidden) .modal-content,
+.modal:not(.hidden) .modal-content {
     animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; /* 应用弹出动画 */
 }
 @keyframes popIn {
@@ -791,7 +802,7 @@ body:has(.modal-backdrop:not(.hidden)) main {
 .modal-content.pop-out,
 #settingsModal .modal-content.pop-out,
 .fixed.inset-0.bg-black.bg-opacity-50:not(.hidden) > div.pop-out {
-    animation: popOut 0.3s ease forwards !important;
+    animation: popOut 0.3s ease forwards;
 }
 
 /* 确认按钮文本居中和平滑过渡效果 */
@@ -824,7 +835,7 @@ body:has(.modal-backdrop:not(.hidden)) main {
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease 0.1s;
-    display: flex !important;
+    display: flex;
     pointer-events: none;
 }
 .fixed.inset-0.bg-black.bg-opacity-50.flex.items-center.justify-center.z-50:not(.hidden) {

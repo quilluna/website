@@ -7,9 +7,9 @@
     <!-- Tailwind CSS v3 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/chart.js@4.4.8"></script>
     <!-- 引入外部 CSS -->
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -19,43 +19,22 @@
         <aside class="w-64 bg-white shadow-lg z-10 hidden md:block dark:bg-gray-800 dark:text-white dark:border-gray-700">
             <div class="p-4 border-b">
                 <h1 class="text-xl font-bold text-primary flex items-center gap-2">
-                    <i class="fa fa-line-chart"></i>
+                    <i class="fa-solid fa-chart-line"></i>
                     <span>成绩分析</span>
                 </h1>
             </div>
-            <nav class="p-4 space-y-2">
-                <a href="#dashboard" class="nav-item active" data-page="dashboard">
-                    <i class="fa fa-dashboard w-5 text-center"></i>
-                    <span>仪表盘</span>
-                </a>
-                <a href="#input" class="nav-item" data-page="input">
-                    <i class="fa fa-pencil-square-o w-5 text-center"></i>
-                    <span>成绩录入</span>
-                </a>
-                <a href="#records" class="nav-item" data-page="records">
-                    <i class="fa fa-list-alt w-5 text-center"></i>
-                    <span>成绩记录</span>
-                </a>
-                <a href="#analysis" class="nav-item" data-page="analysis">
-                    <i class="fa fa-bar-chart w-5 text-center"></i>
-                    <span>成绩分析</span>
-                </a>
-                <a href="#profile" class="nav-item" data-page="profile">
-                    <i class="fa fa-user-circle-o w-5 text-center"></i>
-                    <span>个人档案</span>
-                </a>
-            </nav>
+            <nav class="p-4 space-y-2 nav-container-desktop"></nav>
             <div class="absolute bottom-0 w-64 p-4 border-t">
                 <div class="relative">
                     <button id="dataMenuBtn" class="btn btn-secondary w-12 h-12 flex items-center justify-center rounded-full">
-                        <i class="fa fa-bars text-xl"></i>
+                        <i class="fa-solid fa-bars text-xl"></i>
                     </button>
                     <div id="dataMenuDropdown" class="absolute bottom-full left-0 right-0 mb-1 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 overflow-hidden transform translate-y-2 opacity-0 invisible transition-all duration-300">
                         <!-- 设置栏目 -->
                         <div class="border-b border-gray-200 dark:border-gray-700">
                             <div class="px-3 py-2 font-semibold text-sm text-gray-500 dark:text-gray-400">功能</div>
                             <button id="settingsBtn" class="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
-                                <i class="fa fa-cog mr-2 text-gray-600 dark:text-gray-400"></i>
+                                <i class="fa-solid fa-gear mr-2 text-gray-600 dark:text-gray-400"></i>
                                 <span>设置</span>
                             </button>
                         </div>
@@ -66,11 +45,11 @@
                             <div class="px-3 py-3">
                                 <div class="flex justify-between items-center">
                                     <span class="text-sm">版本号</span>
-                                    <span class="text-sm font-medium">0.1.0-alpha.1</span>
+                                    <span class="text-sm font-medium">0.1.0-alpha3</span>
                                 </div>
                                 <div class="flex justify-between items-center mt-1">
                                     <span class="text-sm">构建时间</span>
-                                    <span class="text-sm font-medium">2025-11-16</span>
+                                    <span class="text-sm font-medium">2025-11-29</span>
                                 </div>
                                 <div class="flex justify-between items-center mt-3">
                                     <span class="text-sm">构建作者</span>
@@ -87,7 +66,7 @@
         <!-- 移动端导航菜单按钮 -->
         <div class="md:hidden fixed bottom-4 right-4 z-50">
             <button id="mobileMenuBtn" class="bg-primary text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center">
-                <i class="fa fa-bars"></i>
+                <i class="fa-solid fa-bars"></i>
             </button>
         </div>
 
@@ -96,35 +75,14 @@
             <div class="bg-white w-64 h-full p-4 transform transition-transform duration-300 -translate-x-full dark:bg-gray-800 dark:text-white" id="mobileMenuContent">
                 <div class="flex justify-between items-center border-b pb-4">
                     <h1 class="text-xl font-bold text-primary flex items-center gap-2">
-                        <i class="fa fa-line-chart"></i>
+                        <i class="fa-solid fa-chart-line"></i>
                         <span>成绩分析系统</span>
                     </h1>
                     <button id="closeMobileMenu" class="text-gray-500 hover:text-gray-700">
-                        <i class="fa fa-times"></i>
+                        <i class="fa-solid fa-times"></i>
                     </button>
                 </div>
-                <nav class="p-4 space-y-2 mt-4">
-                    <a href="#dashboard" class="nav-item active" data-page="dashboard">
-                        <i class="fa fa-dashboard w-5 text-center"></i>
-                        <span>仪表盘</span>
-                    </a>
-                    <a href="#input" class="nav-item" data-page="input">
-                        <i class="fa fa-pencil-square-o w-5 text-center"></i>
-                        <span>成绩录入</span>
-                    </a>
-                    <a href="#records" class="nav-item" data-page="records">
-                        <i class="fa fa-list-alt w-5 text-center"></i>
-                        <span>成绩记录</span>
-                    </a>
-                    <a href="#analysis" class="nav-item" data-page="analysis">
-                        <i class="fa fa-bar-chart w-5 text-center"></i>
-                        <span>成绩分析</span>
-                    </a>
-                    <a href="#profile" class="nav-item" data-page="profile">
-                        <i class="fa fa-user-circle-o w-5 text-center"></i>
-                        <span>个人档案</span>
-                    </a>
-                </nav>
+                <nav class="p-4 space-y-2 mt-4 nav-container-mobile"></nav>
             </div>
         </div>
 
@@ -137,6 +95,18 @@
                         <h2 id="pageTitle" class="text-lg font-semibold">仪表盘</h2>
                     </div>
                     <div class="flex items-center gap-4">
+                        <!-- 用户信息 -->
+                        <div class="user-info flex items-center gap-2">
+                            <span class="name font-medium">访客</span>
+                            <!-- 学校和班级暂时隐藏 -->
+                            <span class="school hidden text-sm text-gray-500 dark:text-gray-400" style="display: none;"></span>
+                            <span class="class hidden text-sm text-gray-500 dark:text-gray-400" style="display: none;"></span>
+                        </div>
+                        <!-- 登出按钮 -->
+                        <button id="logoutBtn" class="btn btn-secondary text-sm px-3 py-1">
+                            <i class="fa-solid fa-right-from-bracket mr-1"></i>
+                            <span>登出</span>
+                        </button>
                     </div>
                 </div>
             </header>
@@ -153,12 +123,12 @@
                                 <h3 id="totalScoreCard" class="text-2xl font-bold">--</h3>
                             </div>
                             <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-primary dark:bg-blue-900">
-                                <i class="fa fa-graduation-cap"></i>
+                                <i class="fa-solid fa-graduation-cap"></i>
                             </div>
                         </div>
                         <div class="mt-2 flex items-center text-sm">
                             <span id="totalScoreTrend" class="text-success">
-                                <i class="fa fa-arrow-up"></i> 0%
+                                <i class="fa-solid fa-arrow-up"></i> 0%
                             </span>
                             <span class="text-gray-500 dark:text-gray-400 ml-2">相比上次</span>
                         </div>
@@ -172,12 +142,12 @@
                                 <h3 id="rankCard" class="text-2xl font-bold">--</h3>
                             </div>
                             <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-success dark:bg-green-900">
-                                <i class="fa fa-trophy"></i>
+                                <i class="fa-solid fa-trophy"></i>
                             </div>
                         </div>
                         <div class="mt-2 flex items-center text-sm">
                             <span id="rankTrend" class="text-danger">
-                                <i class="fa fa-arrow-down"></i> 0位
+                                <i class="fa-solid fa-arrow-down"></i> 0位
                             </span>
                             <span class="text-gray-500 dark:text-gray-400 ml-2">相比上次</span>
                         </div>
@@ -191,7 +161,7 @@
                                 <h3 id="examCountCard" class="text-2xl font-bold">0</h3>
                             </div>
                             <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-warning dark:bg-yellow-900">
-                                <i class="fa fa-calendar"></i>
+                                <i class="fa-solid fa-calendar"></i>
                             </div>
                         </div>
                         <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
@@ -207,7 +177,7 @@
                                 <h3 id="averageScoreCard" class="text-2xl font-bold">--</h3>
                             </div>
                             <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 dark:bg-purple-900">
-                                <i class="fa fa-bar-chart"></i>
+                                <i class="fa-solid fa-chart-bar"></i>
                             </div>
                         </div>
                         <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
@@ -271,12 +241,16 @@
                                         <div class="flex items-center">
                                             <span id="chineseFullMarkDisplay" class="text-xs text-gray-500 mr-2">150</span>
                                             <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="chinese" data-default="150">
-                                                <i class="fa fa-pencil"></i>
+                                                <i class="fa-solid fa-pen"></i>
                                             </button>
                                             <input type="hidden" name="chineseFullMark" value="150">
                                         </div>
                                     </div>
                                     <input type="number" name="chineseScore" class="input-field" placeholder="0-150" max="150" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="chineseRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="chineseRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
                                 </div>
 
                                 <!-- 数学 -->
@@ -286,12 +260,16 @@
                                         <div class="flex items-center">
                                             <span id="mathFullMarkDisplay" class="text-xs text-gray-500 mr-2">150</span>
                                             <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="math" data-default="150">
-                                                <i class="fa fa-pencil"></i>
+                                                <i class="fa-solid fa-pen"></i>
                                             </button>
                                             <input type="hidden" name="mathFullMark" value="150">
                                         </div>
                                     </div>
                                     <input type="number" name="mathScore" class="input-field" placeholder="0-150" max="150" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="mathRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="mathRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
                                 </div>
 
                                 <!-- 英语 -->
@@ -301,12 +279,16 @@
                                         <div class="flex items-center">
                                             <span id="englishFullMarkDisplay" class="text-xs text-gray-500 mr-2">150</span>
                                             <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="english" data-default="150">
-                                                <i class="fa fa-pencil"></i>
+                                                <i class="fa-solid fa-pen"></i>
                                             </button>
                                             <input type="hidden" name="englishFullMark" value="150">
                                         </div>
                                     </div>
                                     <input type="number" name="englishScore" class="input-field" placeholder="0-150" max="150" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="englishRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="englishRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
                                 </div>
 
                                 <!-- 物理 -->
@@ -316,12 +298,16 @@
                                         <div class="flex items-center">
                                             <span id="physicsFullMarkDisplay" class="text-xs text-gray-500 mr-2">100</span>
                                             <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="physics" data-default="100">
-                                                <i class="fa fa-pencil"></i>
+                                                <i class="fa-solid fa-pen"></i>
                                             </button>
                                             <input type="hidden" name="physicsFullMark" value="100">
                                         </div>
                                     </div>
                                     <input type="number" name="physicsScore" class="input-field" placeholder="0-100" max="100" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="physicsRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="physicsRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
                                 </div>
 
                                 <!-- 化学 -->
@@ -331,12 +317,16 @@
                                         <div class="flex items-center">
                                             <span id="chemistryFullMarkDisplay" class="text-xs text-gray-500 mr-2">100</span>
                                             <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="chemistry" data-default="100">
-                                                <i class="fa fa-pencil"></i>
+                                                <i class="fa-solid fa-pen"></i>
                                             </button>
                                             <input type="hidden" name="chemistryFullMark" value="100">
                                         </div>
                                     </div>
                                     <input type="number" name="chemistryScore" class="input-field" placeholder="0-100" max="100" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="chemistryRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="chemistryRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
                                 </div>
 
                                 <!-- 生物 -->
@@ -346,12 +336,16 @@
                                         <div class="flex items-center">
                                             <span id="biologyFullMarkDisplay" class="text-xs text-gray-500 mr-2">100</span>
                                             <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="biology" data-default="100">
-                                                <i class="fa fa-pencil"></i>
+                                                <i class="fa-solid fa-pen"></i>
                                             </button>
                                             <input type="hidden" name="biologyFullMark" value="100">
                                         </div>
                                     </div>
                                     <input type="number" name="biologyScore" class="input-field" placeholder="0-100" max="100" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="biologyRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="biologyRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
                                 </div>
 
                                 <!-- 政治 -->
@@ -361,12 +355,16 @@
                                         <div class="flex items-center">
                                             <span id="politicsFullMarkDisplay" class="text-xs text-gray-500 mr-2">100</span>
                                             <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="politics" data-default="100">
-                                                <i class="fa fa-pencil"></i>
+                                                <i class="fa-solid fa-pen"></i>
                                             </button>
                                             <input type="hidden" name="politicsFullMark" value="100">
                                         </div>
                                     </div>
                                     <input type="number" name="politicsScore" class="input-field" placeholder="0-100" max="100" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="politicsRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="politicsRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
                                 </div>
 
                                 <!-- 历史 -->
@@ -376,12 +374,16 @@
                                         <div class="flex items-center">
                                             <span id="historyFullMarkDisplay" class="text-xs text-gray-500 mr-2">100</span>
                                             <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="history" data-default="100">
-                                                <i class="fa fa-pencil"></i>
+                                                <i class="fa-solid fa-pen"></i>
                                             </button>
                                             <input type="hidden" name="historyFullMark" value="100">
                                         </div>
                                     </div>
                                     <input type="number" name="historyScore" class="input-field" placeholder="0-100" max="100" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="historyRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="historyRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
                                 </div>
 
                                 <!-- 地理 -->
@@ -391,12 +393,16 @@
                                         <div class="flex items-center">
                                             <span id="geographyFullMarkDisplay" class="text-xs text-gray-500 mr-2">100</span>
                                             <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="geography" data-default="100">
-                                                <i class="fa fa-pencil"></i>
+                                                <i class="fa-solid fa-pen"></i>
                                             </button>
                                             <input type="hidden" name="geographyFullMark" value="100">
                                         </div>
                                     </div>
                                     <input type="number" name="geographyScore" class="input-field" placeholder="0-100" max="100" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="geographyRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="geographyRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -419,11 +425,11 @@
 
                         <div class="mt-6 flex justify-end gap-4">
                             <button type="reset" class="btn btn-secondary">
-                                <i class="fa fa-refresh"></i>
+                                <i class="fa-solid fa-rotate-right"></i>
                                 <span>重置</span>
                             </button>
                             <button type="submit" class="btn btn-primary">
-                                <i class="fa fa-save"></i>
+                                <i class="fa-solid fa-floppy-disk"></i>
                                 <span>保存成绩</span>
                             </button>
                         </div>
@@ -439,7 +445,7 @@
                         <div class="flex items-center gap-2">
                             <div class="relative">
                                 <input type="text" id="searchInput" class="input-field pl-10" placeholder="搜索考试名称...">
-                                <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                             </div>
 
                         </div>
@@ -477,7 +483,7 @@
                     </div>
                     <div id="noRecords" class="py-12 text-center hidden">
                         <div class="text-gray-400 mb-4">
-                            <i class="fa fa-folder-open-o text-4xl"></i>
+                            <i class="fa-solid fa-folder-open text-4xl"></i>
                         </div>
                         <p class="text-gray-500 dark:text-gray-400">暂无考试记录</p>
                         <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">点击"成绩录入"开始添加考试记录</p>
@@ -522,8 +528,17 @@
                                     <span class="text-sm font-medium">语文</span>
                                     <span id="chineseAvgScore" class="text-sm font-semibold">--</span>
                                 </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600">
+                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
                                     <div id="chineseScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                    <div>年级排名率: <span id="chineseGradeRankRate">--</span></div>
+                                    <div>班级排名率: <span id="chineseClassRankRate">--</span></div>
+                                    <div>得分率: <span id="chineseScoreRate">--</span>%</div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    <div>班级排名: <span id="chineseClassRank">--</span></div>
+                                    <div>年级排名: <span id="chineseGradeRank">--</span></div>
                                 </div>
                             </div>
                             <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
@@ -531,8 +546,17 @@
                                     <span class="text-sm font-medium">数学</span>
                                     <span id="mathAvgScore" class="text-sm font-semibold">--</span>
                                 </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600">
+                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
                                     <div id="mathScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                    <div>年级排名率: <span id="mathGradeRankRate">--</span></div>
+                                    <div>班级排名率: <span id="mathClassRankRate">--</span></div>
+                                    <div>得分率: <span id="mathScoreRate">--</span>%</div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    <div>班级排名: <span id="mathClassRank">--</span></div>
+                                    <div>年级排名: <span id="mathGradeRank">--</span></div>
                                 </div>
                             </div>
                             <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
@@ -540,8 +564,17 @@
                                     <span class="text-sm font-medium">英语</span>
                                     <span id="englishAvgScore" class="text-sm font-semibold">--</span>
                                 </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600">
+                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
                                     <div id="englishScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                    <div>年级排名率: <span id="englishGradeRankRate">--</span></div>
+                                    <div>班级排名率: <span id="englishClassRankRate">--</span></div>
+                                    <div>得分率: <span id="englishScoreRate">--</span>%</div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    <div>班级排名: <span id="englishClassRank">--</span></div>
+                                    <div>年级排名: <span id="englishGradeRank">--</span></div>
                                 </div>
                             </div>
                             <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
@@ -549,8 +582,17 @@
                                     <span class="text-sm font-medium">物理</span>
                                     <span id="physicsAvgScore" class="text-sm font-semibold">--</span>
                                 </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600">
+                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
                                     <div id="physicsScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                    <div>年级排名率: <span id="physicsGradeRankRate">--</span></div>
+                                    <div>班级排名率: <span id="physicsClassRankRate">--</span></div>
+                                    <div>得分率: <span id="physicsScoreRate">--</span>%</div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    <div>班级排名: <span id="physicsClassRank">--</span></div>
+                                    <div>年级排名: <span id="physicsGradeRank">--</span></div>
                                 </div>
                             </div>
                             <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
@@ -558,8 +600,17 @@
                                     <span class="text-sm font-medium">化学</span>
                                     <span id="chemistryAvgScore" class="text-sm font-semibold">--</span>
                                 </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600">
+                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
                                     <div id="chemistryScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                    <div>年级排名率: <span id="chemistryGradeRankRate">--</span></div>
+                                    <div>班级排名率: <span id="chemistryClassRankRate">--</span></div>
+                                    <div>得分率: <span id="chemistryScoreRate">--</span>%</div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    <div>班级排名: <span id="chemistryClassRank">--</span></div>
+                                    <div>年级排名: <span id="chemistryGradeRank">--</span></div>
                                 </div>
                             </div>
                             <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
@@ -567,8 +618,17 @@
                                     <span class="text-sm font-medium">生物</span>
                                     <span id="biologyAvgScore" class="text-sm font-semibold">--</span>
                                 </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600">
+                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
                                     <div id="biologyScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                    <div>年级排名率: <span id="biologyGradeRankRate">--</span></div>
+                                    <div>班级排名率: <span id="biologyClassRankRate">--</span></div>
+                                    <div>得分率: <span id="biologyScoreRate">--</span>%</div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    <div>班级排名: <span id="biologyClassRank">--</span></div>
+                                    <div>年级排名: <span id="biologyGradeRank">--</span></div>
                                 </div>
                             </div>
                             <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
@@ -576,8 +636,17 @@
                                     <span class="text-sm font-medium">政治</span>
                                     <span id="politicsAvgScore" class="text-sm font-semibold">--</span>
                                 </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600">
+                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
                                     <div id="politicsScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                    <div>年级排名率: <span id="politicsGradeRankRate">--</span></div>
+                                    <div>班级排名率: <span id="politicsClassRankRate">--</span></div>
+                                    <div>得分率: <span id="politicsScoreRate">--</span>%</div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    <div>班级排名: <span id="politicsClassRank">--</span></div>
+                                    <div>年级排名: <span id="politicsGradeRank">--</span></div>
                                 </div>
                             </div>
                             <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
@@ -585,8 +654,17 @@
                                     <span class="text-sm font-medium">历史</span>
                                     <span id="historyAvgScore" class="text-sm font-semibold">--</span>
                                 </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600">
+                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
                                     <div id="historyScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                    <div>年级排名率: <span id="historyGradeRankRate">--</span></div>
+                                    <div>班级排名率: <span id="historyClassRankRate">--</span></div>
+                                    <div>得分率: <span id="historyScoreRate">--</span>%</div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    <div>班级排名: <span id="historyClassRank">--</span></div>
+                                    <div>年级排名: <span id="historyGradeRank">--</span></div>
                                 </div>
                             </div>
                             <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
@@ -594,8 +672,17 @@
                                     <span class="text-sm font-medium">地理</span>
                                     <span id="geographyAvgScore" class="text-sm font-semibold">--</span>
                                 </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600">
+                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
                                     <div id="geographyScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                    <div>年级排名率: <span id="geographyGradeRankRate">--</span></div>
+                                    <div>班级排名率: <span id="geographyClassRankRate">--</span></div>
+                                    <div>得分率: <span id="geographyScoreRate">--</span>%</div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    <div>班级排名: <span id="geographyClassRank">--</span></div>
+                                    <div>年级排名: <span id="geographyGradeRank">--</span></div>
                                 </div>
                             </div>
                         </div>
@@ -611,7 +698,7 @@
                         <div>
                             <div class="flex flex-col items-center">
                                 <div class="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center mb-4 overflow-hidden dark:bg-gray-700">
-                                    <i class="fa fa-user text-4xl text-gray-400"></i>
+                                    <i class="fa-solid fa-user text-4xl text-gray-400"></i>
                                 </div>
                                 <h4 id="profileName" class="text-xl font-semibold">--</h4>
                                 <p id="profileClass" class="text-gray-500 dark:text-gray-400">--</p>
@@ -627,22 +714,23 @@
                                 <input type="text" id="editProfileClass" class="input-field">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">年级</label>
-                                <input type="text" id="editProfileGrade" class="input-field">
+                                <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">学校</label>
+                                <input type="text" id="editProfileSchool" class="input-field">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">目标大学</label>
                                 <input type="text" id="editProfileTargetUniversity" class="input-field">
                             </div>
                             <button id="saveProfileBtn" class="btn btn-primary w-full">
-                                <i class="fa fa-save"></i>
+                                <i class="fa-solid fa-floppy-disk"></i>
                                 <span>保存信息</span>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <div class="card">
+                <!-- 学习目标栏暂时隐藏 -->
+                <div class="card hidden">
                     <h3 class="text-lg font-semibold mb-4">学习目标</h3>
                     <div class="space-y-4">
                         <div>
@@ -658,7 +746,7 @@
                             <textarea id="weakSubjectPlan" class="input-field" rows="3" placeholder="制定针对薄弱科目的提升计划..."></textarea>
                         </div>
                         <button id="saveGoalsBtn" class="btn btn-primary w-full">
-                            <i class="fa fa-save"></i>
+                            <i class="fa-solid fa-floppy-disk"></i>
                             <span>保存目标</span>
                         </button>
                     </div>
@@ -676,7 +764,7 @@
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-xl font-bold">考试详情</h3>
                     <button id="closeDetailModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
-                        <i class="fa fa-times"></i>
+                        <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
                 <div class="space-y-6">
@@ -709,6 +797,10 @@
                                         <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">满分</th>
                                         <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">等级</th>
                                         <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">得分率</th>
+                                        <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">班级排名</th>
+                                        <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">年级排名</th>
+                                        <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">班级排名率</th>
+                                        <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">年级排名率</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -727,7 +819,7 @@
                     </div>
                     <div class="flex justify-end gap-4">
                         <button id="editExamBtn" class="btn btn-secondary">
-                            <i class="fa fa-pencil"></i>
+                            <i class="fa-solid fa-pen"></i>
                             <span>编辑</span>
                         </button>
                     </div>
@@ -739,7 +831,7 @@
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-xl font-bold">编辑考试</h3>
                     <button id="closeEditModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
-                        <i class="fa fa-times"></i>
+                        <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
                 <form id="editExamForm">
@@ -762,6 +854,8 @@
                                         <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">科目</th>
                                         <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">分数</th>
                                         <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">满分</th>
+                                        <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">班级排名</th>
+                                        <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">年级排名</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -784,11 +878,11 @@
                     </div>
                     <div class="flex justify-end gap-4">
                         <button type="button" id="cancelEditBtn" class="btn btn-secondary">
-                            <i class="fa fa-times"></i>
+                            <i class="fa-solid fa-xmark"></i>
                             <span>取消</span>
                         </button>
                         <button type="submit" class="btn btn-primary">
-                            <i class="fa fa-save"></i>
+                            <i class="fa-solid fa-floppy-disk"></i>
                             <span>保存</span>
                         </button>
                     </div>
@@ -804,23 +898,23 @@
             <p class="text-gray-600 mb-6 dark:text-gray-300">确定要删除这条考试记录吗？</p>
             <div class="flex justify-end gap-4">
                 <button id="cancelDeleteBtn" class="btn btn-secondary">
-                    <i class="fa fa-times"></i>
+                    <i class="fa-solid fa-xmark"></i>
                     <span>取消</span>
                 </button>
                 <button id="confirmDeleteBtn" class="btn btn-danger">
-                    <i class="fa fa-trash"></i>
+                    <i class="fa-solid fa-trash-can"></i>
                     <span>删除</span>
                 </button>
             </div>
         </div>
     </div>
     <!-- 设置对话框 -->
-    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden modal-backdrop">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full modal-content">
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden settings-modal-backdrop">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full settings-modal-content">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white">设置</h3>
                 <button id="closeSettingsModal" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-                    <i class="fa fa-times text-xl"></i>
+                    <i class="fa-solid fa-xmark text-xl"></i>
                 </button>
             </div>
             
@@ -829,15 +923,15 @@
                 <h4 class="text-lg font-medium mb-4 text-gray-900 dark:text-white">数据管理</h4>
                 <div class="space-y-2">
                     <button id="exportBtn" class="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md flex items-center text-gray-800 dark:text-gray-200">
-                        <i class="fa fa-download mr-2 text-gray-600 dark:text-gray-400"></i>
+                        <i class="fa-solid fa-download mr-2 text-gray-600 dark:text-gray-400"></i>
                         <span>导出数据</span>
                     </button>
                     <button id="importBtn" class="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md flex items-center text-gray-800 dark:text-gray-200">
-                        <i class="fa fa-upload mr-2 text-gray-600 dark:text-gray-400"></i>
+                        <i class="fa-solid fa-upload mr-2 text-gray-600 dark:text-gray-400"></i>
                         <span>导入数据</span>
                     </button>
                     <button id="clearDataBtn" class="w-full text-left p-3 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md flex items-center text-red-500">
-                        <i class="fa fa-trash-o mr-2 text-red-500"></i>
+                        <i class="fa-solid fa-trash-can mr-2 text-red-500"></i>
                         <span>清空数据</span>
                     </button>
                 </div>
@@ -845,36 +939,56 @@
             
             <!-- 颜色模式设置 -->
             <div class="mb-6">
-                <h4 class="text-lg font-medium mb-4 text-gray-900 dark:text-white">颜色模式</h4>
-                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
-                    <span class="text-sm text-gray-800 dark:text-gray-200">深色模式</span>
+                <h4 class="text-lg font-medium mb-4 text-gray-900 dark:text-white">外观</h4>
+                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-md mb-3">
+                    <span class="text-sm text-gray-800 dark:text-gray-200">颜色模式</span>
                     <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600">
-                        <i class="fa fa-moon-o text-gray-600 dark:text-yellow-400"></i>
+                        <i class="fa-solid fa-moon text-gray-600 dark:text-yellow-400"></i>
                     </button>
+                </div>
+                <!-- 主题色切换功能暂时隐藏 -->
+                <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-md hidden">
+                    <span class="text-sm text-gray-800 dark:text-gray-200 block mb-3">主题色</span>
+                    <div id="themeColorSelector" class="flex gap-3">
+                        <button data-theme="blue" class="theme-color-btn w-8 h-8 rounded-full bg-blue-500 border-2 border-white shadow-md active"></button>
+                        <button data-theme="green" class="theme-color-btn w-8 h-8 rounded-full bg-green-500 border-2 border-white shadow-md"></button>
+                        <button data-theme="purple" class="theme-color-btn w-8 h-8 rounded-full bg-purple-500 border-2 border-white shadow-md"></button>
+                        <button data-theme="red" class="theme-color-btn w-8 h-8 rounded-full bg-red-500 border-2 border-white shadow-md"></button>
+                        <button data-theme="amber" class="theme-color-btn w-8 h-8 rounded-full bg-amber-500 border-2 border-white shadow-md"></button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div id="clearDataModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden modal-backdrop">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full modal-content">
-                <div class="text-center mb-6">
-                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 text-red-500 mb-4">
-                        <i class="fa fa-warning text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-white">确认清空所有数据？</h3>
-                    <p class="text-gray-600 dark:text-gray-300">此操作将删除所有考试记录和个人设置，且无法恢复。</p>
-                </div>
-                <div class="flex space-x-3">
-                    <button id="cancelClearDataBtn" class="flex-1 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                        取消
+    <!-- 清空数据确认对话框 -->
+    <div id="clearDataModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden clear-data-modal-backdrop">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full clear-data-modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">确认清空所有数据</h3>
+                <button id="closeClearDataModal" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                        <i class="fa-solid fa-xmark text-xl"></i>
                     </button>
-                    <button id="confirmClearDataBtn" class="flex-1 py-2 px-4 bg-red-500 text-white rounded-md hover:bg-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                        确认(5s)
-                    </button>
+            </div>
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 text-red-500 mb-4">
+                    <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
                 </div>
+                <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-white">确认清空所有数据？</h3>
+                <p class="text-gray-600 dark:text-gray-300">此操作将删除所有考试记录和个人设置，且无法恢复。</p>
+            </div>
+            <div class="flex justify-end gap-4">
+                <button id="cancelClearDataBtn" class="btn btn-secondary">
+                    <i class="fa-solid fa-xmark"></i>
+                    <span>取消</span>
+                </button>
+                <button id="confirmClearDataBtn" class="btn btn-danger" disabled>
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>确认(5s)</span>
+                </button>
             </div>
         </div>
+    </div>
 
     <!-- 满分编辑模态框 -->
     <div id="editFullMarkModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
@@ -887,11 +1001,11 @@
             </div>
             <div class="flex justify-end gap-4">
                 <button id="cancelFullMarkBtn" class="btn btn-secondary">
-                    <i class="fa fa-times"></i>
+                    <i class="fa-solid fa-xmark"></i>
                     <span>取消</span>
                 </button>
                 <button id="saveFullMarkBtn" class="btn btn-primary">
-                    <i class="fa fa-save"></i>
+                    <i class="fa-solid fa-floppy-disk"></i>
                     <span>保存</span>
                 </button>
             </div>
@@ -913,19 +1027,61 @@
                     <p id="notificationMessage" class="text-sm text-gray-600 mt-1 dark:text-gray-300"></p>
                     <div class="mt-3 flex justify-between items-center">
                         <button id="undoNotificationBtn" class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hidden">
-                            <i class="fa fa-undo mr-1"></i>撤销
+                            <i class="fa-solid fa-rotate-left mr-1"></i>撤销
                         </button>
                         <span class="flex-1"></span> <!-- 占位元素 -->
                     </div>
                 </div>
                 <button id="closeNotification" class="ml-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
-                    <i class="fa fa-times"></i>
+                    <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- 全局加载状态指示器 - 右上角小加载圈 -->
+    <style>
+        #globalLoading {
+            position: fixed;
+            top: 1rem;
+            right: -3rem; /* 初始位置在屏幕外 */
+            width: 2.5rem;
+            height: 2.5rem;
+            background-color: rgba(99, 102, 241, 0.9);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        #globalLoading:not(.hidden) {
+            right: 1rem; /* 显示时移动到右上角 */
+        }
+        
+        #globalLoading .spinner {
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <div id="globalLoading" class="hidden">
+        <div class="spinner"></div>
+    </div>
+
     <!-- 引入外部 JavaScript -->
+    <script src="js/api.js"></script>
     <script src="js/script.js"></script>
 </body>
 </html>
