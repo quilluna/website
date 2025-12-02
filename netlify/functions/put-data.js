@@ -93,7 +93,8 @@ const handler = async (event) => {
     }
     
     const keys = Object.keys(filteredData);
-    const setClauses = keys.map((key, index) => `${key} = $${index + 1}`).join(', ');
+    // 将列名转换为小写，适应PostgreSQL
+    const setClauses = keys.map((key, index) => `${key.toLowerCase()} = $${index + 1}`).join(', ');
     const values = Object.values(filteredData);
     // 在values数组末尾添加id
     values.push(id);

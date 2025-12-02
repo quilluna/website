@@ -80,3 +80,4 @@ init-db.js
 
 # Netlify CLI cache
 .netlify-cli-cache/
+projects.session.sql

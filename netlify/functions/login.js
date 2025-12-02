@@ -44,7 +44,7 @@ exports.handler = async (event) => {
     
     // 查询用户
     const result = await client.query(
-      'SELECT id, username, password, school, class FROM users WHERE username = $1',
+      'SELECT id, username, password, email FROM users WHERE username = $1',
       [username]
     );
     
@@ -89,8 +89,7 @@ exports.handler = async (event) => {
           user: {
             id: user.id,
             username: user.username,
-            school: user.school,
-            class: user.class,
+            email: user.email,
             isAdmin: isAdmin // 添加管理员标识
           },
           token: token // 返回JWT令牌

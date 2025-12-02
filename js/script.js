@@ -198,6 +198,12 @@ const Storage = {
         const exams = this.getExams();
         exams.push(exam);
         localStorage.setItem('exams', JSON.stringify(exams));
+        // 同步到数据库
+        if (window.apiService) {
+            apiService.syncLocalToDatabase().catch(error => {
+                console.error('同步到数据库失败:', error);
+            });
+        }
         return true;
     },
     
@@ -212,6 +218,12 @@ const Storage = {
         if (index >= 0 && index < exams.length) {
             exams[index] = updatedExam;
             localStorage.setItem('exams', JSON.stringify(exams));
+            // 同步到数据库
+            if (window.apiService) {
+                apiService.syncLocalToDatabase().catch(error => {
+                    console.error('同步到数据库失败:', error);
+                });
+            }
             return true;
         }
         return false;
@@ -223,9 +235,22 @@ const Storage = {
         if (index >= 0 && index < exams.length) {
             exams.splice(index, 1);
             localStorage.setItem('exams', JSON.stringify(exams));
+            // 同步到数据库
+            if (window.apiService) {
+                apiService.syncLocalToDatabase().catch(error => {
+                    console.error('同步到数据库失败:', error);
+                });
+            }
             return true;
         }
         return false;
+    },
+    
+    // 保存所有考试记录（用于从数据库同步）
+    saveExams(exams) {
+        localStorage.setItem('exams', JSON.stringify(exams));
+        // 不需要同步到数据库，因为这是从数据库同步过来的数据
+        return true;
     },
 
     // 获取个人信息
@@ -242,6 +267,12 @@ const Storage = {
     // 保存个人信息
     saveProfile(profile) {
         localStorage.setItem('profile', JSON.stringify(profile));
+        // 同步到数据库
+        if (window.apiService) {
+            apiService.syncLocalToDatabase().catch(error => {
+                console.error('同步到数据库失败:', error);
+            });
+        }
         return true;
     },
 
@@ -258,6 +289,12 @@ const Storage = {
     // 保存学习目标
     saveGoals(goals) {
         localStorage.setItem('goals', JSON.stringify(goals));
+        // 同步到数据库
+        if (window.apiService) {
+            apiService.syncLocalToDatabase().catch(error => {
+                console.error('同步到数据库失败:', error);
+            });
+        }
         return true;
     },
 
@@ -268,6 +305,12 @@ const Storage = {
             if (data.profile) localStorage.setItem('profile', JSON.stringify(data.profile));
             if (data.goals) localStorage.setItem('goals', JSON.stringify(data.goals));
             if (data.fullMarks) localStorage.setItem('fullMarks', JSON.stringify(data.fullMarks));
+            // 同步到数据库
+            if (window.apiService) {
+                apiService.syncLocalToDatabase().catch(error => {
+                    console.error('同步到数据库失败:', error);
+                });
+            }
             return true;
         } catch (error) {
             console.error('导入数据失败', error);
@@ -294,6 +337,12 @@ const Storage = {
     // 保存满分设置
     saveFullMarks(fullMarks) {
         localStorage.setItem('fullMarks', JSON.stringify(fullMarks));
+        // 同步到数据库
+        if (window.apiService) {
+            apiService.syncLocalToDatabase().catch(error => {
+                console.error('同步到数据库失败:', error);
+            });
+        }
         return true;
     }
 };
@@ -1406,7 +1455,7 @@ const UI = {
             row.innerHTML = `
                 <td class="py-3 px-4">${exam.name}</td>
                 <td class="py-3 px-4">${formattedDate}</td>
-                <td class="py-3 px-4 font-medium text-primary">${exam.totalScore.toFixed(1)}</td>
+                <td class="py-3 px-4 font-medium text-primary">${typeof exam.totalScore === 'number' ? exam.totalScore.toFixed(1) : '-'}</td>
                 <td class="py-3 px-4">${exam.rankClass || '-'}</td>
                 <td class="py-3 px-4">${exam.rankGrade || '-'}</td>
                 <td class="py-3 px-4">
@@ -1438,7 +1487,7 @@ const UI = {
         const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         document.getElementById('detailExamDate').textContent = formattedDate;
         
-        document.getElementById('detailTotalScore').textContent = exam.totalScore.toFixed(1);
+        document.getElementById('detailTotalScore').textContent = typeof exam.totalScore === 'number' ? exam.totalScore.toFixed(1) : '-';
         
         let rankText = '';
         if (exam.rankClass) rankText += `班级: ${exam.rankClass}`;
@@ -1486,10 +1535,10 @@ const UI = {
             row.className = 'border-b dark:border-gray-700';
             row.innerHTML = `
                 <td class="py-3 px-4">${subjectNames[subject] || subject}</td>
-                <td class="py-3 px-4 font-medium">${score.toFixed(1)}</td>
+                <td class="py-3 px-4 font-medium">${typeof score === 'number' && !isNaN(score) ? score.toFixed(1) : '-'}</td>
                 <td class="py-3 px-4">${fullMark}</td>
                 <td class="py-3 px-4"><span class="badge badge-${grade.toLowerCase()}">${grade}</span></td>
-                <td class="py-3 px-4">${rate.toFixed(1)}%</td>
+                <td class="py-3 px-4">${typeof rate === 'number' && !isNaN(rate) ? rate.toFixed(1) + '%' : '-'}</td>
                 <td class="py-3 px-4">${rankClass}</td>
                 <td class="py-3 px-4">${rankGrade}</td>
                 <td class="py-3 px-4">${rankClassRate}</td>

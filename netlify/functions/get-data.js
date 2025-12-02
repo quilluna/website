@@ -1,6 +1,6 @@
 const { Client } = require('pg');
 require('dotenv').config(); // 加载环境变量
-const { verifyToken, getTokenFromHeaders } = require('./jwt-utils');
+const { verifyToken, getTokenFromHeaders, allowedTables } = require('./jwt-utils');
 
 const handler = async (event) => {
   const headers = {
@@ -52,36 +52,53 @@ const handler = async (event) => {
 
   try {
     await client.connect();
-    
-    // 检查是否有指定表名
     const { table } = event.queryStringParameters || {};
     
-    if (table) {
-      // 查询指定表的数据
-      const res = await client.query(`SELECT * FROM ${table}`);
+    // 如果没有提供表名，返回错误
+    if (!table) {
       return {
-        statusCode: 200,
+        statusCode: 400,
         headers,
-        body: JSON.stringify({ table: table, data: res.rows }),
-      };
-    } else {
-      // 没有指定表名，返回所有表的信息
-      const res = await client.query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'");
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({ tables: res.rows.map(row => row.table_name) }),
+        body: JSON.stringify({ error: 'Missing table parameter' }),
       };
     }
-  } catch (error) {
-    console.error('Error executing query:', error);
+    
+    // 验证表名是否在白名单中
+    if (!allowedTables.includes(table)) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: `Invalid table name: ${table}` }),
+      };
+    }
+    
+    // 执行查询
+    const res = await client.query(`SELECT * FROM ${table}`);
+    
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ message: 'Data retrieved successfully', data: res.rows }),
+    };
+  } catch (err) {
+    console.error('Error executing query:', err);
+    // 如果是表不存在错误，返回空数组而不是500错误
+    if (err.code === '42P01') {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ message: `Table ${event.queryStringParameters.table} not found, returning empty data`, data: [] }),
+      };
+    }
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ error: `Internal Server Error: ${err.message}` }),
     };
   } finally {
-    await client.end();
+    if (client) {
+      await client.end();
+    }
   }
 };
 
