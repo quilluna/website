@@ -10,97 +10,317 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
+            font-family: Poppins, sans-serif;
         }
 
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0c0c1e 0%, #1a1a2e 40%, #16213e 100%);
+            color: white;
+            position: relative;
+            cursor: default;
+            overflow-x: hidden;
+        }
+
+        /* 星空背景 */
+        .stars {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+        }
+
+        .star.small {
+            width: 1px;
+            height: 1px;
+        }
+
+        .star.medium {
+            width: 2px;
+            height: 2px;
+        }
+
+        .star.large {
+            width: 3px;
+            height: 3px;
+        }
+
+        /* 星云背景 */
+        .nebula {
+            position: fixed;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: nebulaFloat 20s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        .nebula:nth-child(2) {
+            background: radial-gradient(circle, rgba(118, 75, 162, 0.1) 0%, transparent 70%);
+            animation-delay: -10s;
+            animation-duration: 25s;
+        }
+
+        /* 初始全屏区域 */
+        .fullscreen-section {
             height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: white;
-            overflow: hidden;
-        }
-
-        .container {
-            text-align: center;
             position: relative;
             z-index: 1;
+            text-align: center;
+            padding: 20px;
         }
 
-        /* 数字动画 */
+        /* 404数字效果 */
         .error-code {
-            font-size: 15rem;
-            font-weight: 700;
-            text-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            font-size: 18rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
             opacity: 0;
-            animation: float 3s ease-in-out infinite, fadeIn 0.8s forwards 0.3s;
+            animation: 
+                float 4s ease-in-out infinite, 
+                fadeIn 1s forwards 0.3s,
+                glow 2s ease-in-out infinite alternate;
+            position: relative;
         }
 
         /* 星球元素 */
         .planet {
-            width: 300px;
-            height: 300px;
-            background: url('data:image/svg+xml,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="45" fill="%23ffffff" opacity="0.1"/></svg>');
+            width: 350px;
+            height: 350px;
+            background: url('data:image/svg+xml,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="planetGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%"><stop offset="0%" stop-color="%23ffffff" stop-opacity="0.1"/><stop offset="100%" stop-color="%23667eea" stop-opacity="0.05"/></radialGradient></defs><circle cx="50" cy="50" r="45" fill="url(%23planetGradient)"/><circle cx="35" cy="40" r="5" fill="%23ffffff" opacity="0.15"/><circle cx="65" cy="55" r="3" fill="%23ffffff" opacity="0.1"/><circle cx="50" cy="70" r="4" fill="%23ffffff" opacity="0.12"/></svg>');
             position: absolute;
-            top: 50%;
+            top: 25%;
             left: 50%;
             transform: translate(-50%, -50%);
             animation: rotate 30s linear infinite;
+            z-index: -1;
+        }
+
+        /* 黑洞元素 */
+        .blackhole {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 30%, transparent 70%);
+            border-radius: 50%;
+            top: 10%;
+            left: 80%;
+            transform: translate(-50%, -50%);
+            animation: blackholePull 5s ease-in-out infinite;
+            z-index: -2;
         }
 
         /* 主要文案 */
         .message {
             margin: 2rem 0;
-            font-size: 1.5rem;
+            font-size: 1.6rem;
+            line-height: 1.6;
             opacity: 0;
             transform: translateY(30px);
-            animation: slideUp 0.8s forwards 0.5s;
+            animation: slideUp 0.8s forwards 0.8s;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            font-weight: 300;
+        }
+
+        /* 下滑提示 */
+        .scroll-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            animation: fadeIn 0.8s forwards 2s, bounce 2s infinite;
+            z-index: 2;
+        }
+
+        .scroll-hint::before {
+            content: '\2193';
+            font-size: 2rem;
+            color: rgba(255, 255, 255, 0.6);
+            display: block;
+        }
+
+        .scroll-hint span {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            display: block;
+            margin-top: 10px;
+        }
+
+        /* 内容区域 */
+        .content-section {
+            position: relative;
+            z-index: 1;
+            background: rgba(22, 33, 62, 0.95);
+            backdrop-filter: blur(10px);
+            min-height: 100vh;
+            padding: 80px 20px;
+            border-top: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        /* 内容容器 */
+        .content-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* 建议标题 */
+        .suggestions-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 50px;
+            color: #667eea;
+        }
+
+        /* 建议卡片 */
+        .suggestions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .suggestion-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .suggestion-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+
+        .suggestion-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .suggestion-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        .suggestion-text {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* 返回按钮区域 */
+        .home-section {
+            text-align: center;
+            margin-top: 60px;
+        }
+
+        .home-section h3 {
+            font-size: 1.8rem;
+            margin-bottom: 30px;
         }
 
         /* 返回按钮 */
         .home-btn {
             display: inline-block;
-            padding: 15px 40px;
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(10px);
+            padding: 18px 45px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 50px;
             text-decoration: none;
             color: white;
-            font-weight: 500;
-            transition: all 0.3s;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
-            opacity: 0;
-            animation: fadeIn 0.5s forwards 1s;
+            border: none;
+        }
+
+        .home-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
         }
 
         .home-btn:hover {
-            background: rgba(255,255,255,0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .home-btn:hover::before {
+            left: 100%;
+        }
+
+        .home-btn:active {
             transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
 
         /* 流星动画 */
         .meteor {
-            position: absolute;
-            width: 2px;
-            height: 2px;
+            position: fixed;
+            width: 3px;
+            height: 3px;
             background: white;
             border-radius: 50%;
-            animation: meteor 3s linear infinite;
+            box-shadow: 0 0 10px white;
+            animation: meteor 4s linear infinite;
+            pointer-events: none;
+            z-index: 0;
         }
 
         /* 关键帧动画 */
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
         @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-30px); }
+        }
+
+        @keyframes glow {
+            0% { filter: brightness(1); }
+            100% { filter: brightness(1.2); }
         }
 
         @keyframes rotate {
             from { transform: translate(-50%, -50%) rotate(0deg); }
             to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes nebulaFloat {
+            0%, 100% { transform: translate(-100px, -100px) scale(1); }
+            50% { transform: translate(100px, 100px) scale(1.1); }
         }
 
         @keyframes slideUp {
@@ -111,43 +331,217 @@
             to { opacity: 1; }
         }
 
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
+        }
+
         @keyframes meteor {
             0% { 
-                transform: translate(-200px, -200px);
+                transform: translate(-200px, -200px) rotate(45deg);
                 opacity: 1;
+                width: 3px;
+            }
+            50% {
+                width: 100px;
             }
             100% {
-                transform: translate(500px, 500px);
+                transform: translate(800px, 800px) rotate(45deg);
                 opacity: 0;
+                width: 3px;
             }
         }
 
+        @keyframes blackholePull {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+
         /* 响应式调整 */
+        @media (max-width: 1200px) {
+            .error-code { font-size: 14rem; }
+        }
+
         @media (max-width: 768px) {
             .error-code { font-size: 10rem; }
-            .message { font-size: 1.2rem; }
-            .planet { width: 200px; height: 200px; }
+            .message { 
+                font-size: 1.3rem;
+                margin: 1.5rem 0;
+            }
+            .planet { 
+                width: 250px;
+                height: 250px;
+            }
+            .nebula {
+                width: 500px;
+                height: 500px;
+            }
+            .suggestions-title {
+                font-size: 2rem;
+                margin-bottom: 40px;
+            }
+            .suggestions-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .content-section {
+                padding: 60px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .error-code { font-size: 7rem; }
+            .message { 
+                font-size: 1.1rem;
+                margin: 1rem 0;
+            }
+            .planet { 
+                width: 200px;
+                height: 200px;
+            }
+            .home-btn {
+                padding: 15px 40px;
+                font-size: 1rem;
+            }
+            .scroll-hint::before {
+                font-size: 1.5rem;
+            }
+            .scroll-hint span {
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- 背景流星 -->
-    <div class="meteor" style="top:15%; left:20%; animation-delay: 1s;"></div>
-    <div class="meteor" style="top:30%; left:80%; animation-delay: 3s;"></div>
-    <div class="meteor" style="top:70%; left:40%; animation-delay: 2s;"></div>
-
+    <!-- 星空背景 -->
+    <div class="stars" id="stars"></div>
+    
+    <!-- 星云背景 -->
+    <div class="nebula"></div>
+    <div class="nebula"></div>
+    
+    <!-- 黑洞效果 -->
+    <div class="blackhole"></div>
+    
     <!-- 星球背景 -->
     <div class="planet"></div>
+    
+    <!-- 流星动画 -->
+    <div class="meteor"></div>
+    <div class="meteor"></div>
+    <div class="meteor"></div>
+    <div class="meteor"></div>
+    <div class="meteor"></div>
 
-    <div class="container">
+    <!-- 初始全屏区域 -->
+    <div class="fullscreen-section">
         <div class="error-code">404</div>
-        <p class="message">
+        <div class="message">
             🚀 哎呀！我们似乎进入了未知空间<br>
             这个页面可能被黑洞吞噬了...
-        </p>
-        <a href="/" class="home-btn">
-            🛸 带我返回地球
-        </a>
+        </div>
+        
+        <!-- 下滑提示 -->
+        <div class="scroll-hint">
+            <span>向下滑动查看更多</span>
+        </div>
     </div>
+
+    <!-- 内容区域 -->
+    <div class="content-section">
+        <div class="content-container">
+            <h2 class="suggestions-title">你可以尝试以下操作</h2>
+            
+            <!-- 建议卡片 -->
+            <div class="suggestions-grid">
+                <div class="suggestion-card">
+                    <span class="suggestion-icon">🔍</span>
+                    <h3 class="suggestion-title">检查URL</h3>
+                    <p class="suggestion-text">请确保你输入的网址拼写正确，或者尝试搜索相关内容。</p>
+                </div>
+                
+                <div class="suggestion-card">
+                    <span class="suggestion-icon">🗂️</span>
+                    <h3 class="suggestion-title">浏览主页</h3>
+                    <p class="suggestion-text">返回网站首页，从那里开始导航到你想要的内容。</p>
+                </div>
+                
+                <div class="suggestion-card">
+                    <span class="suggestion-icon">📱</span>
+                    <h3 class="suggestion-title">联系我们</h3>
+                    <p class="suggestion-text">如果问题持续存在，可以通过邮箱或社交媒体联系我们。</p>
+                </div>
+            </div>
+            
+            <!-- 返回按钮区域 -->
+            <div class="home-section">
+                <h3>准备好返回地球了吗？</h3>
+                <a href="/" class="home-btn">
+                    🛸 带我返回地球
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 生成随机星空
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const starCount = 200;
+            
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = `star ${Math.random() > 0.7 ? 'large' : Math.random() > 0.5 ? 'medium' : 'small'}`;
+                
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.animationDelay = `${Math.random() * 2}s`;
+                star.style.animationDuration = `${1 + Math.random() * 2}s`;
+                
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // 动态生成流星
+        function createMeteors() {
+            const meteors = document.querySelectorAll('.meteor');
+            
+            meteors.forEach(meteor => {
+                resetMeteor(meteor);
+                
+                meteor.addEventListener('animationend', () => {
+                    resetMeteor(meteor);
+                });
+            });
+        }
+
+        function resetMeteor(meteor) {
+            meteor.style.top = `${Math.random() * 30}%`;
+            meteor.style.left = `${Math.random() * 100}%`;
+            meteor.style.animationDelay = `${Math.random() * 5}s`;
+            meteor.style.animationDuration = `${3 + Math.random() * 3}s`;
+        }
+
+        // 鼠标移动星空效果
+        document.addEventListener('mousemove', (e) => {
+            const stars = document.querySelectorAll('.star');
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            
+            stars.forEach((star, index) => {
+                const speed = (index % 3 + 1) * 0.5;
+                const translateX = (x - 0.5) * speed;
+                const translateY = (y - 0.5) * speed;
+                star.style.transform = `translate(${translateX}px, ${translateY}px)`;
+            });
+        });
+
+        // 初始化
+        window.addEventListener('load', () => {
+            createStars();
+            createMeteors();
+        });
+    </script>
 </body>
 </html>

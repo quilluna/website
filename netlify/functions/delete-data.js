@@ -56,7 +56,7 @@ const handler = async (event) => {
   }
 
   const client = new Client({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: process.env.NETLIFY_DATABASE_URL
   });
 
   try {
@@ -64,14 +64,23 @@ const handler = async (event) => {
     
     // 解析请求体
     const requestBody = JSON.parse(event.body);
-    const { table, id } = requestBody;
+    const { table, id, clearAll } = requestBody;
     
     // 验证必要的参数
-    if (!table || !id) {
+    if (!table) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'Missing required parameters: table or id' }),
+        body: JSON.stringify({ error: 'Missing required parameter: table' }),
+      };
+    }
+    
+    // 如果不是清空所有数据，则需要id参数
+    if (!clearAll && !id) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Missing required parameter: id' }),
       };
     }
 
@@ -84,24 +93,33 @@ const handler = async (event) => {
       };
     }
     
-    // 构建动态DELETE查询，使用白名单验证过的表名
-    // 注意：表名不能作为参数传递，必须直接拼接，但我们已经通过allowedTables验证了表名的安全性
-    const query = `DELETE FROM ${table} WHERE id = $1 RETURNING *`;
+    let query;
+    let params;
+    let res;
     
-    // 执行查询，只将id作为参数传递
-    const res = await client.query(query, [id]);
-    
-    // 检查是否有行被删除
-    if (res.rowCount === 0) {
-      return {
-        statusCode: 404,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-        body: JSON.stringify({ error: `No record found with id ${id} in table ${table}` }),
-      };
+    if (clearAll) {
+      // 清空整个表
+      query = `DELETE FROM ${table}`;
+      params = [];
+      res = await client.query(query, params);
+    } else {
+      // 根据id删除单条记录
+      query = `DELETE FROM ${table} WHERE id = $1 RETURNING *`;
+      params = [id];
+      res = await client.query(query, params);
+      
+      // 检查是否有行被删除
+      if (res.rowCount === 0) {
+        return {
+          statusCode: 404,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+          },
+          body: JSON.stringify({ error: `No record found with id ${id} in table ${table}` }),
+        };
+      }
     }
     
     return {

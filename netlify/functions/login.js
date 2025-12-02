@@ -3,9 +3,9 @@ require('dotenv').config(); // 加载环境变量
 const { generateToken } = require('./jwt-utils');
 const bcrypt = require('bcrypt');
 
-// 创建数据库客户端，使用环境变量中的DATABASE_URL
+// 创建数据库客户端，使用环境变量中的NETLIFY_DATABASE_URL
 const client = new Client({  
-  connectionString: process.env.DATABASE_URL
+  connectionString: process.env.NETLIFY_DATABASE_URL
 });
 
 // 处理登录请求

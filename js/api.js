@@ -299,6 +299,47 @@ if (typeof ApiService === 'undefined') {
       }
     }
 
+    // 清空指定表的所有数据
+    async clearAllData(table) {
+      // 访客模式下不删除数据
+      if (this.isGuestMode()) {
+        console.log('访客模式下不删除服务器数据');
+        return { success: true };
+      }
+      
+      // 显示加载状态
+      const globalLoading = document.getElementById('globalLoading');
+      if (globalLoading) {
+        globalLoading.classList.remove('hidden');
+      }
+      
+      try {
+        const response = await fetch(`${this.baseUrl}/delete-data`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({ table, clearAll: true }),
+        });
+        if (!response.ok) {
+          if (response.status === 401) {
+            this.handleUnauthorized();
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+      } catch (error) {
+        console.error(`清空${table}表数据失败:`, error);
+        throw error;
+      } finally {
+        // 隐藏加载状态
+        if (globalLoading) {
+          globalLoading.classList.add('hidden');
+        }
+      }
+    }
+    
     // 同步本地数据到数据库
     async syncLocalToDatabase() {
       // 访客模式下不同步数据
@@ -327,17 +368,36 @@ if (typeof ApiService === 'undefined') {
         
         // 1. 同步考试记录
         console.log(`准备同步 ${localExams.length} 条考试记录`);
-        for (const exam of localExams) {
+        
+        // 如果本地没有考试记录，清空服务器上的考试记录
+        if (localExams.length === 0) {
+          console.log('本地考试记录为空，清空服务器考试记录');
           try {
-            // 确保数据结构匹配数据库表结构
-            const formattedExam = this.formatExamForDatabase(exam);
-            
-            // 尝试插入，如果已存在则更新
-            await this.postData('exams', formattedExam);
-            console.log(`✅ 成功同步考试记录: ${formattedExam.exam_name} (${formattedExam.exam_date})`);
+            await this.clearAllData('exams');
+            console.log('✅ 成功清空服务器考试记录');
           } catch (error) {
-            console.error(`❌ 同步考试记录失败:`, error.message);
-            console.error(`考试数据:`, exam);
+            console.error('❌ 清空服务器考试记录失败:', error.message);
+          }
+        } else {
+          // 否则，逐个同步考试记录
+          for (const exam of localExams) {
+            try {
+              // 跳过空考试记录（没有名称的考试）
+              if (!exam.name || exam.name.trim() === '') {
+                console.log(`⚠️  跳过空考试记录`);
+                continue;
+              }
+              
+              // 确保数据结构匹配数据库表结构
+              const formattedExam = this.formatExamForDatabase(exam);
+              
+              // 尝试插入，如果已存在则更新
+              await this.postData('exams', formattedExam);
+              console.log(`✅ 成功同步考试记录: ${formattedExam.exam_name} (${formattedExam.exam_date})`);
+            } catch (error) {
+              console.error(`❌ 同步考试记录失败:`, error.message);
+              console.error(`考试数据:`, exam);
+            }
           }
         }
         
@@ -351,25 +411,8 @@ if (typeof ApiService === 'undefined') {
           }
         }
         
-        // 3. 同步学习目标
-        if (localGoals && Object.keys(localGoals).length > 0) {
-          try {
-            await this.postData('goals', localGoals);
-            console.log('✅ 成功同步学习目标');
-          } catch (error) {
-            console.error(`❌ 同步学习目标失败:`, error.message);
-          }
-        }
-        
-        // 4. 同步满分设置
-        if (localFullMarks && Object.keys(localFullMarks).length > 0) {
-          try {
-            await this.postData('full_marks', localFullMarks);
-            console.log('✅ 成功同步满分设置');
-          } catch (error) {
-            console.error(`❌ 同步满分设置失败:`, error.message);
-          }
-        }
+        // 3. 同步学习目标 - 已移除
+        // 4. 同步满分设置 - 已移除
 
         return {
           success: true,
@@ -433,27 +476,15 @@ if (typeof ApiService === 'undefined') {
 
         try {
           profileData = await this.getData('profile');
-          Storage.saveProfile(profileData.data[0] || {});
+          // 直接保存到localStorage，不通过Storage.saveProfile()，避免触发同步
+          localStorage.setItem('profile', JSON.stringify(profileData.data[0] || {}));
           console.log('✅ 成功同步个人资料到本地');
         } catch (error) {
           console.log('获取个人资料失败，使用本地数据:', error.message);
         }
 
-        try {
-          goalsData = await this.getData('goals');
-          Storage.saveGoals(goalsData.data[0] || {});
-          console.log('✅ 成功同步学习目标到本地');
-        } catch (error) {
-          console.log('获取学习目标失败，使用本地数据:', error.message);
-        }
-
-        try {
-          fullMarksData = await this.getData('full_marks');
-          Storage.saveFullMarks(fullMarksData.data[0] || {});
-          console.log('✅ 成功同步满分设置到本地');
-        } catch (error) {
-          console.log('获取满分设置失败，使用本地数据:', error.message);
-        }
+        // 学习目标同步 - 已移除
+        // 满分设置同步 - 已移除
 
         return {
           success: true,
@@ -478,60 +509,122 @@ if (typeof ApiService === 'undefined') {
       // 创建考试数据的副本，避免修改原始对象
       const formattedExam = { ...exam };
       
-      // 确保所有必填字段都存在
-      formattedExam.exam_name = formattedExam.exam_name || '';
-      
-      // 确保考试日期格式正确
-      if (formattedExam.exam_date && !(formattedExam.exam_date instanceof Date)) {
-        // 如果是字符串，转换为日期对象
-        formattedExam.exam_date = new Date(formattedExam.exam_date).toISOString().split('T')[0];
-      }
-      
-      // 确保各科成绩是数字类型
-      const subjects = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
-      
+      // 1. 基础字段映射
+    // 将前端的name字段映射到数据库的exam_name字段
+    if (formattedExam.name && !formattedExam.exam_name) {
+      formattedExam.exam_name = formattedExam.name;
+    }
+    
+    // 确保exam_name字段存在
+    formattedExam.exam_name = formattedExam.exam_name || '';
+    
+    // 将前端的date字段映射到数据库的exam_date字段
+    if (formattedExam.date && !formattedExam.exam_date) {
+      formattedExam.exam_date = formattedExam.date;
+      delete formattedExam.date;
+    }
+    
+    // 确保考试日期格式正确
+    if (formattedExam.exam_date && !(formattedExam.exam_date instanceof Date)) {
+      // 如果是字符串，转换为日期对象
+      formattedExam.exam_date = new Date(formattedExam.exam_date).toISOString().split('T')[0];
+    }
+    
+    // 确保exam_date字段存在且不为空
+    if (!formattedExam.exam_date) {
+      formattedExam.exam_date = new Date().toISOString().split('T')[0];
+    }
+    
+    // 2. 科目成绩映射
+    // 从subjects对象中提取成绩
+    const subjects = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+    
+    // 处理subjects对象中的成绩
+    if (formattedExam.subjects) {
       for (const subject of subjects) {
-        // 成绩字段
+        // 成绩字段映射：subjects.chinese → chinese_score
         const scoreKey = `${subject}_score`;
-        if (formattedExam[scoreKey] !== undefined) {
-          formattedExam[scoreKey] = parseFloat(formattedExam[scoreKey]) || 0;
+        if (formattedExam.subjects[subject] !== undefined) {
+          formattedExam[scoreKey] = parseFloat(formattedExam.subjects[subject]) || 0;
         } else {
           formattedExam[scoreKey] = 0;
         }
-        
-        // 班级排名字段
+      }
+    }
+    
+    // 3. 排名映射
+    // 处理subjectRankClass对象中的排名
+    if (formattedExam.subjectRankClass) {
+      for (const subject of subjects) {
+        // 班级排名字段映射：subjectRankClass.chinese → chinese_rank_class
         const rankClassKey = `${subject}_rank_class`;
-        if (formattedExam[rankClassKey] !== undefined) {
-          formattedExam[rankClassKey] = parseInt(formattedExam[rankClassKey]) || null;
+        if (formattedExam.subjectRankClass[subject] !== undefined) {
+          formattedExam[rankClassKey] = parseInt(formattedExam.subjectRankClass[subject]) || null;
         }
-        
-        // 年级排名字段
+      }
+    }
+    
+    // 处理subjectRankGrade对象中的排名
+    if (formattedExam.subjectRankGrade) {
+      for (const subject of subjects) {
+        // 年级排名字段映射：subjectRankGrade.chinese → chinese_rank_grade
         const rankGradeKey = `${subject}_rank_grade`;
-        if (formattedExam[rankGradeKey] !== undefined) {
-          formattedExam[rankGradeKey] = parseInt(formattedExam[rankGradeKey]) || null;
+        if (formattedExam.subjectRankGrade[subject] !== undefined) {
+          formattedExam[rankGradeKey] = parseInt(formattedExam.subjectRankGrade[subject]) || null;
         }
-        
-        // 满分设置字段
+      }
+    }
+    
+    // 4. 满分映射
+    // 处理fullMarks对象中的满分
+    if (formattedExam.fullMarks) {
+      for (const subject of subjects) {
+        // 满分字段映射：fullMarks.chinese → chinese_full_mark
         const fullMarkKey = `${subject}_full_mark`;
-        if (formattedExam[fullMarkKey] !== undefined) {
-          formattedExam[fullMarkKey] = parseInt(formattedExam[fullMarkKey]) || 100;
+        if (formattedExam.fullMarks[subject] !== undefined) {
+          formattedExam[fullMarkKey] = parseInt(formattedExam.fullMarks[subject]) || 100;
         } else {
           formattedExam[fullMarkKey] = 100;
         }
       }
-      
-      // 确保总分和总满分是数字类型
-      formattedExam.total_score = parseFloat(formattedExam.total_score) || 0;
-      formattedExam.total_full_mark = parseInt(formattedExam.total_full_mark) || 900;
-      
-      // 确保排名是数字类型
-      formattedExam.rank_class = parseInt(formattedExam.rank_class) || 0;
-      formattedExam.rank_grade = parseInt(formattedExam.rank_grade) || 0;
-      
-      // 确保总结字段存在
-      formattedExam.summary = formattedExam.summary || '';
-      
-      return formattedExam;
+    }
+    
+    // 5. 总分和排名映射
+    // 将totalScore映射到total_score
+    if (formattedExam.totalScore !== undefined) {
+      formattedExam.total_score = parseFloat(formattedExam.totalScore) || 0;
+    } else {
+      formattedExam.total_score = 0;
+    }
+    
+    // 将totalFullMark映射到total_full_mark
+    if (formattedExam.totalFullMark !== undefined) {
+      formattedExam.total_full_mark = parseInt(formattedExam.totalFullMark) || 900;
+    } else {
+      formattedExam.total_full_mark = 900;
+    }
+    
+    // 将rankClass映射到rank_class
+    if (formattedExam.rankClass !== undefined) {
+      formattedExam.rank_class = parseInt(formattedExam.rankClass) || 0;
+    } else {
+      formattedExam.rank_class = 0;
+    }
+    
+    // 将rankGrade映射到rank_grade
+    if (formattedExam.rankGrade !== undefined) {
+      formattedExam.rank_grade = parseInt(formattedExam.rankGrade) || 0;
+    } else {
+      formattedExam.rank_grade = 0;
+    }
+    
+    // 6. 总结映射
+    // 将summary映射到summary（如果存在）
+    if (formattedExam.summary === undefined) {
+      formattedExam.summary = '';
+    }
+    
+    return formattedExam;
     }
     
     // 格式化考试数据以匹配localStorage结构
@@ -539,47 +632,88 @@ if (typeof ApiService === 'undefined') {
       // 创建考试数据的副本，避免修改原始对象
       const formattedExam = { ...exam };
       
+      // 将数据库字段名转换为前端使用的字段名
+      if (formattedExam.exam_name && !formattedExam.name) {
+        formattedExam.name = formattedExam.exam_name;
+        delete formattedExam.exam_name;
+      }
+      
+      if (formattedExam.exam_date && !formattedExam.date) {
+        formattedExam.date = formattedExam.exam_date;
+        delete formattedExam.exam_date;
+      }
+      
       // 确保考试日期是字符串格式
-      if (formattedExam.exam_date) {
-        formattedExam.exam_date = formattedExam.exam_date.toString();
+      if (formattedExam.date) {
+        formattedExam.date = formattedExam.date.toString();
       }
       
       // 确保所有成绩字段都是数字类型
       const subjects = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
       
       for (const subject of subjects) {
-        // 成绩字段
+        // 成绩字段 - 转换为前端的subjects对象格式
         const scoreKey = `${subject}_score`;
         if (formattedExam[scoreKey] !== undefined) {
-          formattedExam[scoreKey] = parseFloat(formattedExam[scoreKey]);
+          if (!formattedExam.subjects) {
+            formattedExam.subjects = {};
+          }
+          formattedExam.subjects[subject] = parseFloat(formattedExam[scoreKey]);
+          delete formattedExam[scoreKey];
         }
         
-        // 班级排名字段
+        // 班级排名字段 - 转换为前端的subjectRankClass对象格式
         const rankClassKey = `${subject}_rank_class`;
         if (formattedExam[rankClassKey] !== undefined) {
-          formattedExam[rankClassKey] = parseInt(formattedExam[rankClassKey]);
+          if (!formattedExam.subjectRankClass) {
+            formattedExam.subjectRankClass = {};
+          }
+          formattedExam.subjectRankClass[subject] = parseInt(formattedExam[rankClassKey]);
+          delete formattedExam[rankClassKey];
         }
         
-        // 年级排名字段
+        // 年级排名字段 - 转换为前端的subjectRankGrade对象格式
         const rankGradeKey = `${subject}_rank_grade`;
         if (formattedExam[rankGradeKey] !== undefined) {
-          formattedExam[rankGradeKey] = parseInt(formattedExam[rankGradeKey]);
+          if (!formattedExam.subjectRankGrade) {
+            formattedExam.subjectRankGrade = {};
+          }
+          formattedExam.subjectRankGrade[subject] = parseInt(formattedExam[rankGradeKey]);
+          delete formattedExam[rankGradeKey];
         }
         
-        // 满分设置字段
+        // 满分设置字段 - 转换为前端的fullMarks对象格式
         const fullMarkKey = `${subject}_full_mark`;
         if (formattedExam[fullMarkKey] !== undefined) {
-          formattedExam[fullMarkKey] = parseInt(formattedExam[fullMarkKey]);
+          if (!formattedExam.fullMarks) {
+            formattedExam.fullMarks = {};
+          }
+          formattedExam.fullMarks[subject] = parseInt(formattedExam[fullMarkKey]);
+          delete formattedExam[fullMarkKey];
         }
       }
       
       // 确保总分和总满分是数字类型
-      formattedExam.total_score = parseFloat(formattedExam.total_score);
-      formattedExam.total_full_mark = parseInt(formattedExam.total_full_mark);
+      if (formattedExam.total_score !== undefined) {
+        formattedExam.totalScore = parseFloat(formattedExam.total_score);
+        delete formattedExam.total_score;
+      }
+      
+      if (formattedExam.total_full_mark !== undefined) {
+        formattedExam.totalFullMark = parseInt(formattedExam.total_full_mark);
+        delete formattedExam.total_full_mark;
+      }
       
       // 确保排名是数字类型
-      formattedExam.rank_class = parseInt(formattedExam.rank_class);
-      formattedExam.rank_grade = parseInt(formattedExam.rank_grade);
+      if (formattedExam.rank_class !== undefined) {
+        formattedExam.rankClass = parseInt(formattedExam.rank_class);
+        delete formattedExam.rank_class;
+      }
+      
+      if (formattedExam.rank_grade !== undefined) {
+        formattedExam.rankGrade = parseInt(formattedExam.rank_grade);
+        delete formattedExam.rank_grade;
+      }
       
       return formattedExam;
     }

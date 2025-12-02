@@ -1,6 +1,7 @@
 const { Client } = require('pg');
 require('dotenv').config(); // 加载环境变量
 const { verifyToken, getTokenFromHeaders, allowedTables } = require('./jwt-utils');
+const bcrypt = require('bcrypt');
 
 const handler = async (event) => {
   // 定义CORS头
@@ -48,7 +49,7 @@ const handler = async (event) => {
   }
 
   const client = new Client({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: process.env.NETLIFY_DATABASE_URL
   });
 
   try {
@@ -96,13 +97,10 @@ const handler = async (event) => {
 		'physics_full_mark', 'chemistry_full_mark', 'biology_full_mark', 
 		'politics_full_mark', 'history_full_mark', 'geography_full_mark',
 		'total_score', 'total_full_mark', 'rank_class', 'rank_grade', 
-		'exam_summary'
+		'summary'
 	  ],
-      users: ['id', 'username', 'password', 'email'],
-      scores: ['id', 'exam_id', 'subject', 'score', 'rank_class', 'rank_grade'],
-      profile: ['id', 'username', 'name', 'gradeClass', 'studentId'],
-      goals: ['id', 'username', 'subject', 'targetScore', 'targetRank'],
-      full_marks: ['id', 'subject', 'fullMark']
+      users: ['id', 'username', 'password', 'email', 'school', 'class'],
+      profile: ['id', 'username', 'name', 'gradeclass', 'studentid']
     };
     
     // 获取当前表允许的列
@@ -167,33 +165,67 @@ const handler = async (event) => {
     // 构建并执行批量插入查询
     const results = [];
     for (const item of finalData) {
+      // 如果是users表且包含password字段，加密密码
+      let processedItem = { ...item };
+      if (table === 'users' && processedItem.password) {
+        processedItem.password = await bcrypt.hash(processedItem.password, 10);
+      }
+      
       // 构建INSERT查询，使用参数化查询防止SQL注入
-      const keys = Object.keys(item);
+      const keys = Object.keys(processedItem);
       const columns = keys.join(', ');
       const placeholders = keys.map((_, index) => `$${index + 1}`).join(', ');
-      const values = Object.values(item);
+      const values = Object.values(processedItem);
       
-      // 构建ON CONFLICT子句，正确的语法是为每个列单独指定更新值
+      // 构建SQL查询
       let query;
-      
-      // 对于PostgreSQL，将列名转换为小写，因为PostgreSQL默认会将列名转换为小写
-      const columnsLower = keys.map(col => col.toLowerCase()).join(', ');
+      let queryValues = values;
       
       if (table === 'exams') {
-        // 只对exams表使用ON CONFLICT，其他表不使用
+        // 移除id列，因为exams表没有id列
+        const filteredKeys = keys.filter(key => key !== 'id');
+        if (filteredKeys.length > 0) {
+          const filteredPlaceholders = filteredKeys.map((_, index) => `$${index + 1}`).join(', ');
+          queryValues = filteredKeys.map(key => processedItem[key]);
+          const filteredColumnsLower = filteredKeys.map(col => col.toLowerCase()).join(', ');
+          
+          // exams表使用普通插入，不使用ON CONFLICT，因为没有id列
+          query = `INSERT INTO ${table} (${filteredColumnsLower}) VALUES (${filteredPlaceholders}) RETURNING *`;
+        } else {
+          // 如果过滤后没有列，跳过插入
+          console.warn(`跳过处理${table}表: 没有有效的列`);
+          continue;
+        }
+      } else if (table === 'profile') {
+        // 对于PostgreSQL，将列名转换为小写，因为PostgreSQL默认会将列名转换为小写
+        const columnsLower = keys.map(col => col.toLowerCase()).join(', ');
+        
+        // profile表有username唯一约束，使用username作为冲突目标
         const updateSet = keys.map((col, index) => `${col.toLowerCase()} = $${index + 1}`).join(', ');
-        query = `INSERT INTO ${table} (${columnsLower}) VALUES (${placeholders}) ON CONFLICT (id) DO UPDATE SET ${updateSet} RETURNING *`;
+        query = `INSERT INTO ${table} (${columnsLower}) VALUES (${placeholders}) ON CONFLICT (username) DO UPDATE SET ${updateSet} RETURNING *`;
       } else {
-        // 其他表不使用ON CONFLICT
+        // 对于PostgreSQL，将列名转换为小写，因为PostgreSQL默认会将列名转换为小写
+        const columnsLower = keys.map(col => col.toLowerCase()).join(', ');
+        
+        // 其他表使用普通插入
         query = `INSERT INTO ${table} (${columnsLower}) VALUES (${placeholders}) RETURNING *`;
       }
       
       console.log(`Executing query for table ${table}:`, query);
-      console.log(`With values:`, values);
+      console.log(`With values:`, queryValues);
       
       // 执行查询
-      const res = await client.query(query, values);
-      results.push(res.rows[0]);
+      try {
+        const res = await client.query(query, queryValues);
+        results.push(res.rows[0]);
+      } catch (err) {
+        // 如果是表不存在或列不存在的错误，跳过处理
+        if (err.code === '42P01' || err.code === '42703') {
+          console.warn(`跳过处理${table}表: ${err.message}`);
+        } else {
+          throw err;
+        }
+      }
     }
     
     // 返回结果

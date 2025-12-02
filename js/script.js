@@ -248,7 +248,9 @@ const Storage = {
     
     // 保存所有考试记录（用于从数据库同步）
     saveExams(exams) {
-        localStorage.setItem('exams', JSON.stringify(exams));
+        // 过滤掉空考试记录（没有名称的考试）
+        const validExams = exams.filter(exam => exam.name && exam.name.trim() !== '');
+        localStorage.setItem('exams', JSON.stringify(validExams));
         // 不需要同步到数据库，因为这是从数据库同步过来的数据
         return true;
     },
@@ -1892,24 +1894,30 @@ const UI = {
         
         // 获取最新考试数据
         const latestExam = sortedExams[0];
-        document.getElementById('totalScoreCard').textContent = latestExam.totalScore.toFixed(1);
+        document.getElementById('totalScoreCard').textContent = latestExam.totalScore ? latestExam.totalScore.toFixed(1) : '--';
         
         // 计算总分趋势
         if (sortedExams.length > 1) {
             const previousExam = sortedExams[1];
-            const scoreDiff = latestExam.totalScore - previousExam.totalScore;
-            const scorePercent = (scoreDiff / previousExam.totalScore) * 100;
             const trendElement = document.getElementById('totalScoreTrend');
             
-            if (scoreDiff > 0) {
-                trendElement.className = 'text-success';
-                trendElement.innerHTML = `<i class="fa-solid fa-arrow-up"></i> ${Math.abs(scorePercent).toFixed(1)}%`;
-            } else if (scoreDiff < 0) {
-                trendElement.className = 'text-danger';
-                trendElement.innerHTML = `<i class="fa-solid fa-arrow-down"></i> ${Math.abs(scorePercent).toFixed(1)}%`;
+            // 检查totalScore是否存在且previousExam.totalScore不为0
+            if (latestExam.totalScore !== undefined && previousExam.totalScore !== undefined && previousExam.totalScore !== 0) {
+                const scoreDiff = latestExam.totalScore - previousExam.totalScore;
+                const scorePercent = (scoreDiff / previousExam.totalScore) * 100;
+                
+                if (scoreDiff > 0) {
+                    trendElement.className = 'text-success';
+                    trendElement.innerHTML = `<i class="fa-solid fa-arrow-up"></i> ${Math.abs(scorePercent).toFixed(1)}%`;
+                } else if (scoreDiff < 0) {
+                    trendElement.className = 'text-danger';
+                    trendElement.innerHTML = `<i class="fa-solid fa-arrow-down"></i> ${Math.abs(scorePercent).toFixed(1)}%`;
+                } else {
+                    trendElement.className = 'text-gray-500';
+                    trendElement.innerHTML = '<i class="fa-solid fa-minus"></i> 0%';
+                }
             } else {
-                trendElement.className = 'text-gray-500';
-                trendElement.innerHTML = '<i class="fa-solid fa-minus"></i> 0%';
+                trendElement.innerHTML = '<i class="fa-solid fa-minus"></i> 0%相比上次';
             }
         } else {
             document.getElementById('totalScoreTrend').innerHTML = '<i class="fa-solid fa-minus"></i> 0%';
@@ -1943,12 +1951,20 @@ const UI = {
         }
         
         // 计算平均成绩和最高成绩
-        const totalScores = exams.map(exam => exam.totalScore);
-        const averageScore = totalScores.reduce((sum, score) => sum + score, 0) / totalScores.length;
-        const highestScore = Math.max(...totalScores);
+        const validTotalScores = exams
+            .map(exam => exam.totalScore)
+            .filter(score => score !== undefined && score !== null && !isNaN(score));
         
-        document.getElementById('averageScoreCard').textContent = averageScore.toFixed(1);
-        document.getElementById('highestScoreCard').textContent = highestScore.toFixed(1);
+        let averageScore = '--';
+        let highestScore = '--';
+        
+        if (validTotalScores.length > 0) {
+            averageScore = validTotalScores.reduce((sum, score) => sum + score, 0) / validTotalScores.length;
+            highestScore = Math.max(...validTotalScores);
+        }
+        
+        document.getElementById('averageScoreCard').textContent = typeof averageScore === 'number' ? averageScore.toFixed(1) : averageScore;
+        document.getElementById('highestScoreCard').textContent = typeof highestScore === 'number' ? highestScore.toFixed(1) : highestScore;
         
         // 更新考试总结
         const summaryElement = document.getElementById('latestExamSummary');
@@ -2215,6 +2231,7 @@ const UI = {
             return;
         }
         
+        // 获取通知相关元素
         const notification = document.getElementById('notification');
         const notificationIcon = document.getElementById('notificationIcon');
         const notificationTitle = document.getElementById('notificationTitle');
@@ -2222,9 +2239,14 @@ const UI = {
         const undoButton = document.getElementById('undoNotificationBtn');
         const progressBar = document.getElementById('notificationProgress');
         
+        // 检查所有必需元素是否存在
+        if (!notification || !notificationIcon || !notificationTitle || !notificationMessage || !progressBar) {
+            console.warn('通知组件元素缺失，无法显示通知');
+            return;
+        }
+        
         // 检查是否与当前显示的通知内容完全相同，避免重复显示
-        if (notificationTitle && notificationMessage && 
-            notificationTitle.textContent === title && 
+        if (notificationTitle.textContent === title && 
             notificationMessage.textContent === message &&
             !notification.classList.contains('translate-x-full') &&
             !notification.classList.contains('opacity-0')) {
@@ -2261,10 +2283,12 @@ const UI = {
         notificationMessage.textContent = message;
 
         // 显示或隐藏撤销按钮
-        if (canUndo && this.undoStack) {
-            undoButton.classList.remove('hidden');
-        } else {
-            undoButton.classList.add('hidden');
+        if (undoButton) {
+            if (canUndo && this.undoStack) {
+                undoButton.classList.remove('hidden');
+            } else {
+                undoButton.classList.add('hidden');
+            }
         }
 
         // 重置进度条 - 适配绝对定位的进度条
@@ -2866,6 +2890,12 @@ const UI = {
                     localStorage.removeItem('profile');
                     localStorage.removeItem('goals');
                     
+                    // 确保exams被设置为空数组，而不是仅被移除
+                    localStorage.setItem('exams', JSON.stringify([]));
+                    localStorage.setItem('fullMarks', JSON.stringify({}));
+                    localStorage.setItem('profile', JSON.stringify({}));
+                    localStorage.setItem('goals', JSON.stringify({}));
+                    
                     // 刷新界面
                     UI.exams = [];
                     UI.fullMarks = { chinese: 150, math: 150, english: 150, physics: 100, chemistry: 100, biology: 100 };
@@ -2877,6 +2907,13 @@ const UI = {
                     UI.updateAnalysisPage();
                     if (typeof UI.updateProfileInfo === 'function') {
                         UI.updateProfileInfo();
+                    }
+                    
+                    // 同步到数据库
+                    if (window.apiService) {
+                        apiService.syncLocalToDatabase().catch(error => {
+                            console.error('清空数据后同步到数据库失败:', error);
+                        });
                     }
                     
                     // 存储撤销操作

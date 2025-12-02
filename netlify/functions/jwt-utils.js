@@ -39,4 +39,4 @@ exports.getTokenFromHeaders = (headers) => {
 };
 
 // 允许操作的表名白名单
-exports.allowedTables = ['users', 'exams', 'scores', 'profile', 'goals', 'full_marks'];
+exports.allowedTables = ['users', 'exams', 'profile'];
