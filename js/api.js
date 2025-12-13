@@ -361,25 +361,40 @@ if (typeof ApiService === 'undefined') {
         // 获取本地数据
         const localExams = Storage.getExams();
         const localProfile = Storage.getProfile();
-        const localGoals = Storage.getGoals();
-        const localFullMarks = Storage.getFullMarks();
         
         console.log('开始同步本地数据到数据库...');
         
         // 1. 同步考试记录
         console.log(`准备同步 ${localExams.length} 条考试记录`);
         
-        // 如果本地没有考试记录，清空服务器上的考试记录
-        if (localExams.length === 0) {
-          console.log('本地考试记录为空，清空服务器考试记录');
+        // 先获取服务器上的现有考试记录
+        let serverExams = [];
+        try {
+          const serverData = await this.getData('exams');
+          serverExams = serverData.data || [];
+          console.log(`✅ 成功获取服务器上的 ${serverExams.length} 条考试记录`);
+        } catch (error) {
+          console.error('❌ 获取服务器考试记录失败:', error.message);
+          serverExams = [];
+        }
+        
+        // 从服务器删除所有考试记录，然后重新插入本地记录
+        // 这样可以确保服务器和本地数据完全一致
+        console.log('先删除服务器上的所有考试记录，然后重新插入本地记录');
+        
+        // 先删除服务器上的所有考试记录
+        for (const serverExam of serverExams) {
           try {
-            await this.clearAllData('exams');
-            console.log('✅ 成功清空服务器考试记录');
+            await this.deleteData('exams', serverExam.id);
+            console.log(`✅ 成功删除服务器上的考试记录: ${serverExam.exam_name || serverExam.name}`);
           } catch (error) {
-            console.error('❌ 清空服务器考试记录失败:', error.message);
+            console.error(`❌ 删除服务器上的考试记录失败: ${serverExam.exam_name || serverExam.name}`, error.message);
           }
-        } else {
-          // 否则，逐个同步考试记录
+        }
+        
+        // 如果本地有考试记录，重新插入到服务器
+        if (localExams.length > 0) {
+          // 逐个同步考试记录
           for (const exam of localExams) {
             try {
               // 跳过空考试记录（没有名称的考试）
@@ -388,15 +403,14 @@ if (typeof ApiService === 'undefined') {
                 continue;
               }
               
-              // 确保数据结构匹配数据库表结构
+              // 格式化考试数据以匹配数据库结构
               const formattedExam = this.formatExamForDatabase(exam);
               
-              // 尝试插入，如果已存在则更新
+              // 插入考试记录
               await this.postData('exams', formattedExam);
               console.log(`✅ 成功同步考试记录: ${formattedExam.exam_name} (${formattedExam.exam_date})`);
             } catch (error) {
               console.error(`❌ 同步考试记录失败:`, error.message);
-              console.error(`考试数据:`, exam);
             }
           }
         }

@@ -3,19 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>项目导航中心</title>
+    <title>皓之羽</title>
+    <link rel="icon" type="image/png" href="/imgs/logo.png">
+    <!-- 引入Google Fonts：思源宋体和思源黑体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #4361ee;
-            --primary-light: #4895ef;
-            --secondary: #3f37c9;
-            --success: #4cc9f0;
-            --light: #f8f9fa;
-            --dark: #212529;
-            --gray: #6c757d;
-            --border-radius: 12px;
-            --shadow: 0 10px 20px rgba(0,0,0,0.1);
-            --transition: all 0.3s ease;
+            /* 皓之羽品牌色彩系统 - 浅色模式 */
+            --primary: #7FB3D5;      /* 羽蓝 - 主色调 */
+            --primary-light: #85C1E2; /* 羽青 - 辅助主色调 */
+            --secondary: #5B9DC7;    /* 深羽蓝 - 次级色调 */
+            --success: #A3E4D7;      /* 羽绿 - 成功色 */
+            --light: #F5F7FA;        /* 轻羽灰 - 浅色背景 */
+            --dark: #34495E;         /* 深灰 - 正文文本 */
+            --gray: #7F8C8D;         /* 中灰 - 次要文本 */
+            --background: linear-gradient(135deg, #f5f7ff 0%, #e9ecef 100%);
+            --card-bg: white;
+            --tab-bg: var(--light);
+            --border-color: #e1e5ee;
+            --border-radius: 16px;   /* 圆角，更柔和 */
+            --shadow: 0 8px 24px rgba(0,0,0,0.08); /* 更轻盈的阴影 */
+            --transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* 更自然的过渡 */
+        }
+
+        /* 深色模式变量 */
+        body.dark-mode {
+            --primary: #85C1E2;      /* 羽青 - 主色调 */
+            --primary-light: #7FB3D5; /* 羽蓝 - 辅助主色调 */
+            --secondary: #85C1E2;    /* 羽青 - 次级色调 */
+            --success: #A3E4D7;      /* 羽绿 - 成功色 */
+            --light: #2C3E50;        /* 深色背景 */
+            --dark: #ECF0F1;         /* 浅色文本 */
+            --gray: #BDC3C7;         /* 中灰 - 次要文本 */
+            --background: linear-gradient(135deg, #1A202C 0%, #2D3748 100%);
+            --card-bg: #2D3748;
+            --tab-bg: #2C3E50;
+            --border-color: #4A5568;
+            --shadow: 0 8px 24px rgba(0,0,0,0.2); /* 更深的阴影 */
         }
 
         * {
@@ -26,11 +50,12 @@
         }
 
         body {
-            background: linear-gradient(135deg, #f5f7ff 0%, #e9ecef 100%);
+            background: var(--background);
             color: var(--dark);
             line-height: 1.6;
             min-height: 100vh;
             padding: 20px;
+            transition: var(--transition);
         }
 
         .container {
@@ -46,6 +71,32 @@
             opacity: 0;
             transform: translateY(30px);
             animation: fadeInUp 0.8s ease forwards;
+        }
+
+        /* 深色模式切换按钮 */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: none;
+            color: var(--dark);
+            font-size: 20px;
+            cursor: pointer;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+            z-index: 1000;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--light);
+            transform: scale(1.1);
         }
 
         header::after {
@@ -65,11 +116,12 @@
         header h1 {
             font-size: 2.8rem;
             margin-bottom: 10px;
-            background: linear-gradient(90deg, var(--primary), var(--success));
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
             font-weight: 700;
+            font-family: 'Noto Serif SC', serif;
             animation: fadeInDown 0.6s ease forwards;
         }
 
@@ -83,19 +135,40 @@
             transform: translateY(20px);
         }
 
+        /* Logo样式 */
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+        
+        .logo {
+            max-height: 140px;
+            max-width: 100%;
+            object-fit: contain;
+        }
+        
         /* 博客链接样式 */
         .blog-link {
             display: inline-block;
             margin-top: 10px;
-            padding: 8px 16px;
-            background: transparent;
-            color: var(--primary);
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
             text-decoration: none;
-            border: 1px solid var(--primary);
+            border: none;
             border-radius: var(--border-radius);
             font-weight: 500;
             font-size: 0.9rem;
             transition: var(--transition);
+            box-shadow: var(--shadow);
+        }
+        
+        .blog-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(127, 179, 213, 0.2);
         }
 
         .blog-link:hover {
@@ -106,7 +179,7 @@
         }
 
         .tabs-container {
-            background: white;
+            background: var(--card-bg);
             border-radius: var(--border-radius);
             box-shadow: var(--shadow);
             overflow: hidden;
@@ -118,8 +191,8 @@
 
         .tabs {
             display: flex;
-            background: var(--light);
-            border-bottom: 1px solid #e1e5ee;
+            background: var(--tab-bg);
+            border-bottom: 1px solid var(--border-color);
         }
 
         .tab-button {
@@ -146,7 +219,7 @@
 
         .tab-button.active {
             color: var(--primary);
-            background: white;
+            background: var(--card-bg);
         }
 
         .tab-button.active::before {
@@ -180,13 +253,13 @@
         }
 
         .project-card {
-            background: white;
+            background: var(--card-bg);
             border-radius: var(--border-radius);
             overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             cursor: pointer;
-            border: 1px solid #eef2ff;
+            border: 1px solid var(--border-color);
             position: relative;
             opacity: 0;
             transform: translateY(20px);
@@ -213,8 +286,9 @@
         }
 
         .project-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+            transform: translateY(-12px) scale(1.03);
+            box-shadow: 0 24px 56px rgba(127, 179, 213, 0.15);
+            border-color: rgba(127, 179, 213, 0.3);
         }
 
         .project-card:hover::before {
@@ -290,7 +364,7 @@
         }
 
         .tag {
-            background-color: #eef2ff;
+            background-color: rgba(102, 126, 234, 0.1);
             color: var(--primary);
             padding: 5px 12px;
             border-radius: 20px;
@@ -310,7 +384,7 @@
             align-items: center;
             margin-top: 15px;
             padding-top: 15px;
-            border-top: 1px solid #f1f3f9;
+            border-top: 1px solid var(--border-color);
         }
 
         .card-link {
@@ -499,9 +573,16 @@
 <body>
     <div class="container">
         <header>
-            <h1>项目导航中心</h1>
-            <p>快速访问和管理您的项目资源</p>
-        </header>
+        <div class="logo-container">
+            <img src="imgs/logo_text.png" alt="皓之羽" class="logo">
+        </div>
+        <p>欢迎来到我的个人项目集合</p>
+    </header>
+
+    <!-- 深色模式切换按钮 -->
+    <button class="theme-toggle" id="themeToggle">
+        <i class="fas fa-moon"></i>
+    </button>
 
         <div class="tabs-container">
             <div class="tabs">
@@ -568,6 +649,9 @@
         <symbol id="inbox-icon" viewBox="0 0 24 24">
             <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5v-3h3.56c.69 1.19 1.97 2 3.45 2s2.75-.81 3.45-2H19v3zm0-5h-4.99c0 1.1-.9 2-2 2s-2-.9-2-2H5V5h14v9z"/>
         </symbol>
+        <symbol id="music-icon" viewBox="0 0 24 24">
+            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+        </symbol>
         <symbol id="arrow-right-icon" viewBox="0 0 24 24">
             <path d="M10 17l5-5-5-5v10z"/>
         </symbol>
@@ -592,7 +676,16 @@
     "icon": "chart-icon",
     "id": 1,
     "link": "grade",
-    "name": "成绩统计",
+    "name": "皓羽成绩分析",
+    "tags": []
+  },
+  {
+    "date": "2025-12-14",
+    "description": "音乐播放器，支持本地音乐播放和管理",
+    "icon": "music-icon",
+    "id": 2,
+    "link": "music_player",
+    "name": "皓羽音乐播放器",
     "tags": []
   }]
 };
@@ -681,6 +774,33 @@
     
     <!-- 引入必要的 JavaScript 文件 -->
     <script src="js/api.js"></script>
-  <script src="js/script.js"></script>
+  <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/script.js"></script>
+    <script>
+        // 深色模式切换逻辑
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+
+        // 检查本地存储中的主题设置
+        if (localStorage.getItem('theme') === 'dark' || 
+            (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            body.classList.add('dark-mode');
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        }
+
+        // 点击切换主题
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            
+            if (body.classList.contains('dark-mode')) {
+                localStorage.setItem('theme', 'dark');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            } else {
+                localStorage.setItem('theme', 'light');
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            }
+        });
+    </script>
 </body>
 </html>

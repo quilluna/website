@@ -46,12 +46,12 @@ const handler = async (event) => {
     };
   }
 
-  // 检查是否为管理员
-  if (!decodedToken.isAdmin) {
+  // 只有清空所有数据操作才需要管理员权限
+  if (requestBody.clearAll && !decodedToken.isAdmin) {
     return {
       statusCode: 403,
       headers,
-      body: JSON.stringify({ error: 'Permission denied. Only admins can delete data.' }),
+      body: JSON.stringify({ error: 'Permission denied. Only admins can clear all data.' }),
     };
   }
 

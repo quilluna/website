@@ -4,13 +4,22 @@
 :root {
     color-scheme: light dark;
     
-    /* 主题色CSS变量 - 默认蓝色主题 */
-    --primary-color: #3b82f6;
-    --primary-dark: #2563eb;
-    --primary-darker: #1d4ed8;
-    --primary-light: #60a5fa;
-    --primary-glow: rgba(59, 130, 246, 0.3);
-    --primary-glow-active: rgba(59, 130, 246, 0.6);
+    /* 皓之羽品牌色彩系统 - 主色调 */
+    --primary-color: #7FB3D5;      /* 羽蓝 - 主色调，象征自由与灵动 */
+    --primary-dark: #5B9DC7;        /* 深羽蓝 - 用于深色模式 */
+    --primary-darker: #4A8BB8;      /* 更深羽蓝 - 用于强调 */
+    --primary-light: #85C1E2;       /* 羽青 - 辅助主色调 */
+    --primary-glow: rgba(127, 179, 213, 0.3);    /* 主色调发光效果 */
+    --primary-glow-active: rgba(127, 179, 213, 0.6); /* 活跃状态发光效果 */
+    
+    /* 皓之羽品牌色彩系统 - 品牌色 */
+    --brand-white: #FFFFFF;         /* 皓羽白 - 纯净与明亮 */
+    --brand-light-gray: #F5F7FA;    /* 轻羽灰 - 轻盈与柔和 */
+    
+    /* 皓之羽品牌色彩系统 - 辅助色 */
+    --accent-yellow: #F9E79F;       /* 羽黄 - 阳光与温暖 */
+    --accent-pink: #D7BDE2;         /* 羽粉 - 柔美与优雅 */
+    --accent-green: #A3E4D7;        /* 羽绿 - 自然与生机 */
 }
 
 /* 进度条背景色类 */
@@ -18,44 +27,42 @@
     background-color: var(--primary-color);
 }
 
-/* 绿色主题 */
+/* 皓之羽主题变体 - 保持品牌一致性 */
+body[data-theme="blue"] {
+    --primary-color: #7FB3D5;
+    --primary-dark: #5B9DC7;
+    --primary-darker: #4A8BB8;
+    --primary-light: #85C1E2;
+    --primary-glow: rgba(127, 179, 213, 0.3);
+    --primary-glow-active: rgba(127, 179, 213, 0.6);
+}
+
+/* 皓之羽主题变体 - 辅助色主题 */
 body[data-theme="green"] {
-    --primary-color: #10b981;
-    --primary-dark: #059669;
-    --primary-darker: #047857;
-    --primary-light: #34d399;
-    --primary-glow: rgba(16, 185, 129, 0.3);
-    --primary-glow-active: rgba(16, 185, 129, 0.6);
+    --primary-color: #A3E4D7;
+    --primary-dark: #7FCDC6;
+    --primary-darker: #6BBBB0;
+    --primary-light: #B4E6DE;
+    --primary-glow: rgba(163, 228, 215, 0.3);
+    --primary-glow-active: rgba(163, 228, 215, 0.6);
 }
 
-/* 紫色主题 */
-body[data-theme="purple"] {
-    --primary-color: #8b5cf6;
-    --primary-dark: #7c3aed;
-    --primary-darker: #6d28d9;
-    --primary-light: #a78bfa;
-    --primary-glow: rgba(139, 92, 246, 0.3);
-    --primary-glow-active: rgba(139, 92, 246, 0.6);
+body[data-theme="yellow"] {
+    --primary-color: #F9E79F;
+    --primary-dark: #F5D76E;
+    --primary-darker: #F1C40F;
+    --primary-light: #FAF0B5;
+    --primary-glow: rgba(249, 231, 159, 0.3);
+    --primary-glow-active: rgba(249, 231, 159, 0.6);
 }
 
-/* 红色主题 */
-body[data-theme="red"] {
-    --primary-color: #ef4444;
-    --primary-dark: #dc2626;
-    --primary-darker: #b91c1c;
-    --primary-light: #f87171;
-    --primary-glow: rgba(239, 68, 68, 0.3);
-    --primary-glow-active: rgba(239, 68, 68, 0.6);
-}
-
-/* 琥珀色主题 */
-body[data-theme="amber"] {
-    --primary-color: #f59e0b;
-    --primary-dark: #d97706;
-    --primary-darker: #b45309;
-    --primary-light: #fbbf24;
-    --primary-glow: rgba(245, 158, 11, 0.3);
-    --primary-glow-active: rgba(245, 158, 11, 0.6);
+body[data-theme="pink"] {
+    --primary-color: #D7BDE2;
+    --primary-dark: #C39BD3;
+    --primary-darker: #AF7AC5;
+    --primary-light: #E2C9E8;
+    --primary-glow: rgba(215, 189, 226, 0.3);
+    --primary-glow-active: rgba(215, 189, 226, 0.6);
 }
 
 /* 全局样式和背景 */
@@ -63,20 +70,29 @@ html {
     scroll-behavior: smooth;
 }
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Noto Sans SC', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     line-height: 1.6;
-    color: #1e293b;
-    background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+    color: #34495E; /* 深灰 - 正文文本 */
+    background: linear-gradient(135deg, #FFFFFF 0%, #F5F7FA 100%); /* 皓羽白到轻羽灰渐变 */
     background-attachment: fixed;
     margin: 0;
     padding: 0;
     min-height: 100vh;
 }
 
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Noto Serif SC', 'Times New Roman', serif;
+    color: #2C3E50; /* 更深灰 - 标题文本 */
+}
+
 .dark, .dark body {
-    color: #f1f5f9;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #F8F9FA; /* 浅灰白 - 深色模式正文 */
+    background: linear-gradient(135deg, #1A1A2E 0%, #16213E 100%); /* 深色模式渐变 */
     background-attachment: fixed;
+}
+
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    color: #FFFFFF; /* 白色 - 深色模式标题 */
 }
 
 /* 全局过渡动画类 */
