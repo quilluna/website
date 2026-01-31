@@ -4,9 +4,7 @@
   "description": "网站项目",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "netlify dev",
-    "dev": "netlify dev"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -19,12 +17,5 @@
   "bugs": {
     "url": "https://github.com/15958907724/website/issues"
   },
-  "homepage": "https://github.com/15958907724/website#readme",
-  "dependencies": {
-    "axios": "^1.13.2",
-    "bcrypt": "^6.0.0",
-    "dotenv": "^17.2.3",
-    "jsonwebtoken": "^9.0.2",
-    "pg": "^8.16.3"
-  }
+  "homepage": "https://github.com/15958907724/website#readme"
 }

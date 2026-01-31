@@ -12,6 +12,18 @@
     --primary-glow: rgba(127, 179, 213, 0.3);    /* 主色调发光效果 */
     --primary-glow-active: rgba(127, 179, 213, 0.6); /* 活跃状态发光效果 */
     
+    /* 统一发光效果变量 */
+    --glow-hover: 0 0 20px 8px var(--primary-glow), 0 0 40px 15px var(--primary-glow);
+    --glow-active: 0 0 25px 10px var(--primary-glow-active), 0 0 50px 20px var(--primary-glow);
+    --glow-subtle: 0 0 15px 5px var(--primary-glow);
+    
+    /* 其他类型按钮发光效果变量 */
+    --glow-danger: 0 0 20px 8px rgba(239, 68, 68, 0.3), 0 0 40px 15px rgba(239, 68, 68, 0.1);
+    --glow-success: 0 0 20px 8px rgba(16, 185, 129, 0.4), 0 0 40px 15px rgba(16, 185, 129, 0.2);
+    --glow-secondary: 0 0 20px 8px rgba(156, 163, 175, 0.4), 0 0 40px 15px rgba(156, 163, 175, 0.2);
+    --glow-input: 0 0 15px 6px rgba(59, 130, 246, 0.3);
+    --glow-white: 0 0 15px 5px rgba(255, 255, 255, 0.4);
+    
     /* 皓之羽品牌色彩系统 - 品牌色 */
     --brand-white: #FFFFFF;         /* 皓羽白 - 纯净与明亮 */
     --brand-light-gray: #F5F7FA;    /* 轻羽灰 - 轻盈与柔和 */
@@ -205,7 +217,7 @@ h1, h2, h3, h4, h5, h6 {
 .nav-item.active {
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
     color: white;
-    box-shadow: 0 0 30px 15px var(--primary-glow-active);
+    box-shadow: var(--glow-active);
 }
 .nav-item:not(.active) {
     color: #64748b;
@@ -213,7 +225,7 @@ h1, h2, h3, h4, h5, h6 {
 .nav-item:not(.active):hover {
     color: var(--primary-color);
     transform: translateX(4px);
-    box-shadow: 0 0 15px 5px var(--primary-glow);
+    box-shadow: var(--glow-subtle);
 }
 /* 导航项底部色块已移除 */
 .nav-item::after {
@@ -232,7 +244,7 @@ h1, h2, h3, h4, h5, h6 {
     animation: none;
 }
 .dark .nav-item:not(.active):hover {
-    box-shadow: 0 0 15px 5px var(--primary-glow);
+    box-shadow: var(--glow-subtle);
 }
 
 /* 主题色选择器按钮样式 */
@@ -307,20 +319,25 @@ button:not(.btn) {
     box-shadow: none;
 }
 
-/* 导出和导入按钮悬停效果 */
+/* 导出和导入按钮样式 */
+#exportBtn, #importBtn {
+    transition: all 0.3s ease;
+    box-shadow: none;
+}
+
 #exportBtn:hover, #importBtn:hover {
-    box-shadow: 0 0 20px 8px var(--primary-glow), 0 0 40px 15px var(--primary-glow);
+    box-shadow: var(--glow-hover);
     transform: translateY(-1px);
 }
 
 /* 主题切换按钮悬停效果 */
 #themeToggle:hover {
-    box-shadow: 0 0 15px 5px var(--primary-glow-active);
+    box-shadow: var(--glow-subtle);
 }
 
 /* 清空数据按钮悬停效果 */
 #clearDataBtn:hover {
-    box-shadow: 0 0 20px 8px rgba(239, 68, 68, 0.3), 0 0 40px 15px rgba(239, 68, 68, 0.1);
+    box-shadow: var(--glow-danger);
     transform: translateY(-1px);
 }
 
@@ -331,22 +348,23 @@ button:not(.btn) {
 }
 
 #dataMenuDropdown button:hover {
-    box-shadow: 0 0 20px 8px var(--primary-glow), 0 0 40px 15px var(--primary-glow);
+    box-shadow: var(--glow-hover);
     transform: translateY(-1px);
 }
 
 /* 关闭设置按钮悬停效果 */
 #closeSettingsModal:hover {
-    box-shadow: 0 0 15px 5px rgba(156, 163, 175, 0.4);
+    box-shadow: var(--glow-subtle);
 }
 
 /* 设置按钮悬停发光效果 */
 #settingsBtn {
     transition: all 0.3s ease;
+    box-shadow: none;
 }
 
 #settingsBtn:hover {
-    box-shadow: 0 0 20px 8px var(--primary-glow), 0 0 40px 15px var(--primary-glow);
+    box-shadow: var(--glow-hover);
     transform: translateY(-1px);
 }
 
@@ -359,7 +377,7 @@ button:not(.btn) {
 
 #cancelClearDataBtn:hover {
     /* 悬停时发白光 */
-    box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.4);
+    box-shadow: var(--glow-white);
 }
 
 #confirmClearDataBtn {
@@ -371,7 +389,7 @@ button:not(.btn) {
 #confirmClearDataBtn:hover {
     /* 悬停时加强红光 */
     box-shadow: 0 0 60px 8px rgba(239, 68, 68, 0.6);
-} */
+}
 .btn:active {
     transform: scale(0.97);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -382,7 +400,7 @@ button:not(.btn) {
 }
 .btn-primary:hover {
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-    box-shadow: 0 0 20px 8px var(--primary-glow-active), 0 0 40px 15px var(--primary-glow);
+    box-shadow: var(--glow-hover);
 }
 .btn-primary:active {
     background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-darker) 100%);
@@ -393,7 +411,7 @@ button:not(.btn) {
 }
 .btn-secondary:hover {
     background-color: #e5e7eb;
-    box-shadow: 0 0 20px 8px rgba(156, 163, 175, 0.4), 0 0 40px 15px rgba(156, 163, 175, 0.2);
+    box-shadow: var(--glow-secondary);
 }
 .btn-secondary:active {
     background-color: #9ca3af;
@@ -407,7 +425,7 @@ button:not(.btn) {
 }
 .dark .btn-secondary:hover {
     background-color: #374151;
-    box-shadow: 0 0 20px 8px rgba(156, 163, 175, 0.3), 0 0 40px 15px rgba(156, 163, 175, 0.1);
+    box-shadow: var(--glow-secondary);
 }
 .dark .btn-secondary:active {
     background-color: #6b7280;
@@ -421,7 +439,7 @@ button:not(.btn) {
 }
 .btn-success:hover {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    box-shadow: 0 0 20px 8px rgba(16, 185, 129, 0.4), 0 0 40px 15px rgba(16, 185, 129, 0.2);
+    box-shadow: var(--glow-success);
 }
 .btn-success:active {
     background: linear-gradient(135deg, #047857 0%, #065f46 100%);
@@ -432,7 +450,7 @@ button:not(.btn) {
 }
 .btn-danger:hover {
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    box-shadow: 0 0 20px 8px rgba(239, 68, 68, 0.4), 0 0 40px 15px rgba(239, 68, 68, 0.2);
+    box-shadow: var(--glow-danger);
 }
 .btn-danger:active {
     background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
@@ -456,7 +474,7 @@ button:not(.btn) {
 }
 .input-field:focus {
     outline: none;
-    box-shadow: 0 0 15px 6px rgba(59, 130, 246, 0.3);
+    box-shadow: var(--glow-input);
     border-color: #3b82f6;
     transform: translateY(-1px);
 }
@@ -473,7 +491,7 @@ button:not(.btn) {
     color: white;
 }
 .dark .input-field:focus {
-    box-shadow: 0 0 15px 6px rgba(59, 130, 246, 0.4);
+    box-shadow: var(--glow-input);
 }
 
 /* 完全移除数字输入框的自定义样式，让浏览器使用默认箭头显示 */
@@ -784,6 +802,9 @@ body:has(.modal-backdrop:not(.hidden)) main {
     transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55), opacity 0.3s ease;
 }
 .modal-backdrop:not(.hidden) .modal-content,
+.modal-backdrop:not(.hidden) .settings-modal-content,
+.modal-backdrop:not(.hidden) .clear-data-modal-content,
+.modal-backdrop:not(.hidden) .login-modal-content,
 .modal:not(.hidden) .modal-content {
     animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; /* 应用弹出动画 */
 }
@@ -816,6 +837,9 @@ body:has(.modal-backdrop:not(.hidden)) main {
 
 /* 消失动画类 */
 .modal-content.pop-out,
+.settings-modal-content.pop-out,
+.clear-data-modal-content.pop-out,
+.login-modal-content.pop-out,
 #settingsModal .modal-content.pop-out,
 .fixed.inset-0.bg-black.bg-opacity-50:not(.hidden) > div.pop-out {
     animation: popOut 0.3s ease forwards;

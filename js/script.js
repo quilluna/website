@@ -198,12 +198,6 @@ const Storage = {
         const exams = this.getExams();
         exams.push(exam);
         localStorage.setItem('exams', JSON.stringify(exams));
-        // 同步到数据库
-        if (window.apiService) {
-            apiService.syncLocalToDatabase().catch(error => {
-                console.error('同步到数据库失败:', error);
-            });
-        }
         return true;
     },
     
@@ -218,12 +212,6 @@ const Storage = {
         if (index >= 0 && index < exams.length) {
             exams[index] = updatedExam;
             localStorage.setItem('exams', JSON.stringify(exams));
-            // 同步到数据库
-            if (window.apiService) {
-                apiService.syncLocalToDatabase().catch(error => {
-                    console.error('同步到数据库失败:', error);
-                });
-            }
             return true;
         }
         return false;
@@ -235,12 +223,6 @@ const Storage = {
         if (index >= 0 && index < exams.length) {
             exams.splice(index, 1);
             localStorage.setItem('exams', JSON.stringify(exams));
-            // 同步到数据库
-            if (window.apiService) {
-                apiService.syncLocalToDatabase().catch(error => {
-                    console.error('同步到数据库失败:', error);
-                });
-            }
             return true;
         }
         return false;
@@ -269,12 +251,6 @@ const Storage = {
     // 保存个人信息
     saveProfile(profile) {
         localStorage.setItem('profile', JSON.stringify(profile));
-        // 同步到数据库
-        if (window.apiService) {
-            apiService.syncLocalToDatabase().catch(error => {
-                console.error('同步到数据库失败:', error);
-            });
-        }
         return true;
     },
 
@@ -291,12 +267,6 @@ const Storage = {
     // 保存学习目标
     saveGoals(goals) {
         localStorage.setItem('goals', JSON.stringify(goals));
-        // 同步到数据库
-        if (window.apiService) {
-            apiService.syncLocalToDatabase().catch(error => {
-                console.error('同步到数据库失败:', error);
-            });
-        }
         return true;
     },
 
@@ -307,12 +277,6 @@ const Storage = {
             if (data.profile) localStorage.setItem('profile', JSON.stringify(data.profile));
             if (data.goals) localStorage.setItem('goals', JSON.stringify(data.goals));
             if (data.fullMarks) localStorage.setItem('fullMarks', JSON.stringify(data.fullMarks));
-            // 同步到数据库
-            if (window.apiService) {
-                apiService.syncLocalToDatabase().catch(error => {
-                    console.error('同步到数据库失败:', error);
-                });
-            }
             return true;
         } catch (error) {
             console.error('导入数据失败', error);
@@ -339,12 +303,6 @@ const Storage = {
     // 保存满分设置
     saveFullMarks(fullMarks) {
         localStorage.setItem('fullMarks', JSON.stringify(fullMarks));
-        // 同步到数据库
-        if (window.apiService) {
-            apiService.syncLocalToDatabase().catch(error => {
-                console.error('同步到数据库失败:', error);
-            });
-        }
         return true;
     }
 };
@@ -368,7 +326,8 @@ const Charts = {
             window.scoreTrendChartInstance.destroy();
         }
 
-        window.scoreTrendChartInstance = new Chart(ctx, {
+        // 使用全局 Chart 构造函数创建图表实例
+        window.scoreTrendChartInstance = new window.Chart(ctx, {
             type: 'line',
             data: {
                 labels: labels,
@@ -810,8 +769,11 @@ function showModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.classList.remove('hidden');
-        // 触发淡入动画
-        const modalContent = modal.querySelector('.modal-content');
+        // 触发淡入动画 - 支持多种模态框内容类名
+        const modalContent = modal.querySelector('.modal-content') || 
+                            modal.querySelector('.settings-modal-content') || 
+                            modal.querySelector('.clear-data-modal-content') ||
+                            modal.querySelector('.login-modal-content');
         if (modalContent) {
             modalContent.classList.add('active');
         }
@@ -821,8 +783,11 @@ function showModal(modalId) {
 function hideModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
-        // 添加消失动画
-        const modalContent = modal.querySelector('.modal-content');
+        // 添加消失动画 - 支持多种模态框内容类名
+        const modalContent = modal.querySelector('.modal-content') || 
+                            modal.querySelector('.settings-modal-content') || 
+                            modal.querySelector('.clear-data-modal-content') ||
+                            modal.querySelector('.login-modal-content');
         if (modalContent) {
             modalContent.classList.add('pop-out');
             // 动画完成后隐藏
@@ -2588,102 +2553,96 @@ const UI = {
 };
 
 // 页面加载完成后初始化
-        document.addEventListener('DOMContentLoaded', () => {
-                // 检查登录状态
-                const checkLoginStatus = async () => {
-                    // 如果当前不是登录页面且未登录，允许访客模式访问
-                    // 不再强制跳转到登录页面，而是允许访客模式使用
+document.addEventListener('DOMContentLoaded', () => {
+    // 检查登录状态
+    const checkLoginStatus = async () => {
+        // 如果当前不是登录页面且未登录，允许访客模式访问
+        // 不再强制跳转到登录页面，而是允许访客模式使用
+        
+        // 已登录用户，检查是否需要同步数据
+        const user = Storage.getUser();
+        if (user && Storage.isLoggedIn()) {
+            try {
+                // 检查缓存时间戳
+                const lastSyncTime = localStorage.getItem('lastSyncTime');
+                const now = new Date().getTime();
+                const oneHour = 60 * 60 * 1000; // 1小时
+                
+                // 如果缓存时间戳不存在或已过期，则同步数据
+                if (!lastSyncTime || (now - parseInt(lastSyncTime)) > oneHour) {
+                    console.log('缓存时间戳过期或不存在，开始同步数据');
                     
-                    // 更新用户信息显示
-                    const user = Storage.getUser();
-                    const nameElement = document.querySelector('.user-info .name');
-                    const schoolElement = document.querySelector('.user-info .school');
-                    const classElement = document.querySelector('.user-info .class');
-                    
-                    if (user && Storage.isLoggedIn()) {
-                        // 已登录用户，从数据库同步数据到本地
+                    // 从localStorage获取同步数据
+                    const syncDataStr = localStorage.getItem('syncData');
+                    if (syncDataStr) {
                         try {
-                            await apiService.syncDatabaseToLocal();
-                            console.log('数据已从数据库同步到本地');
-                            
-                            // 数据库同步后，仍然用登录信息覆盖姓名、班级和学校
-                            const currentProfile = Storage.getProfile();
-                            const updatedProfile = {
-                                ...currentProfile,
-                                name: user.username,
-                                className: user.class || '',
-                                school: user.school || ''
-                            };
-                            Storage.saveProfile(updatedProfile);
-                        } catch (error) {
-                            console.error('从数据库同步数据失败:', error);
-                        }
-                        
-                        if (nameElement) {
-                            nameElement.textContent = user.username;
-                        }
-                        // 学校和班级暂时隐藏，不显示
-                        /*if (user.school) {
-                            if (schoolElement) {
-                                schoolElement.textContent = user.school;
-                                schoolElement.classList.remove('hidden');
-                            }
-                        }
-                        if (user.class) {
-                            if (classElement) {
-                                classElement.textContent = user.class + '班';
-                                classElement.classList.remove('hidden');
-                            }
-                        }*/
-                    } else {
-                        // 访客模式，显示访客信息
-                        if (nameElement) {
-                            nameElement.textContent = '访客';
-                        }
-                        if (schoolElement) {
-                            schoolElement.classList.add('hidden');
-                        }
-                        if (classElement) {
-                            classElement.classList.add('hidden');
+                            const syncData = JSON.parse(syncDataStr);
+                            Storage.importData(syncData);
+                        } catch (e) {
+                            console.error('解析syncData失败:', e);
                         }
                     }
-                    return true;
+                    
+                    // 同步完成后，设置新的缓存时间戳
+                    localStorage.setItem('lastSyncTime', now.toString());
+                    console.log('已设置新的缓存时间戳:', new Date(now).toLocaleString());
+                } else {
+                    console.log('缓存时间戳未过期，跳过数据同步');
+                    console.log('上次同步时间:', new Date(parseInt(lastSyncTime)).toLocaleString());
+                    console.log('下次同步时间:', new Date(parseInt(lastSyncTime) + oneHour).toLocaleString());
+                }
+                
+                // 用登录信息覆盖姓名、班级和学校
+                const currentProfile = Storage.getProfile();
+                const updatedProfile = {
+                    ...currentProfile,
+                    name: user.username,
+                    className: user.class || '',
+                    school: user.school || ''
                 };
-
-        // 登出功能
-        const logout = () => {
-            Storage.setLoggedIn(false);
-            Storage.removeUser();
-            window.location.href = 'login.html';
-        };
-
-        // 页面加载时检查登录状态
-        (async () => {
-            if (!(await checkLoginStatus())) {
-                return;
+                Storage.saveProfile(updatedProfile);
+            } catch (error) {
+                console.error('同步数据失败:', error);
             }
-        })();
-        
-        // 只有当当前不是登录页面和管理页面时，才初始化UI
-        if (window.location.pathname !== '/login.html' && window.location.pathname !== '/login' && window.location.pathname !== '/admin.html' && window.location.pathname !== '/admin') {
-            UI.init();
-            
-            // 初始化主题色设置
-            initThemeColor();
-            
-            // 显示测试版本通知
-            UI.showNotification('info', '测试版本', '当前为测试版本，可能存在不稳定性,请悉知');
         }
+        return true;
+    };
+
+    // 登出功能
+    const logout = () => {
+        Storage.setLoggedIn(false);
+        Storage.removeUser();
+        localStorage.removeItem('lastSyncTime');
+        window.location.href = 'login.html';
+    };
+
+    // 页面加载时检查登录状态
+    (async () => {
+        if (!(await checkLoginStatus())) {
+            return;
+        }
+    })();
+    
+    // 只有当当前不是登录页面和管理页面时，才初始化UI
+    if (window.location.pathname !== '/login.html' && window.location.pathname !== '/login' && window.location.pathname !== '/admin.html' && window.location.pathname !== '/admin') {
+        UI.init();
         
-        // 绑定登出事件
-        document.getElementById('logoutBtn')?.addEventListener('click', logout);
+        // 初始化主题色设置
+        initThemeColor();
         
-        // 交互元素获取
-        const dataMenuBtn = document.getElementById('dataMenuBtn');
-        const dataMenuDropdown = document.getElementById('dataMenuDropdown');
-        const settingsBtn = document.getElementById('settingsBtn');
-        const settingsModal = document.getElementById('settingsModal');
-        const closeSettingsModal = document.getElementById('closeSettingsModal');
+        // 显示测试版本通知
+        UI.showNotification('info', '测试版本', '当前为测试版本，可能存在不稳定性,请悉知');
+    }
+    
+    // 绑定登出事件
+    document.getElementById('logoutBtn')?.addEventListener('click', logout);
+    
+    // 交互元素获取
+    const dataMenuBtn = document.getElementById('dataMenuBtn');
+    const dataMenuDropdown = document.getElementById('dataMenuDropdown');
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsModal = document.getElementById('settingsModal');
+    const closeSettingsModal = document.getElementById('closeSettingsModal');
         
         // 切换下拉菜单显示/隐藏
         function toggleDropdown() {
@@ -2909,12 +2868,7 @@ const UI = {
                         UI.updateProfileInfo();
                     }
                     
-                    // 同步到数据库
-                    if (window.apiService) {
-                        apiService.syncLocalToDatabase().catch(error => {
-                            console.error('清空数据后同步到数据库失败:', error);
-                        });
-                    }
+
                     
                     // 存储撤销操作
                     UI.undoStack = {
@@ -2997,5 +2951,4 @@ const UI = {
                 }
             });
         }
-        
     });
