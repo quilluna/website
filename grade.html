@@ -1521,12 +1521,17 @@
             // 总分趋势图
             const totalScoreCtx = document.getElementById('totalScoreTrendChart');
             if (totalScoreCtx && exams.length > 0) {
+                // 销毁旧图表实例
+                if (window.totalScoreTrendChart && typeof window.totalScoreTrendChart.destroy === 'function') {
+                    window.totalScoreTrendChart.destroy();
+                }
+                
                 const examNames = exams.map(exam => exam.name);
                 const totalScores = exams.map(exam => exam.totalScore || 0);
                 const classRanks = exams.map(exam => exam.rankClass || null);
                 const gradeRanks = exams.map(exam => exam.rankGrade || null);
                 
-                new Chart(totalScoreCtx, {
+                window.totalScoreTrendChart = new Chart(totalScoreCtx, {
                     type: 'line',
                     data: {
                         labels: examNames,
@@ -1600,6 +1605,11 @@
             // 各科雷达图
             const radarCtx = document.getElementById('subjectRadarChart');
             if (radarCtx && exams.length > 0) {
+                // 销毁旧图表实例
+                if (window.subjectRadarChart && typeof window.subjectRadarChart.destroy === 'function') {
+                    window.subjectRadarChart.destroy();
+                }
+                
                 // 获取最近一次考试的数据
                 const latestExam = exams[exams.length - 1];
                 const subjects = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
@@ -1629,7 +1639,7 @@
                     return 0;
                 });
                 
-                new Chart(radarCtx, {
+                window.subjectRadarChart = new Chart(radarCtx, {
                     type: 'radar',
                     data: {
                         labels: subjects,
@@ -2018,6 +2028,7 @@
 
         // 确保所有函数都是全局可访问的
         window.initDashboardPage = initDashboardPage;
+        window.initAnalysisPage = initAnalysisPage;
         
         // 页面加载完成后立即初始化仪表盘
         initDashboardPage();

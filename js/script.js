@@ -445,6 +445,61 @@ function hideModal(modalId) {
     }
 }
 
+function initThemeColor() {
+    const savedTheme = localStorage.getItem('themeColor');
+    if (savedTheme) {
+        setThemeColor(savedTheme);
+    }
+}
+
+function setThemeColor(theme) {
+    const themeColors = {
+        blue: { primary: '#3b82f6', primaryDark: '#2563eb', primaryLight: '#60a5fa' },
+        green: { primary: '#10b981', primaryDark: '#059669', primaryLight: '#34d399' },
+        purple: { primary: '#8b5cf6', primaryDark: '#7c3aed', primaryLight: '#a78bfa' },
+        red: { primary: '#ef4444', primaryDark: '#dc2626', primaryLight: '#f87171' },
+        amber: { primary: '#f59e0b', primaryDark: '#d97706', primaryLight: '#fbbf24' }
+    };
+    
+    const colors = themeColors[theme] || themeColors.blue;
+    document.documentElement.style.setProperty('--primary-color', colors.primary);
+    document.documentElement.style.setProperty('--primary-dark', colors.primaryDark);
+    document.documentElement.style.setProperty('--primary-light', colors.primaryLight);
+    
+    localStorage.setItem('themeColor', theme);
+    
+    document.querySelectorAll('.theme-color-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.theme === theme) {
+            btn.classList.add('active');
+        }
+    });
+}
+
+function switchToEditMode() {
+    const viewModeContainer = document.getElementById('viewModeContainer');
+    const editModeContainer = document.getElementById('editModeContainer');
+    
+    if (viewModeContainer) {
+        viewModeContainer.classList.add('hidden');
+    }
+    if (editModeContainer) {
+        editModeContainer.classList.remove('hidden');
+    }
+}
+
+function switchToViewMode() {
+    const viewModeContainer = document.getElementById('viewModeContainer');
+    const editModeContainer = document.getElementById('editModeContainer');
+    
+    if (editModeContainer) {
+        editModeContainer.classList.add('hidden');
+    }
+    if (viewModeContainer) {
+        viewModeContainer.classList.remove('hidden');
+    }
+}
+
 
 
 // 用户界面管理
@@ -859,6 +914,18 @@ const UI = {
         if (profile) {
             // 重新调用loadProfile方法，确保完整的动态渲染
             this.loadProfile();
+        }
+    },
+
+    updateAnalysisPage() {
+        if (typeof window.initAnalysisPage === 'function') {
+            window.initAnalysisPage();
+        }
+    },
+
+    updateDashboard() {
+        if (typeof window.initDashboardPage === 'function') {
+            window.initDashboardPage();
         }
     },
 
