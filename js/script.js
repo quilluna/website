@@ -318,160 +318,6 @@ const Storage = {
 
 // 图表管理
 const Charts = {
-    // 成绩趋势图
-    renderScoreTrendChart() {
-        const ctx = document.getElementById('scoreTrendChart');
-        if (!ctx) return;
-
-        const exams = Storage.getExams().sort((a, b) => new Date(a.date) - new Date(b.date));
-        const labels = exams.map(exam => {
-            const date = new Date(exam.date);
-            return `${date.getMonth() + 1}/${date.getDate()}`;
-        });
-        const scores = exams.map(exam => exam.totalScore);
-
-        // 使用与grade.html一致的对象名称
-        if (window.scoreTrendChartInstance) {
-            window.scoreTrendChartInstance.destroy();
-        }
-
-        // 使用全局 Chart 构造函数创建图表实例
-        window.scoreTrendChartInstance = new window.Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                        label: '总分',
-                        data: scores,
-                        // 使用ThemeColors工具类获取主题色
-                        borderColor: ThemeColors.getPrimaryColor(),
-                        backgroundColor: ThemeColors.getPrimaryColorWithOpacity(0.1),
-                        tension: 0.4,
-                        fill: true
-                    }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            drawBorder: false
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
-        });
-    },
-
-    // 科目雷达图（用于首页）
-    renderSubjectRadarChart() {
-        try {
-            const ctx = document.getElementById('examDetailRadarChart');
-            if (!ctx) {
-                console.error('科目雷达图容器不存在');
-                return;
-            }
-
-            const exams = Storage.getExams();
-            if (exams.length === 0) {
-                console.log('暂无考试数据，无法渲染雷达图');
-                return;
-            }
-
-            // 获取最近一次考试的数据
-            const latestExam = exams.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-            const subjects = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
-            const subjectNames = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
-            
-            // 获取数据优先级：1.年级排名率 2.班级排名率 3.得分率
-            const getSubjectPriorityData = (subject) => {
-                // 年级排名率
-                const gradeRank = latestExam.subjectRankGrade && latestExam.subjectRankGrade[subject];
-                if (gradeRank) {
-                    return 100 - parseFloat(((gradeRank / 650) * 100).toFixed(2));
-                }
-                
-                // 班级排名率
-                const classRank = latestExam.subjectRankClass && latestExam.subjectRankClass[subject];
-                if (classRank) {
-                    return 100 - parseFloat(((classRank / 51) * 100).toFixed(2));
-                }
-                
-                // 得分率
-                const score = latestExam.subjects && latestExam.subjects[subject] || 0;
-                const fullMark = latestExam.fullMarks && latestExam.fullMarks[subject] || 100;
-                return fullMark > 0 ? parseFloat(((score / fullMark) * 100).toFixed(2)) : 0;
-            };
-            
-            // 计算各项数据
-            const gradeRankRates = subjects.map(subject => {
-                const gradeRank = latestExam.subjectRankGrade && latestExam.subjectRankGrade[subject];
-                return gradeRank ? 100 - parseFloat(((gradeRank / 650) * 100).toFixed(2)) : 0;
-            });
-            
-            const classRankRates = subjects.map(subject => {
-                const classRank = latestExam.subjectRankClass && latestExam.subjectRankClass[subject];
-                return classRank ? 100 - parseFloat(((classRank / 51) * 100).toFixed(2)) : 0;
-            });
-            
-            const scoreRates = subjects.map(subject => {
-                const score = latestExam.subjects && latestExam.subjects[subject] || 0;
-                const fullMark = latestExam.fullMarks && latestExam.fullMarks[subject] || 100;
-                return fullMark > 0 ? parseFloat(((score / fullMark) * 100).toFixed(2)) : 0;
-            });
-            
-            // 获取优先级数据
-            const priorityData = subjects.map(getSubjectPriorityData);
-
-            console.log('雷达图数据:', { subjects, subjectNames, priorityData, gradeRankRates, classRankRates, scoreRates });
-
-            if (window.examDetailRadarChart && typeof window.examDetailRadarChart.destroy === 'function') {
-                window.examDetailRadarChart.destroy();
-            }
-            
-            window.examDetailRadarChart = new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: subjectNames,
-                    datasets: [{
-                        label: '科目表现(优先级:年级排名率>班级排名率>得分率)',
-                        data: priorityData,
-                        // 使用ThemeColors工具类获取主题色
-                        borderColor: ThemeColors.getPrimaryColor(),
-                        backgroundColor: ThemeColors.getPrimaryColorWithOpacity(0.2)
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        r: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                stepSize: 20
-                            }
-                        }
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('渲染雷达图时出错:', error);
-        }
-    },
-    
     // 考试详情模态框中的科目分布雷达图
     renderDetailSubjectRadarChart(examData, canvasId = 'detailSubjectRadarChart') {
         try {
@@ -559,222 +405,6 @@ const Charts = {
         } catch (error) {
             console.error('渲染详情模态框雷达图时出错:', error);
         }
-    },
-
-    // 排名对比图
-    renderRankComparisonChart() {
-        const ctx = document.getElementById('rankComparisonChart');
-        if (!ctx) return;
-
-        const exams = Storage.getExams().sort((a, b) => new Date(a.date) - new Date(b.date));
-        const labels = exams.map(exam => {
-            const date = new Date(exam.date);
-            return `${date.getMonth() + 1}/${date.getDate()}`;
-        });
-        const classRanks = exams.map(exam => exam.rankClass || 0);
-        const gradeRanks = exams.map(exam => exam.rankGrade || 0);
-
-        // 使用与grade.html一致的对象名称
-        if (window.rankComparisonChartInstance && typeof window.rankComparisonChartInstance.destroy === 'function') {
-            window.rankComparisonChartInstance.destroy();
-        }
-
-        window.rankComparisonChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: '班级排名',
-                        data: classRanks,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.4
-                    },
-                    {
-                        label: '年级排名',
-                        data: gradeRanks,
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        tension: 0.4
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        reverse: true,
-                        beginAtZero: true,
-                        grid: {
-                            drawBorder: false
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
-        });
-    },
-
-    // 科目强弱分析图
-    renderSubjectStrengthChart() {
-        const ctx = document.getElementById('subjectStrengthChart');
-        if (!ctx) return;
-
-        const exams = Storage.getExams();
-        if (exams.length === 0) return;
-
-        const subjects = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
-        const subjectNames = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
-        const avgScores = subjects.map(subject => {
-            let totalPriorityScore = 0;
-            let count = 0;
-
-            exams.forEach(exam => {
-                if (exam.subjects && exam.fullMarks && exam.subjects[subject] !== undefined && exam.fullMarks[subject] > 0) {
-                    const subjectData = {
-                        score: exam.subjects[subject],
-                        rankClass: exam.subjectRankClass ? exam.subjectRankClass[subject] : null,
-                        rankGrade: exam.subjectRankGrade ? exam.subjectRankGrade[subject] : null
-                    };
-                    const priorityScore = getSubjectPriorityScore(subjectData, exam.fullMarks[subject]);
-                    if (priorityScore !== null) {
-                        totalPriorityScore += priorityScore;
-                        count++;
-                    }
-                }
-            });
-
-            return count > 0 ? totalPriorityScore / count : 0;
-        });
-
-        if (window.subjectStrengthChart && typeof window.subjectStrengthChart.destroy === 'function') {
-            window.subjectStrengthChart.destroy();
-        }
-
-        window.subjectStrengthChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: subjectNames,
-                datasets: [{
-                    label: '平均得分率(%)',
-                    data: avgScores,
-                    backgroundColor: [
-                        'rgba(59, 130, 246, 0.7)',
-                        'rgba(16, 185, 129, 0.7)',
-                        'rgba(245, 158, 11, 0.7)',
-                        'rgba(239, 68, 68, 0.7)',
-                        'rgba(168, 85, 247, 0.7)',
-                        'rgba(6, 182, 212, 0.7)',
-                        'rgba(236, 72, 153, 0.7)',
-                        'rgba(209, 213, 219, 0.7)',
-                        'rgba(107, 114, 128, 0.7)'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        grid: {
-                            drawBorder: false
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
-        });
-    },
-
-    // 成绩分布图 - 显示得分率分布
-    renderScoreDistributionChart() {
-        const ctx = document.getElementById('scoreDistributionChart');
-        if (!ctx) return;
-
-        const exams = Storage.getExams();
-        if (exams.length === 0) return;
-
-        // 统计各得分率段的考试次数
-        const ranges = [
-            { name: '90%+', min: 90 },
-            { name: '80%-89%', min: 80, max: 90 },
-            { name: '70%-79%', min: 70, max: 80 },
-            { name: '60%-69%', min: 60, max: 70 },
-            { name: '<60%', max: 60 }
-        ];
-
-        const distribution = ranges.map(range => {
-            let count = 0;
-            exams.forEach(exam => {
-                // 确保totalFullMark存在且不为0，否则尝试根据科目计算总分
-                let totalFullMark = exam.totalFullMark || 0;
-                if (totalFullMark <= 0 && exam.subjects && exam.fullMarks) {
-                    totalFullMark = Object.keys(exam.subjects).reduce((sum, subject) => {
-                        return sum + (exam.fullMarks[subject] || 100);
-                    }, 0);
-                }
-                
-                // 计算得分率
-                const scoreRate = totalFullMark > 0 ? (exam.totalScore / totalFullMark) * 100 : 0;
-                
-                // 判断得分率所在区间
-                if (range.min !== undefined && range.max !== undefined) {
-                    if (scoreRate >= range.min && scoreRate < range.max) count++;
-                } else if (range.min !== undefined) {
-                    if (scoreRate >= range.min) count++;
-                } else if (range.max !== undefined) {
-                    if (scoreRate < range.max) count++;
-                }
-            });
-            return count;
-        });
-
-        if (window.scoreDistributionChart && typeof window.scoreDistributionChart.destroy === 'function') {
-            window.scoreDistributionChart.destroy();
-        }
-
-        window.scoreDistributionChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ranges.map(range => range.name),
-                datasets: [{
-                    data: distribution,
-                    backgroundColor: [
-                        'rgba(16, 185, 129, 0.7)',
-                        'rgba(59, 130, 246, 0.7)',
-                        'rgba(245, 158, 11, 0.7)',
-                        'rgba(239, 68, 68, 0.7)',
-                        'rgba(100, 116, 139, 0.7)'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
     }
 };
 
@@ -815,51 +445,7 @@ function hideModal(modalId) {
     }
 }
 
-// 主题色切换功能
-function setThemeColor(theme) {
-    // 设置主题色数据属性
-    document.body.dataset.theme = theme || '';
-    
-    // 更新按钮的active状态
-    document.querySelectorAll('.theme-color-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.theme === theme);
-    });
-    
-    // 保存到localStorage
-    try {
-        localStorage.setItem('themeColor', theme);
-    } catch (e) {
-        console.warn('无法保存主题设置到localStorage:', e);
-    }
-}
 
-// 初始化主题色设置
-function initThemeColor() {
-    // 从localStorage读取保存的主题色
-    try {
-        const savedTheme = localStorage.getItem('themeColor');
-        if (savedTheme) {
-            setThemeColor(savedTheme);
-            return;
-        }
-    } catch (e) {
-        console.warn('无法从localStorage读取主题设置:', e);
-    }
-    
-    // 默认为蓝色主题
-    setThemeColor('blue');
-}
-
-// 通用视图模式切换函数
-function switchToViewMode() {
-    document.getElementById('editModeContainer').classList.add('hidden');
-    document.getElementById('viewModeContainer').classList.remove('hidden');
-}
-
-function switchToEditMode() {
-    document.getElementById('viewModeContainer').classList.add('hidden');
-    document.getElementById('editModeContainer').classList.remove('hidden');
-}
 
 // 用户界面管理
 const UI = {
@@ -868,10 +454,7 @@ const UI = {
 
     currentPage: 'dashboard',
     editingExamIndex: -1,
-    editingSubject: '',
-    undoStack: null, // 存储可撤销的操作
     notificationTimeout: null, // 通知超时计时器
-    progressInterval: null, // 进度条动画计时器
 
     // 初始化
     init() {
@@ -896,10 +479,7 @@ const UI = {
         // 加载数据
         this.loadExams();
         this.loadProfile();
-        this.loadGoals();
         this.loadFullMarks();
-        this.loadStudentInfo();
-        this.updateDashboard();
         
         // 初始化仪表盘（确保第一次打开页面时仪表盘也能显示）
         if (document.getElementById('dashboardPage')) {
@@ -1102,21 +682,18 @@ const UI = {
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     try {
-                        const data = JSON.parse(event.target.result);
-                        if (Storage.importData(data)) {
-                            this.showNotification('success', '导入成功', '数据已成功导入');
-                            this.loadExams();
-                            this.updateDashboard();
-                            this.updateAnalysisPage();
-                            this.updateProfilePage();
-                            this.updateExamSelects();
-                        } else {
-                            this.showNotification('error', '导入失败', '数据格式错误');
-                        }
-                    } catch (error) {
-                        console.error('导入失败', error);
-                        this.showNotification('error', '导入失败', '数据格式错误');
-                    }
+            const data = JSON.parse(event.target.result);
+            if (Storage.importData(data)) {
+                this.showNotification('success', '导入成功', '数据已成功导入');
+                this.loadExams();
+                this.updateProfilePage();
+            } else {
+                this.showNotification('error', '导入失败', '数据格式错误');
+            }
+        } catch (error) {
+            console.error('导入失败', error);
+            this.showNotification('error', '导入失败', '数据格式错误');
+        }
                 };
                 reader.readAsText(file);
 
@@ -1278,7 +855,6 @@ const UI = {
     updateProfilePage() {
         // 获取存储的个人信息
         const profile = Storage.getProfile();
-        const isLoggedIn = Storage.isLoggedIn();
         
         if (profile) {
             // 重新调用loadProfile方法，确保完整的动态渲染
@@ -1385,8 +961,6 @@ const UI = {
             document.getElementById('examForm').reset();
             document.getElementById('examDate').valueAsDate = new Date();
             this.loadExams();
-            this.updateDashboard();
-            this.updateAnalysisPage();
         } else {
             this.showNotification('error', '添加失败', '保存考试记录时出错');
         }
@@ -1945,24 +1519,7 @@ const UI = {
         }, 5000);
     },
     
-    // 临时更新UI（不修改存储）
-    tempUpdateUI(index, examData, isInsert = false) {
-        const currentExams = Storage.getExams();
-        const tempExams = [...currentExams];
-        
-        if (isInsert) {
-            // 插入操作（用于撤销删除时恢复数据）
-            tempExams.splice(index, 0, examData);
-        } else {
-            // 更新操作
-            tempExams[index] = examData;
-        }
-        
-        // 使用临时数据直接更新界面
-        this.loadExams(tempExams);
-        this.updateDashboard();
-        this.updateAnalysisPage();
-    },
+
 
     // 显示删除确认
     showDeleteConfirm(index) {
@@ -2025,214 +1582,9 @@ const UI = {
         }, 5000);
     },
 
-    // 更新仪表盘
-    updateDashboard() {
-        // 检查仪表盘元素是否存在，避免在登录页面调用时出错
-        const totalScoreCard = document.getElementById('totalScoreCard');
-        if (!totalScoreCard) return;
 
-        const exams = Storage.getExams();
-        if (exams.length === 0) {
-            document.getElementById('totalScoreCard').textContent = '--';
-            document.getElementById('rankCard').textContent = '--';
-            document.getElementById('examCountCard').textContent = '0';
-            document.getElementById('averageScoreCard').textContent = '--';
-            document.getElementById('highestScoreCard').textContent = '--';
-            document.getElementById('monthlyExamCount').textContent = '0';
-            document.getElementById('totalScoreTrend').innerHTML = '<i class="fa-solid fa-minus"></i> 0%相比上次';
-            document.getElementById('rankTrend').innerHTML = '<i class="fa-solid fa-minus"></i> 0位相比上次';
-            return;
-        }
 
-        // 按日期排序，最新的在前
-        const sortedExams = [...exams].sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        // 更新考试次数
-        document.getElementById('examCountCard').textContent = exams.length;
-        
-        // 计算本月考试次数
-        const currentMonth = new Date().getMonth();
-        const currentYear = new Date().getFullYear();
-        const monthlyCount = exams.filter(exam => {
-            const examDate = new Date(exam.date);
-            return examDate.getMonth() === currentMonth && examDate.getFullYear() === currentYear;
-        }).length;
-        document.getElementById('monthlyExamCount').textContent = monthlyCount;
-        
-        // 获取最新考试数据
-        const latestExam = sortedExams[0];
-        document.getElementById('totalScoreCard').textContent = latestExam.totalScore ? latestExam.totalScore.toFixed(1) : '--';
-        
-        // 计算总分趋势
-        if (sortedExams.length > 1) {
-            const previousExam = sortedExams[1];
-            const trendElement = document.getElementById('totalScoreTrend');
-            
-            // 检查totalScore是否存在且previousExam.totalScore不为0
-            if (latestExam.totalScore !== undefined && previousExam.totalScore !== undefined && previousExam.totalScore !== 0) {
-                const scoreDiff = latestExam.totalScore - previousExam.totalScore;
-                const scorePercent = (scoreDiff / previousExam.totalScore) * 100;
-                
-                if (scoreDiff > 0) {
-                    trendElement.className = 'text-success';
-                    trendElement.innerHTML = `<i class="fa-solid fa-arrow-up"></i> ${Math.abs(scorePercent).toFixed(1)}%`;
-                } else if (scoreDiff < 0) {
-                    trendElement.className = 'text-danger';
-                    trendElement.innerHTML = `<i class="fa-solid fa-arrow-down"></i> ${Math.abs(scorePercent).toFixed(1)}%`;
-                } else {
-                    trendElement.className = 'text-gray-500';
-                    trendElement.innerHTML = '<i class="fa-solid fa-minus"></i> 0%';
-                }
-            } else {
-                trendElement.innerHTML = '<i class="fa-solid fa-minus"></i> 0%相比上次';
-            }
-        } else {
-            document.getElementById('totalScoreTrend').innerHTML = '<i class="fa-solid fa-minus"></i> 0%';
-        }
-        
-        // 更新排名
-        if (latestExam.rankClass) {
-            document.getElementById('rankCard').textContent = latestExam.rankClass;
-            
-            // 计算排名趋势
-            if (sortedExams.length > 1) {
-                const previousExam = sortedExams[1];
-                if (previousExam.rankClass) {
-                    const rankDiff = latestExam.rankClass - previousExam.rankClass;
-                    const trendElement = document.getElementById('rankTrend');
-                    
-                    if (rankDiff < 0) {
-                        trendElement.className = 'text-success';
-                        trendElement.innerHTML = `<i class="fa-solid fa-arrow-up"></i> ${Math.abs(rankDiff)}位`;
-                    } else if (rankDiff > 0) {
-                        trendElement.className = 'text-danger';
-                        trendElement.innerHTML = `<i class="fa-solid fa-arrow-down"></i> ${rankDiff}位`;
-                    } else {
-                        trendElement.className = 'text-gray-500';
-                        trendElement.innerHTML = '<i class="fa-solid fa-minus"></i> 0位';
-                    }
-                }
-            }
-        } else {
-            document.getElementById('rankCard').textContent = '--';
-        }
-        
-        // 计算平均成绩和最高成绩
-        const validTotalScores = exams
-            .map(exam => exam.totalScore)
-            .filter(score => score !== undefined && score !== null && !isNaN(score));
-        
-        let averageScore = '--';
-        let highestScore = '--';
-        
-        if (validTotalScores.length > 0) {
-            averageScore = validTotalScores.reduce((sum, score) => sum + score, 0) / validTotalScores.length;
-            highestScore = Math.max(...validTotalScores);
-        }
-        
-        document.getElementById('averageScoreCard').textContent = typeof averageScore === 'number' ? averageScore.toFixed(1) : averageScore;
-        document.getElementById('highestScoreCard').textContent = typeof highestScore === 'number' ? highestScore.toFixed(1) : highestScore;
-        
-        // 更新考试总结
-        const summaryElement = document.getElementById('latestExamSummary');
-        if (latestExam.summary && latestExam.summary.trim() !== '') {
-            const date = new Date(latestExam.date);
-            const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-            summaryElement.innerHTML = `
-                <div class="mb-2 flex justify-between items-center">
-                    <span class="font-medium text-primary dark:text-blue-400">${latestExam.name}</span>
-                    <span class="text-sm text-gray-500 dark:text-gray-400">${formattedDate}</span>
-                </div>
-                <p>${latestExam.summary}</p>
-            `;
-        } else {
-            summaryElement.innerHTML = '<p class="text-center text-gray-400 dark:text-gray-500">最近的考试没有添加总结</p>';
-        }
-    },
 
-    // 更新分析页面
-    updateAnalysisPage() {
-        // 检查分析页面元素是否存在，避免在登录页面调用时出错
-        const chineseAvgScore = document.getElementById('chineseAvgScore');
-        if (!chineseAvgScore) return;
-
-        const exams = Storage.getExams();
-        if (exams.length === 0) return;
-
-        const subjects = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
-        const subjectNames = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
-        
-        subjects.forEach((subject, index) => {
-            let totalScore = 0;
-            let totalFullMark = 0;
-            let totalClassRank = 0;
-            let totalGradeRank = 0;
-            let countScore = 0;
-            let countClassRank = 0;
-            let countGradeRank = 0;
-            
-            // 计算排名率的总和和计数
-            let totalClassRankRate = 0;
-            let totalGradeRankRate = 0;
-            let countClassRankRate = 0;
-            let countGradeRankRate = 0;
-            
-            exams.forEach(exam => {
-                // 计算平均分和得分率
-                if (exam.subjects && exam.fullMarks && exam.subjects[subject] !== undefined && exam.fullMarks[subject] > 0) {
-                    totalScore += exam.subjects[subject];
-                    totalFullMark += exam.fullMarks[subject];
-                    countScore++;
-                }
-                
-                // 计算班级排名和班级排名率
-                if (exam.subjectRankClass && exam.subjectRankClass[subject] !== undefined && exam.subjectRankClass[subject] > 0) {
-                    const classRank = exam.subjectRankClass[subject];
-                    totalClassRank += classRank;
-                    countClassRank++;
-                    
-                    // 计算班级排名率
-                    const classRankRate = ((classRank / 51) * 100);
-                    totalClassRankRate += classRankRate;
-                    countClassRankRate++;
-                }
-                
-                // 计算年级排名和年级排名率
-                if (exam.subjectRankGrade && exam.subjectRankGrade[subject] !== undefined && exam.subjectRankGrade[subject] > 0) {
-                    const gradeRank = exam.subjectRankGrade[subject];
-                    totalGradeRank += gradeRank;
-                    countGradeRank++;
-                    
-                    // 计算年级排名率
-                    const gradeRankRate = ((gradeRank / 650) * 100);
-                    totalGradeRankRate += gradeRankRate;
-                    countGradeRankRate++;
-                }
-            });
-            
-            const avgScore = countScore > 0 ? totalScore / countScore : 0;
-            const avgRate = countScore > 0 ? (totalScore / totalFullMark) * 100 : 0;
-            const avgClassRank = countClassRank > 0 ? totalClassRank / countClassRank : '--';
-            const avgGradeRank = countGradeRank > 0 ? totalGradeRank / countGradeRank : '--';
-            
-            // 计算平均班级排名率和平均年级排名率
-            const avgClassRankRate = countClassRankRate > 0 ? totalClassRankRate / countClassRankRate : '--';
-            const avgGradeRankRate = countGradeRankRate > 0 ? totalGradeRankRate / countGradeRankRate : '--';
-            
-            // 更新平均分和得分率
-            document.getElementById(`${subject}AvgScore`).textContent = avgScore.toFixed(1);
-            document.getElementById(`${subject}ScoreRate`).textContent = avgRate.toFixed(1);
-            document.getElementById(`${subject}ScoreBar`).style.width = `${Math.min(avgRate, 100)}%`;
-            
-            // 更新班级排名和年级排名
-            document.getElementById(`${subject}ClassRank`).textContent = typeof avgClassRank === 'number' ? avgClassRank.toFixed(1) : avgClassRank;
-            document.getElementById(`${subject}GradeRank`).textContent = typeof avgGradeRank === 'number' ? avgGradeRank.toFixed(1) : avgGradeRank;
-            
-            // 更新班级排名率和年级排名率
-            document.getElementById(`${subject}ClassRankRate`).textContent = typeof avgClassRankRate === 'number' ? avgClassRankRate.toFixed(1) + '%' : avgClassRankRate;
-            document.getElementById(`${subject}GradeRankRate`).textContent = typeof avgGradeRankRate === 'number' ? avgGradeRankRate.toFixed(1) + '%' : avgGradeRankRate;
-        });
-    },
 
     // 加载个人信息
     loadProfile() {
@@ -2525,30 +1877,7 @@ const UI = {
         }
     },
 
-    // 撤销操作
-    undoAction() {
-        if (this.undoStack && this.undoStack.undo) {
-            this.undoStack.undo();
-            
-            // 清除定时器
-            if (this.notificationTimeout) {
-                clearTimeout(this.notificationTimeout);
-                this.notificationTimeout = null;
-            }
-            if (this.progressInterval) {
-                clearInterval(this.progressInterval);
-                this.progressInterval = null;
-            }
-            
-            // 隐藏当前通知
-            this.hideNotification();
-            
-            // 显示撤销成功通知
-            setTimeout(() => {
-                this.showNotification('success', '撤销成功', '您的操作已成功撤销', false);
-            }, 300);
-        }
-    },
+
 
     // 切换主题
     toggleTheme() {
