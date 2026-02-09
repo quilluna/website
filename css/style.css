@@ -635,45 +635,32 @@ table tbody tr:last-child {
     border-radius: 9999px;
     white-space: nowrap;
 }
-.badge-excellent,
-.badge-优秀 {
-    background-color: #dcfce7;
-    color: #166534;
-}
-.dark .badge-excellent,
-.dark .badge-优秀 {
-    background-color: #064e3b;
-    color: #d1fae5;
-}
-.badge-good,
-.badge-良好 {
-    background-color: #dbeafe;
-    color: #1e40af;
-}
-.dark .badge-good,
-.dark .badge-良好 {
-    background-color: #172554;
-    color: #bfdbfe;
-}
+/* 浅色模式 - 通过徽章 */
 .badge-passed,
 .badge-及格 {
-    background-color: #fef3c7;
-    color: #92400e;
+    background-color: #10b981;
+    color: #ffffff;
 }
+
+/* 深色模式 - 通过徽章 */
 .dark .badge-passed,
 .dark .badge-及格 {
-    background-color: #92400e;
-    color: #fef3c7;
+    background-color: #059669;
+    color: #ffffff;
 }
+
+/* 浅色模式 - 未通过徽章 */
 .badge-failed,
 .badge-不及格 {
-    background-color: #fee2e2;
-    color: #991b1b;
+    background-color: #ef4444;
+    color: #ffffff;
 }
+
+/* 深色模式 - 未通过徽章 */
 .dark .badge-failed,
 .dark .badge-不及格 {
-    background-color: #991b1b;
-    color: #fee2e2;
+    background-color: #dc2626;
+    color: #ffffff;
 }
 
 /* 动画 */

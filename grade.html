@@ -44,11 +44,11 @@
                             <div class="px-3 py-3">
                                 <div class="flex justify-between items-center">
                                     <span class="text-sm">版本号</span>
-                                    <span class="text-sm font-medium">0.1.1-release</span>
+                                    <span class="text-sm font-medium">0.2.0-beta</span>
                                 </div>
                                 <div class="flex justify-between items-center mt-1">
                                     <span class="text-sm">构建时间</span>
-                                    <span class="text-sm font-medium">2025-12-14</span>
+                                    <span class="text-sm font-medium">2026-2-9</span>
                                 </div>
                                 <div class="flex justify-between items-center mt-3">
                                     <span class="text-sm">构建作者</span>
@@ -109,104 +109,56 @@
             </header>
 
             <!-- 仪表盘页面 -->
-            <div id="dashboardPage" class="page-content container mx-auto p-4">
-                <!-- 仪表盘内容 -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <!-- 总分卡片 -->
-                    <div class="card scale-hover">
-                        <div class="flex justify-between items-center">
+            <div id="dashboardPage" class="page-content container mx-auto p-4 min-h-screen flex flex-col">
+                <!-- 问候语区域 -->
+                <div class="text-center mb-10 mt-4">
+                    <h1 id="greeting" class="text-4xl md:text-5xl font-bold mb-2"></h1>
+                </div>
+
+                <!-- 主要内容区域 -->
+                <div class="max-w-3xl mx-auto mb-8 flex-grow">
+                    <!-- 1) 最近一次考试 -->
+                    <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm mb-8">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">当前总分</p>
-                                <h3 id="totalScoreCard" class="text-2xl font-bold">--</h3>
+                                <h3 class="text-lg font-semibold mb-2">最近一次考试</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">总分</p>
+                                <h4 id="latestExamScore" class="text-3xl font-bold mt-1">--</h4>
                             </div>
-                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-primary dark:bg-blue-900">
-                                <i class="fa-solid fa-graduation-cap"></i>
+                            <div class="mt-4 md:mt-0">
+                                <button id="viewAllExamsBtn" class="btn btn-primary">
+                                    <i class="fa-solid fa-list"></i>
+                                    <span>查看全部</span>
+                                </button>
                             </div>
-                        </div>
-                        <div class="mt-2 flex items-center text-sm">
-                            <span id="totalScoreTrend" class="text-success">
-                                <i class="fa-solid fa-arrow-up"></i> 0%
-                            </span>
-                            <span class="text-gray-500 dark:text-gray-400 ml-2">相比上次</span>
                         </div>
                     </div>
 
-                    <!-- 排名卡片 -->
-                    <div class="card scale-hover">
-                        <div class="flex justify-between items-center">
+                    <!-- 2) 新增考试录入 -->
+                    <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">班级排名</p>
-                                <h3 id="rankCard" class="text-2xl font-bold">--</h3>
+                                <h3 class="text-lg font-semibold mb-2">新增了考试？</h3>
+                                <p class="text-gray-600 dark:text-gray-300">去录入成绩</p>
                             </div>
-                            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-success dark:bg-green-900">
-                                <i class="fa-solid fa-trophy"></i>
+                            <div class="mt-4 md:mt-0">
+                                <button id="goToInputBtn" class="btn btn-secondary">
+                                    <i class="fa-solid fa-plus"></i>
+                                    <span>成绩录入</span>
+                                </button>
                             </div>
-                        </div>
-                        <div class="mt-2 flex items-center text-sm">
-                            <span id="rankTrend" class="text-danger">
-                                <i class="fa-solid fa-arrow-down"></i> 0位
-                            </span>
-                            <span class="text-gray-500 dark:text-gray-400 ml-2">相比上次</span>
-                        </div>
-                    </div>
-
-                    <!-- 考试次数卡片 -->
-                    <div class="card scale-hover">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">考试次数</p>
-                                <h3 id="examCountCard" class="text-2xl font-bold">0</h3>
-                            </div>
-                            <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-warning dark:bg-yellow-900">
-                                <i class="fa-solid fa-calendar"></i>
-                            </div>
-                        </div>
-                        <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
-                            <span>本月新增: <span id="monthlyExamCount">0</span></span>
-                        </div>
-                    </div>
-
-                    <!-- 平均成绩卡片 -->
-                    <div class="card scale-hover">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">平均成绩</p>
-                                <h3 id="averageScoreCard" class="text-2xl font-bold">--</h3>
-                            </div>
-                            <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 dark:bg-purple-900">
-                                <i class="fa-solid fa-chart-bar"></i>
-                            </div>
-                        </div>
-                        <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
-                            <span>最高: <span id="highestScoreCard">--</span></span>
                         </div>
                     </div>
                 </div>
 
-                <!-- 图表区域 -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- 成绩趋势图 -->
-                    <div class="card scale-hover">
-                        <h3 class="text-lg font-semibold mb-4">成绩趋势</h3>
-                        <div class="h-80">
-                            <canvas id="scoreTrendChart"></canvas>
+                <!-- 一言区域 - 页面底部 -->
+                <div class="max-w-3xl mx-auto mt-auto">
+                    <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+                        <h3 class="text-lg font-semibold mb-4">一言</h3>
+                        <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <p id="hitokoto" class="text-gray-600 dark:text-gray-300 italic text-lg text-center"></p>
+                            <p id="hitokotoFrom" class="text-sm text-gray-500 dark:text-gray-400 mt-2 text-center"></p>
                         </div>
-                    </div>
-
-                    <!-- 科目雷达图 -->
-                    <div class="card scale-hover">
-                        <h3 class="text-lg font-semibold mb-4">科目分布</h3>
-                        <div class="h-80">
-                            <canvas id="subjectRadarChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 考试总结区域 -->
-                <div class="card mt-6 scale-hover">
-                    <h3 class="text-lg font-semibold mb-4">最近考试总结</h3>
-                    <div id="latestExamSummary" class="text-gray-600 dark:text-gray-300 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <p class="text-center text-gray-400 dark:text-gray-500">暂无考试总结</p>
                     </div>
                 </div>
             </div>
@@ -490,196 +442,110 @@
 
             <!-- 成绩分析页面 -->
             <div id="analysisPage" class="page-content container mx-auto p-4 hidden">
-                <!-- 分析图表 -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                    <!-- 排名对比图 -->
-                    <div class="card lg:col-span-3">
-                        <h3 class="text-lg font-semibold mb-4">排名变化趋势</h3>
+                <!-- 标签页导航 -->
+                <div class="mb-6 border-b">
+                    <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="analysisTabs" role="tablist">
+                        <li class="mr-2" role="presentation">
+                            <button class="inline-block p-4 border-b-2 border-primary rounded-t-lg active text-gray-700 dark:text-gray-200" id="overview-tab" data-tab="overview" type="button" role="tab" aria-controls="overview" aria-selected="true">
+                                全览
+                            </button>
+                        </li>
+                        <li class="mr-2" role="presentation">
+                            <button class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-300 text-gray-700 dark:text-gray-300" id="subject-detail-tab" data-tab="subject-detail" type="button" role="tab" aria-controls="subject-detail" aria-selected="false">
+                                单科详情
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 全览标签页内容 -->
+                <div id="overview" class="tab-content active">
+                    <!-- 总分趋势 -->
+                    <div class="card mb-6">
+                        <h3 class="text-lg font-semibold mb-4">总分趋势</h3>
                         <div class="h-80">
-                            <canvas id="rankComparisonChart"></canvas>
+                            <canvas id="totalScoreTrendChart"></canvas>
                         </div>
                     </div>
 
-                    <!-- 科目强弱分析 -->
-                    <div class="card">
-                        <h3 class="text-lg font-semibold mb-4">科目强弱分析</h3>
-                        <div class="h-80">
-                            <canvas id="subjectStrengthChart"></canvas>
+                    <!-- 各科雷达图 -->
+                    <div class="card mb-6">
+                        <h3 class="text-lg font-semibold mb-4">各科分析雷达图</h3>
+                        <div class="h-96">
+                            <canvas id="subjectRadarChart"></canvas>
                         </div>
                     </div>
 
-                    <!-- 总分分布 -->
+                    <!-- 建议 -->
                     <div class="card">
-                        <h3 class="text-lg font-semibold mb-4">总分分布</h3>
-                        <div class="h-80">
-                            <canvas id="scoreDistributionChart"></canvas>
+                        <h3 class="text-lg font-semibold mb-4">学习建议</h3>
+                        <div id="studyAdvice" class="p-4 bg-gray-50 rounded-lg dark:bg-gray-700">
+                            <p class="text-gray-600 dark:text-gray-300 mb-4">
+                                <i class="fa-solid fa-lightbulb text-yellow-500 mr-2"></i>
+                                <strong>优势科目：</strong><span id="strengthSubjects">--</span>
+                            </p>
+                            <p class="text-gray-600 dark:text-gray-300 mb-4">
+                                <i class="fa-solid fa-exclamation-triangle text-orange-500 mr-2"></i>
+                                <strong>弱势科目：</strong><span id="weakSubjects">--</span>
+                            </p>
+                            <p class="text-gray-600 dark:text-gray-300">
+                                <i class="fa-solid fa-star text-primary mr-2"></i>
+                                <strong>总体建议：</strong><span id="generalAdvice">请先录入考试数据，系统将为你生成个性化的学习建议。</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 单科详情标签页内容 -->
+                <div id="subject-detail" class="tab-content hidden">
+                    <!-- 科目选择 -->
+                    <div class="card mb-6">
+                        <h3 class="text-lg font-semibold mb-4">选择科目</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                            <button class="subject-select-btn btn btn-outline-primary" data-subject="chinese">语文</button>
+                            <button class="subject-select-btn btn btn-outline-primary" data-subject="math">数学</button>
+                            <button class="subject-select-btn btn btn-outline-primary" data-subject="english">英语</button>
+                            <button class="subject-select-btn btn btn-outline-primary" data-subject="physics">物理</button>
+                            <button class="subject-select-btn btn btn-outline-primary" data-subject="chemistry">化学</button>
+                            <button class="subject-select-btn btn btn-outline-primary" data-subject="biology">生物</button>
+                            <button class="subject-select-btn btn btn-outline-primary" data-subject="politics">政治</button>
+                            <button class="subject-select-btn btn btn-outline-primary" data-subject="history">历史</button>
+                            <button class="subject-select-btn btn btn-outline-primary" data-subject="geography">地理</button>
                         </div>
                     </div>
 
-                    <!-- 科目详情 -->
-                    <div class="card">
-                        <h3 class="text-lg font-semibold mb-4">科目详情</h3>
-                        <div class="space-y-4">
-                            <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-sm font-medium">语文</span>
-                                    <span id="chineseAvgScore" class="text-sm font-semibold">--</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
-                                    <div id="chineseScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
-                                </div>
-                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                    <div>年级排名率: <span id="chineseGradeRankRate">--</span></div>
-                                    <div>班级排名率: <span id="chineseClassRankRate">--</span></div>
-                                    <div>得分率: <span id="chineseScoreRate">--</span>%</div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                    <div>班级排名: <span id="chineseClassRank">--</span></div>
-                                    <div>年级排名: <span id="chineseGradeRank">--</span></div>
+                    <!-- 科目详情展示 -->
+                    <div id="subjectDetailContent" class="card">
+                        <h3 class="text-lg font-semibold mb-4">
+                            <span id="selectedSubjectName">请选择科目</span> 详情
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- 科目成绩趋势 -->
+                            <div class="bg-gray-50 p-6 rounded-lg dark:bg-gray-700">
+                                <div>
+                                    <h4 class="text-md font-medium mb-2">成绩和排名趋势</h4>
+                                    <div class="h-80">
+                                        <canvas id="subjectRankTrendChart"></canvas>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-sm font-medium">数学</span>
-                                    <span id="mathAvgScore" class="text-sm font-semibold">--</span>
+
+                            <!-- 单科建议 -->
+                            <div class="bg-gray-50 p-6 rounded-lg dark:bg-gray-700">
+                                <h4 class="text-md font-medium mb-4">单科建议</h4>
+                                <div id="subjectAdvice" class="text-gray-600 dark:text-gray-300">
+                                    <p class="text-center text-gray-400 dark:text-gray-500">
+                                        请选择一个科目查看详细建议
+                                    </p>
                                 </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
-                                    <div id="mathScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
-                                </div>
-                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                    <div>年级排名率: <span id="mathGradeRankRate">--</span></div>
-                                    <div>班级排名率: <span id="mathClassRankRate">--</span></div>
-                                    <div>得分率: <span id="mathScoreRate">--</span>%</div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                    <div>班级排名: <span id="mathClassRank">--</span></div>
-                                    <div>年级排名: <span id="mathGradeRank">--</span></div>
-                                </div>
-                            </div>
-                            <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-sm font-medium">英语</span>
-                                    <span id="englishAvgScore" class="text-sm font-semibold">--</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
-                                    <div id="englishScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
-                                </div>
-                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                    <div>年级排名率: <span id="englishGradeRankRate">--</span></div>
-                                    <div>班级排名率: <span id="englishClassRankRate">--</span></div>
-                                    <div>得分率: <span id="englishScoreRate">--</span>%</div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                    <div>班级排名: <span id="englishClassRank">--</span></div>
-                                    <div>年级排名: <span id="englishGradeRank">--</span></div>
-                                </div>
-                            </div>
-                            <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-sm font-medium">物理</span>
-                                    <span id="physicsAvgScore" class="text-sm font-semibold">--</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
-                                    <div id="physicsScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
-                                </div>
-                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                    <div>年级排名率: <span id="physicsGradeRankRate">--</span></div>
-                                    <div>班级排名率: <span id="physicsClassRankRate">--</span></div>
-                                    <div>得分率: <span id="physicsScoreRate">--</span>%</div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                    <div>班级排名: <span id="physicsClassRank">--</span></div>
-                                    <div>年级排名: <span id="physicsGradeRank">--</span></div>
-                                </div>
-                            </div>
-                            <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-sm font-medium">化学</span>
-                                    <span id="chemistryAvgScore" class="text-sm font-semibold">--</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
-                                    <div id="chemistryScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
-                                </div>
-                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                    <div>年级排名率: <span id="chemistryGradeRankRate">--</span></div>
-                                    <div>班级排名率: <span id="chemistryClassRankRate">--</span></div>
-                                    <div>得分率: <span id="chemistryScoreRate">--</span>%</div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                    <div>班级排名: <span id="chemistryClassRank">--</span></div>
-                                    <div>年级排名: <span id="chemistryGradeRank">--</span></div>
-                                </div>
-                            </div>
-                            <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-sm font-medium">生物</span>
-                                    <span id="biologyAvgScore" class="text-sm font-semibold">--</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
-                                    <div id="biologyScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
-                                </div>
-                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                    <div>年级排名率: <span id="biologyGradeRankRate">--</span></div>
-                                    <div>班级排名率: <span id="biologyClassRankRate">--</span></div>
-                                    <div>得分率: <span id="biologyScoreRate">--</span>%</div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                    <div>班级排名: <span id="biologyClassRank">--</span></div>
-                                    <div>年级排名: <span id="biologyGradeRank">--</span></div>
-                                </div>
-                            </div>
-                            <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-sm font-medium">政治</span>
-                                    <span id="politicsAvgScore" class="text-sm font-semibold">--</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
-                                    <div id="politicsScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
-                                </div>
-                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                    <div>年级排名率: <span id="politicsGradeRankRate">--</span></div>
-                                    <div>班级排名率: <span id="politicsClassRankRate">--</span></div>
-                                    <div>得分率: <span id="politicsScoreRate">--</span>%</div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                    <div>班级排名: <span id="politicsClassRank">--</span></div>
-                                    <div>年级排名: <span id="politicsGradeRank">--</span></div>
-                                </div>
-                            </div>
-                            <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-sm font-medium">历史</span>
-                                    <span id="historyAvgScore" class="text-sm font-semibold">--</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
-                                    <div id="historyScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
-                                </div>
-                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                    <div>年级排名率: <span id="historyGradeRankRate">--</span></div>
-                                    <div>班级排名率: <span id="historyClassRankRate">--</span></div>
-                                    <div>得分率: <span id="historyScoreRate">--</span>%</div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                    <div>班级排名: <span id="historyClassRank">--</span></div>
-                                    <div>年级排名: <span id="historyGradeRank">--</span></div>
-                                </div>
-                            </div>
-                            <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-sm font-medium">地理</span>
-                                    <span id="geographyAvgScore" class="text-sm font-semibold">--</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-600 mb-2">
-                                    <div id="geographyScoreBar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
-                                </div>
-                                <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                    <div>年级排名率: <span id="geographyGradeRankRate">--</span></div>
-                                    <div>班级排名率: <span id="geographyClassRankRate">--</span></div>
-                                    <div>得分率: <span id="geographyScoreRate">--</span>%</div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                    <div>班级排名: <span id="geographyClassRank">--</span></div>
-                                    <div>年级排名: <span id="geographyGradeRank">--</span></div>
+                                <div class="mt-6">
+                                    <h4 class="text-md font-medium mb-2">学习状态</h4>
+                                    <div id="subjectStatus" class="flex items-center">
+                                        <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600">
+                                            <div id="subjectStatusBar" class="bg-primary h-2.5 rounded-full" style="width: 0%"></div>
+                                        </div>
+                                        <span id="subjectStatusText" class="ml-3 text-sm font-medium">--</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1586,6 +1452,580 @@
                 }
             }
         }
+
+        // 成绩分析页面功能
+        function initAnalysisPage() {
+            // 标签页切换功能
+            const tabs = document.querySelectorAll('#analysisTabs button');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // 更新标签页状态
+                    tabs.forEach(t => {
+                        t.classList.remove('border-primary', 'active');
+                        t.classList.add('border-transparent');
+                        t.setAttribute('aria-selected', 'false');
+                        t.classList.remove('text-gray-700', 'dark:text-gray-200');
+                        t.classList.add('text-gray-700', 'dark:text-gray-300');
+                    });
+                    this.classList.add('border-primary', 'active');
+                    this.classList.remove('border-transparent');
+                    this.setAttribute('aria-selected', 'true');
+                    this.classList.remove('text-gray-700', 'dark:text-gray-300');
+                    this.classList.add('text-gray-700', 'dark:text-gray-200');
+                    
+                    // 显示对应内容
+                    const tabContents = document.querySelectorAll('.tab-content');
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                        content.classList.add('hidden');
+                    });
+                    document.getElementById(tabId).classList.add('active');
+                    document.getElementById(tabId).classList.remove('hidden');
+                    
+                    // 如果切换到全览标签页，初始化图表
+                    if (tabId === 'overview') {
+                        initOverviewCharts();
+                    }
+                });
+            });
+
+            // 科目选择功能
+            const subjectButtons = document.querySelectorAll('.subject-select-btn');
+            subjectButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const subject = this.getAttribute('data-subject');
+                    const subjectName = this.textContent;
+                    
+                    // 更新选中状态
+                    subjectButtons.forEach(btn => btn.classList.remove('btn-primary'));
+                    this.classList.add('btn-primary');
+                    
+                    // 更新科目名称
+                    document.getElementById('selectedSubjectName').textContent = subjectName;
+                    
+                    // 加载科目详情
+                    loadSubjectDetail(subject, subjectName);
+                });
+            });
+            
+            // 自动初始化全览标签页的图表
+            initOverviewCharts();
+        }
+
+        // 初始化全览页面图表
+        function initOverviewCharts() {
+            const exams = Storage.getExams().sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // 总分趋势图
+            const totalScoreCtx = document.getElementById('totalScoreTrendChart');
+            if (totalScoreCtx && exams.length > 0) {
+                const examNames = exams.map(exam => exam.name);
+                const totalScores = exams.map(exam => exam.totalScore || 0);
+                const classRanks = exams.map(exam => exam.rankClass || null);
+                const gradeRanks = exams.map(exam => exam.rankGrade || null);
+                
+                new Chart(totalScoreCtx, {
+                    type: 'line',
+                    data: {
+                        labels: examNames,
+                        datasets: [
+                            {
+                                label: '总分',
+                                data: totalScores,
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                tension: 0.3,
+                                fill: true,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: '班级排名',
+                                data: classRanks,
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                tension: 0.3,
+                                yAxisID: 'y1'
+                            },
+                            {
+                                label: '年级排名',
+                                data: gradeRanks,
+                                borderColor: '#f59e0b',
+                                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                tension: 0.3,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true
+                            }
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: '分数'
+                                },
+                                beginAtZero: false,
+                                min: Math.min(...totalScores) - 50
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: '排名'
+                                },
+                                beginAtZero: false,
+                                reverse: true,
+                                grid: {
+                                    drawOnChartArea: false
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 各科雷达图
+            const radarCtx = document.getElementById('subjectRadarChart');
+            if (radarCtx && exams.length > 0) {
+                // 获取最近一次考试的数据
+                const latestExam = exams[exams.length - 1];
+                const subjects = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
+                const subjectKeys = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+                
+                // 计算得分率
+                const scoreRates = subjectKeys.map(key => {
+                    if (latestExam.subjects && latestExam.fullMarks && latestExam.subjects[key] && latestExam.fullMarks[key]) {
+                        return latestExam.subjects[key] / latestExam.fullMarks[key];
+                    }
+                    return 0;
+                });
+                
+                // 计算班级排名率（排名率越低越好，转换为1-排名率）
+                const classRankRates = subjectKeys.map(key => {
+                    if (latestExam.subjectRankClass && latestExam.subjectRankClass[key]) {
+                        return 1 - (latestExam.subjectRankClass[key] / 51);
+                    }
+                    return 0;
+                });
+                
+                // 计算年级排名率（排名率越低越好，转换为1-排名率）
+                const gradeRankRates = subjectKeys.map(key => {
+                    if (latestExam.subjectRankGrade && latestExam.subjectRankGrade[key]) {
+                        return 1 - (latestExam.subjectRankGrade[key] / 620);
+                    }
+                    return 0;
+                });
+                
+                new Chart(radarCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: subjects,
+                        datasets: [
+                            {
+                                label: '得分率',
+                                data: scoreRates,
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                            },
+                            {
+                                label: '班级排名率',
+                                data: classRankRates,
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.2)'
+                            },
+                            {
+                                label: '年级排名率',
+                                data: gradeRankRates,
+                                borderColor: '#f59e0b',
+                                backgroundColor: 'rgba(245, 158, 11, 0.2)'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 1,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value * 100 + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 生成学习建议
+            generateStudyAdvice();
+        }
+
+        // 生成学习建议
+        function generateStudyAdvice() {
+            const exams = Storage.getExams();
+            if (exams.length === 0) {
+                document.getElementById('strengthSubjects').textContent = '暂无数据';
+                document.getElementById('weakSubjects').textContent = '暂无数据';
+                document.getElementById('generalAdvice').textContent = '请先录入考试数据，系统将为你生成个性化的学习建议。';
+                return;
+            }
+            
+            // 获取最近一次考试的数据（按日期排序）
+            const sortedExams = exams.sort((a, b) => new Date(b.date) - new Date(a.date));
+            const latestExam = sortedExams[0];
+            const subjectKeys = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology'];
+            const subjectNames = ['语文', '数学', '英语', '物理', '化学', '生物'];
+            const subjectScores = [];
+            
+            // 计算各科得分率
+            subjectKeys.forEach((key, index) => {
+                if (latestExam.subjects && latestExam.fullMarks && latestExam.subjects[key] && latestExam.fullMarks[key]) {
+                    const scoreRate = latestExam.subjects[key] / latestExam.fullMarks[key];
+                    subjectScores.push({ name: subjectNames[index], score: scoreRate });
+                }
+            });
+            
+            // 检查是否有有效科目数据
+            if (subjectScores.length === 0) {
+                document.getElementById('strengthSubjects').textContent = '暂无数据';
+                document.getElementById('weakSubjects').textContent = '暂无数据';
+                document.getElementById('generalAdvice').textContent = '请先录入完整的考试数据，系统将为你生成个性化的学习建议。';
+                return;
+            }
+            
+            // 排序科目得分率
+            subjectScores.sort((a, b) => b.score - a.score);
+            
+            // 确定优势科目和弱势科目
+            const topSubjects = subjectScores.slice(0, 2).map(s => s.name).join('、');
+            const weakSubjects = subjectScores.slice(-2).map(s => s.name).join('、');
+            
+            // 生成建议
+            document.getElementById('strengthSubjects').textContent = topSubjects || '暂无数据';
+            document.getElementById('weakSubjects').textContent = weakSubjects || '暂无数据';
+            document.getElementById('generalAdvice').textContent = `继续保持${topSubjects}的优势，加强${weakSubjects}的基础知识学习。建议制定合理的学习计划，注重错题整理和知识点巩固。保持积极的学习态度，相信你会取得更大的进步！`;
+        }
+
+        // 加载科目详情
+        function loadSubjectDetail(subject, subjectName) {
+            const exams = Storage.getExams().sort((a, b) => new Date(a.date) - new Date(b.date));
+            if (exams.length === 0) {
+                document.getElementById('subjectScore').textContent = '--';
+                document.getElementById('subjectClassRank').textContent = '--';
+                document.getElementById('subjectGradeRank').textContent = '--';
+                document.getElementById('subjectAdvice').innerHTML = '<p>请先录入考试数据</p>';
+                document.getElementById('subjectStatusText').textContent = '--';
+                return;
+            }
+            
+            // 获取最近一次考试的科目数据
+            const latestExam = exams[exams.length - 1];
+            let score = 0;
+            let classRank = '--';
+            let gradeRank = '--';
+            let status = 0;
+            let advice = '';
+            
+            if (latestExam.subjects && latestExam.subjects[subject]) {
+                score = latestExam.subjects[subject];
+            }
+            
+            if (latestExam.subjectRankClass && latestExam.subjectRankClass[subject]) {
+                classRank = latestExam.subjectRankClass[subject];
+            }
+            
+            if (latestExam.subjectRankGrade && latestExam.subjectRankGrade[subject]) {
+                gradeRank = latestExam.subjectRankGrade[subject];
+            }
+            
+            // 计算平均排名（使用所有考试的排名数据）
+            let totalClassRank = 0;
+            let totalGradeRank = 0;
+            let classRankCount = 0;
+            let gradeRankCount = 0;
+            
+            exams.forEach(exam => {
+                if (exam.subjectRankClass && exam.subjectRankClass[subject]) {
+                    totalClassRank += exam.subjectRankClass[subject];
+                    classRankCount++;
+                }
+                if (exam.subjectRankGrade && exam.subjectRankGrade[subject]) {
+                    totalGradeRank += exam.subjectRankGrade[subject];
+                    gradeRankCount++;
+                }
+            });
+            
+            // 计算平均排名得分（排名越小越好，转换为0-1的得分）
+            let avgRankScore = 0;
+            if (classRankCount > 0 || gradeRankCount > 0) {
+                // 使用班级排名和年级排名的平均值
+                let avgClassRank = classRankCount > 0 ? totalClassRank / classRankCount : 26; // 假设班级有51人，默认排名26
+                let avgGradeRank = gradeRankCount > 0 ? totalGradeRank / gradeRankCount : 310; // 假设年级有620人，默认排名310
+                
+                // 转换为0-1的得分（排名越小得分越高）
+                const classRankScore = 1 - (avgClassRank / 51); // 班级51人
+                const gradeRankScore = 1 - (avgGradeRank / 620); // 年级620人
+                
+                // 综合得分（班级排名权重更高）
+                avgRankScore = (classRankScore * 0.6 + gradeRankScore * 0.4);
+                // 确保得分在0-1之间
+                avgRankScore = Math.max(0, Math.min(1, avgRankScore));
+            }
+            
+            // 如果没有排名数据，使用得分率作为备用
+            if (avgRankScore === 0 && latestExam.subjects && latestExam.fullMarks && latestExam.subjects[subject] && latestExam.fullMarks[subject]) {
+                avgRankScore = latestExam.subjects[subject] / latestExam.fullMarks[subject];
+            }
+            
+            status = avgRankScore;
+            
+            // 生成建议
+            if (status >= 0.9) {
+                advice = `${subjectName}成绩优秀，继续保持。建议挑战一些难题，拓展解题思路，保持领先地位。`;
+            } else if (status >= 0.8) {
+                advice = `${subjectName}成绩良好，建议加强知识点的系统性整理，多做练习题巩固知识点。`;
+            } else if (status >= 0.7) {
+                advice = `${subjectName}成绩中等，建议注重基础知识的学习，多做练习题，提高解题能力。`;
+            } else {
+                advice = `${subjectName}成绩有待提高，建议加强基础知识学习，多做练习题，注重理解概念和公式的应用。`;
+            }
+            
+            // 更新建议
+            document.getElementById('subjectAdvice').innerHTML = `<p>${advice}</p>`;
+            
+            // 更新学习状态
+            const statusBar = document.getElementById('subjectStatusBar');
+            const statusText = document.getElementById('subjectStatusText');
+            statusBar.style.width = (status * 100) + '%';
+            
+            // 清空之前的状态文本类
+            statusText.className = 'ml-3 text-sm font-medium';
+            
+            if (status >= 0.9) {
+                statusText.textContent = '优秀';
+                statusText.classList.add('text-success');
+            } else if (status >= 0.8) {
+                statusText.textContent = '良好';
+                statusText.classList.add('text-primary');
+            } else if (status >= 0.7) {
+                statusText.textContent = '中等';
+                statusText.classList.add('text-warning');
+            } else {
+                statusText.textContent = '需要加强';
+                statusText.classList.add('text-danger');
+            }
+            
+            // 初始化排名趋势图
+            initSubjectRankChart(subject);
+        }
+
+        // 初始化科目排名趋势图
+        function initSubjectRankChart(subject) {
+            const ctx = document.getElementById('subjectRankTrendChart');
+            if (!ctx) return;
+            
+            // 销毁旧图表实例
+            if (window.subjectRankChart) {
+                window.subjectRankChart.destroy();
+            }
+            
+            const exams = Storage.getExams().sort((a, b) => new Date(a.date) - new Date(b.date));
+            if (exams.length === 0) return;
+            
+            const examNames = exams.map(exam => exam.name);
+            const classRanks = exams.map(exam => {
+                return exam.subjectRankClass && exam.subjectRankClass[subject] ? exam.subjectRankClass[subject] : null;
+            });
+            const gradeRanks = exams.map(exam => {
+                return exam.subjectRankGrade && exam.subjectRankGrade[subject] ? exam.subjectRankGrade[subject] : null;
+            });
+            const scores = exams.map(exam => {
+                return exam.subjects && exam.subjects[subject] ? exam.subjects[subject] : null;
+            });
+            
+            window.subjectRankChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: examNames,
+                    datasets: [
+                        {
+                            label: '分数',
+                            data: scores,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.3,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: '班级排名',
+                            data: classRanks,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.3,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: '年级排名',
+                            data: gradeRanks,
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            tension: 0.3,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: '分数'
+                            },
+                            beginAtZero: false
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: '排名'
+                            },
+                            beginAtZero: false,
+                            reverse: true,
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 初始化仪表盘页面
+        function initDashboardPage() {
+            // 更新问候语
+            updateGreeting();
+            
+            // 加载最近一次考试
+            loadLatestExam();
+            
+            // 加载一言
+            loadHitokoto();
+            
+            // 绑定查看全部按钮事件
+            document.getElementById('viewAllExamsBtn').addEventListener('click', function() {
+                if (UI && UI.navigateTo) {
+                    UI.navigateTo('records');
+                }
+            });
+            
+            // 绑定去录入按钮事件
+            document.getElementById('goToInputBtn').addEventListener('click', function() {
+                if (UI && UI.navigateTo) {
+                    UI.navigateTo('input');
+                }
+            });
+        }
+        
+        // 更新问候语
+        function updateGreeting() {
+            const now = new Date();
+            const hour = now.getHours();
+            let timeGreeting = '';
+            
+            if (hour >= 5 && hour < 6) {
+                timeGreeting = '凌晨';
+            } else if (hour >= 6 && hour < 8) {
+                timeGreeting = '清晨';
+            } else if (hour >= 8 && hour < 11) {
+                timeGreeting = '上午';
+            } else if (hour >= 11 && hour < 13) {
+                timeGreeting = '中午';
+            } else if (hour >= 13 && hour < 15) {
+                timeGreeting = '午后';
+            } else if (hour >= 15 && hour < 18) {
+                timeGreeting = '下午';
+            } else if (hour >= 18 && hour < 20) {
+                timeGreeting = '傍晚';
+            } else if (hour >= 20 && hour < 22) {
+                timeGreeting = '晚上';
+            } else if (hour >= 22 && hour < 24) {
+                timeGreeting = '深夜';
+            } else {
+                timeGreeting = '凌晨';
+            }
+            
+            const username = Storage.getUsername() || '欢迎使用';
+            const greetingElement = document.getElementById('greeting');
+            greetingElement.textContent = `${timeGreeting}好，${username}`;
+        }
+        
+        // 加载最近一次考试
+        function loadLatestExam() {
+            const exams = Storage.getExams();
+            if (exams.length === 0) {
+                document.getElementById('latestExamScore').textContent = '--';
+                return;
+            }
+            
+            // 按日期排序，取最新的一次考试
+            const latestExam = exams.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+            const scoreElement = document.getElementById('latestExamScore');
+            scoreElement.textContent = latestExam.totalScore || '--';
+        }
+        
+        // 加载一言
+        function loadHitokoto() {
+            fetch('https://v1.hitokoto.cn/')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('hitokoto').textContent = data.hitokoto;
+                    document.getElementById('hitokotoFrom').textContent = `—— ${data.from || '一言'}`;
+                })
+                .catch(error => {
+                    console.error('加载一言失败:', error);
+                    document.getElementById('hitokoto').textContent = '愿你拥有美好的一天';
+                    document.getElementById('hitokotoFrom').textContent = '—— 系统';
+                });
+        }
+
+        // 确保所有函数都是全局可访问的
+        window.initDashboardPage = initDashboardPage;
+        window.initAnalysisPage = initAnalysisPage;
+        window.initOverviewCharts = initOverviewCharts;
+        window.generateStudyAdvice = generateStudyAdvice;
+        window.loadSubjectDetail = loadSubjectDetail;
+        window.initSubjectRankChart = initSubjectRankChart;
+        
+        // 页面加载完成后立即初始化仪表盘
+        initDashboardPage();
     });
 </script>
 </body>

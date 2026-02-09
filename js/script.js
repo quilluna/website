@@ -304,6 +304,15 @@ const Storage = {
     saveFullMarks(fullMarks) {
         localStorage.setItem('fullMarks', JSON.stringify(fullMarks));
         return true;
+    },
+    
+    // 获取用户名
+    getUsername() {
+        const user = this.getUser();
+        if (user && user.username) {
+            return user.username;
+        }
+        return localStorage.getItem('username') || '';
     }
 };
 
@@ -369,7 +378,7 @@ const Charts = {
     // 科目雷达图（用于首页）
     renderSubjectRadarChart() {
         try {
-            const ctx = document.getElementById('subjectRadarChart');
+            const ctx = document.getElementById('examDetailRadarChart');
             if (!ctx) {
                 console.error('科目雷达图容器不存在');
                 return;
@@ -428,11 +437,11 @@ const Charts = {
 
             console.log('雷达图数据:', { subjects, subjectNames, priorityData, gradeRankRates, classRankRates, scoreRates });
 
-            if (window.subjectRadarChart && typeof window.subjectRadarChart.destroy === 'function') {
-                window.subjectRadarChart.destroy();
+            if (window.examDetailRadarChart && typeof window.examDetailRadarChart.destroy === 'function') {
+                window.examDetailRadarChart.destroy();
             }
-
-            window.subjectRadarChart = new Chart(ctx, {
+            
+            window.examDetailRadarChart = new Chart(ctx, {
                 type: 'radar',
                 data: {
                     labels: subjectNames,
@@ -464,11 +473,11 @@ const Charts = {
     },
     
     // 考试详情模态框中的科目分布雷达图
-    renderDetailSubjectRadarChart(examData) {
+    renderDetailSubjectRadarChart(examData, canvasId = 'detailSubjectRadarChart') {
         try {
-            const ctx = document.getElementById('detailSubjectRadarChart');
+            const ctx = document.getElementById(canvasId);
             if (!ctx) {
-                console.error('详情模态框科目雷达图容器不存在');
+                console.error(`雷达图容器 ${canvasId} 不存在`);
                 return;
             }
 
@@ -503,12 +512,17 @@ const Charts = {
             // 获取优先级数据
             const priorityData = subjects.map(getSubjectPriorityData);
 
+            // 确保图表容器对象存在
+            if (!window.detailSubjectRadarCharts) {
+                window.detailSubjectRadarCharts = {};
+            }
+            
             // 销毁旧图表
-            if (window.detailSubjectRadarChart && typeof window.detailSubjectRadarChart.destroy === 'function') {
-                window.detailSubjectRadarChart.destroy();
+            if (window.detailSubjectRadarCharts[canvasId] && typeof window.detailSubjectRadarCharts[canvasId].destroy === 'function') {
+                window.detailSubjectRadarCharts[canvasId].destroy();
             }
 
-            window.detailSubjectRadarChart = new Chart(ctx, {
+            window.detailSubjectRadarCharts[canvasId] = new Chart(ctx, {
                 type: 'radar',
                 data: {
                     labels: subjectNames,
@@ -887,13 +901,11 @@ const UI = {
         this.loadStudentInfo();
         this.updateDashboard();
         
-        // 初始化图表（确保第一次打开页面时图表也能显示）
-        // 但只在有图表容器的页面执行
-        if (document.getElementById('scoreTrendChart')) {
-            Charts.renderScoreTrendChart();
-        }
-        if (document.getElementById('subjectRadarChart')) {
-            Charts.renderSubjectRadarChart();
+        // 初始化仪表盘（确保第一次打开页面时仪表盘也能显示）
+        if (document.getElementById('dashboardPage')) {
+            if (typeof window.initDashboardPage === 'function') {
+                window.initDashboardPage();
+            }
         }
 
         // 绑定事件
@@ -1234,18 +1246,19 @@ const UI = {
         targetPage.style.transform = 'translateY(0)';
         targetPage.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
 
-        // 如果是仪表盘页面，更新图表
+        // 如果是仪表盘页面，初始化仪表盘
         if (page === 'dashboard') {
-            Charts.renderScoreTrendChart();
-            Charts.renderSubjectRadarChart();
+            if (typeof window.initDashboardPage === 'function') {
+                window.initDashboardPage();
+            }
         }
 
         // 如果是分析页面，更新图表
         if (page === 'analysis') {
-            Charts.renderRankComparisonChart();
-            Charts.renderSubjectStrengthChart();
-            Charts.renderScoreDistributionChart();
-            this.updateAnalysisPage();
+            // 调用新的成绩分析页面初始化函数
+            if (typeof initAnalysisPage === 'function') {
+                initAnalysisPage();
+            }
         }
 
         // 如果是个人档案页面，加载数据
@@ -1382,7 +1395,7 @@ const UI = {
     // 加载考试记录
     loadExams(tempExams = null) {
         // 如果提供了临时数据，则使用临时数据，否则从存储中获取
-        const exams = tempExams !== null ? tempExams : Storage.getExams();
+        let exams = tempExams !== null ? tempExams : Storage.getExams();
         const examsTable = document.getElementById('examsTable');
         const noRecords = document.getElementById('noRecords');
 
@@ -1396,6 +1409,9 @@ const UI = {
             noRecords.classList.remove('hidden');
             return;
         }
+
+        // 应用默认排序（日期降序）
+        exams.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         noRecords.classList.add('hidden');
         this.updateExamsTable(exams);
@@ -1413,28 +1429,212 @@ const UI = {
         examsTable.innerHTML = '';
 
         exams.forEach((exam, index) => {
+            // 创建主行
             const row = document.createElement('tr');
-            row.className = 'border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700';
+            row.className = 'border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer';
             
             const date = new Date(exam.date);
             const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             
             row.innerHTML = `
-                <td class="py-3 px-4">${exam.name}</td>
+                <td class="py-3 px-4">
+                    <div class="flex items-center">
+                        <i class="fa-solid fa-chevron-down mr-2 text-gray-500 transform transition-transform duration-300"></i>
+                        ${exam.name}
+                    </div>
+                </td>
                 <td class="py-3 px-4">${formattedDate}</td>
                 <td class="py-3 px-4 font-medium text-primary">${typeof exam.totalScore === 'number' ? exam.totalScore.toFixed(1) : '-'}</td>
                 <td class="py-3 px-4">${exam.rankClass || '-'}</td>
                 <td class="py-3 px-4">${exam.rankGrade || '-'}</td>
                 <td class="py-3 px-4">
                     <div class="flex gap-2">
-                        <button class="btn btn-secondary btn-sm" onclick="UI.showExamDetail(${index})"><i class="fa-solid fa-eye"></i></button>
-                    <button class="btn btn-danger btn-sm" onclick="UI.showDeleteConfirm(${index})"><i class="fa-solid fa-trash"></i></button>
+                        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); UI.showEditExam(${index})">
+                            <i class="fa-solid fa-edit"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); UI.showDeleteConfirm(${index})">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
                     </div>
                 </td>
             `;
             
+            // 创建详情行
+            const detailRow = document.createElement('tr');
+            detailRow.className = 'border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-800';
+            detailRow.style.display = 'none';
+            detailRow.style.opacity = '0';
+            detailRow.style.transform = 'translateY(-10px)';
+            detailRow.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            
+            // 构建详情内容
+            const detailContent = this.generateExamDetailContent(exam, index);
+            detailRow.innerHTML = `<td colspan="6" class="py-4 px-6">${detailContent}</td>`;
+            
+            // 添加点击事件
+            row.addEventListener('click', () => {
+                const isCollapsed = detailRow.style.display === 'none';
+                
+                // 收起其他所有详情行
+                document.querySelectorAll('tr').forEach(row => {
+                    if (row !== detailRow && row.style.transition) {
+                        row.style.opacity = '0';
+                        row.style.transform = 'translateY(-10px)';
+                        setTimeout(() => {
+                            row.style.display = 'none';
+                        }, 300);
+                        const parentRow = row.previousElementSibling;
+                        if (parentRow) {
+                            const icon = parentRow.querySelector('.fa-chevron-down');
+                            if (icon) {
+                                icon.style.transform = 'rotate(0deg)';
+                            }
+                        }
+                    }
+                });
+                
+                // 切换当前详情行
+                if (isCollapsed) {
+                    // 先显示行
+                    detailRow.style.display = 'table-row';
+                    // 触发重排
+                    detailRow.offsetHeight;
+                    // 然后添加动画
+                    detailRow.style.opacity = '1';
+                    detailRow.style.transform = 'translateY(0)';
+                    const icon = row.querySelector('.fa-chevron-down');
+                    if (icon) {
+                        icon.style.transform = 'rotate(180deg)';
+                    }
+                    // 渲染雷达图
+                    if (exam.subjects) {
+                        setTimeout(() => {
+                            Charts.renderDetailSubjectRadarChart(exam, `detailSubjectRadarChart_${index}`);
+                        }, 300);
+                    }
+                } else {
+                    // 先添加收起动画
+                    detailRow.style.opacity = '0';
+                    detailRow.style.transform = 'translateY(-10px)';
+                    // 动画结束后隐藏
+                    setTimeout(() => {
+                        detailRow.style.display = 'none';
+                    }, 300);
+                    const icon = row.querySelector('.fa-chevron-down');
+                    if (icon) {
+                        icon.style.transform = 'rotate(0deg)';
+                    }
+                }
+            });
+            
+            // 添加到表格
             examsTable.appendChild(row);
+            examsTable.appendChild(detailRow);
         });
+    },
+    
+    // 生成考试详情内容
+    generateExamDetailContent(exam, index) {
+        const date = new Date(exam.date);
+        const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        
+        let rankText = '';
+        if (exam.rankClass) rankText += `班级: ${exam.rankClass}`;
+        if (exam.rankGrade) rankText += (rankText ? ' | ' : '') + `年级: ${exam.rankGrade}`;
+        
+        // 科目成绩表格
+        let subjectsTable = '';
+        if (exam.subjects) {
+            const subjectNames = {
+                'chinese': '语文',
+                'math': '数学',
+                'english': '英语',
+                'physics': '物理',
+                'chemistry': '化学',
+                'biology': '生物',
+                'politics': '政治',
+                'history': '历史',
+                'geography': '地理'
+            };
+            
+            subjectsTable = `
+                <div class="mt-4">
+                    <h4 class="font-semibold mb-2">科目成绩</h4>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full border border-gray-200 dark:border-gray-700">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700">
+                                    <th class="py-2 px-4 text-left text-sm">科目</th>
+                                    <th class="py-2 px-4 text-left text-sm">分数</th>
+                                    <th class="py-2 px-4 text-left text-sm">等级</th>
+                                    <th class="py-2 px-4 text-left text-sm">得分率</th>
+                                    <th class="py-2 px-4 text-left text-sm">班级排名</th>
+                                    <th class="py-2 px-4 text-left text-sm">年级排名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            Object.keys(exam.subjects).forEach(subject => {
+                const score = exam.subjects[subject];
+                const fullMark = (exam.fullMarks && exam.fullMarks[subject]) || 100;
+                const rate = fullMark > 0 ? (score / fullMark) * 100 : 0;
+                const grade = this.getGrade(rate);
+                const rankClass = (exam.subjectRankClass && exam.subjectRankClass[subject]) || '-';
+                const rankGrade = (exam.subjectRankGrade && exam.subjectRankGrade[subject]) || '-';
+                
+                // 检查是否及格（得分率低于60%为不及格）
+                const isFail = rate < 60;
+                
+                subjectsTable += `
+                    <tr class="border-t border-gray-200 dark:border-gray-700">
+                        <td class="py-2 px-4">${subjectNames[subject] || subject}</td>
+                        <td class="py-2 px-4">
+                            ${typeof score === 'number' && !isNaN(score) ? `
+                                <span class="${isFail ? 'text-danger font-medium' : ''}">${score.toFixed(1)}</span>
+                                <span class="text-gray-500 text-sm">/${fullMark}</span>
+                            ` : '-'}
+                        </td>
+                        <td class="py-2 px-4">
+                            <span class="badge badge-${grade.toLowerCase()}">${grade}</span>
+                        </td>
+                        <td class="py-2 px-4">${typeof rate === 'number' && !isNaN(rate) ? rate.toFixed(1) + '%' : '-'}</td>
+                        <td class="py-2 px-4">${rankClass}</td>
+                        <td class="py-2 px-4">${rankGrade}</td>
+                    </tr>
+                `;
+            });
+            
+            subjectsTable += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 构建详情内容
+        return `
+            <div class="exam-detail-content">
+                ${exam.summary ? `
+                    <div class="mb-4">
+                        <h4 class="font-semibold mb-2">考试总结</h4>
+                        <p class="text-gray-600 dark:text-gray-300">${exam.summary}</p>
+                    </div>
+                ` : ''}
+                
+                ${subjectsTable}
+                
+                ${exam.subjects ? `
+                    <div class="mt-6">
+                        <h4 class="font-semibold mb-3">科目表现分析</h4>
+                        <div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow-sm">
+                            <canvas id="detailSubjectRadarChart_${index}" height="300"></canvas>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
     },
 
     // 显示考试详情
@@ -1496,7 +1696,7 @@ const UI = {
             };
             
             const rankClassRate = calculateRankRate(rankClass, 51);
-            const rankGradeRate = calculateRankRate(rankGrade, 650);
+            const rankGradeRate = calculateRankRate(rankGrade, 620);
             
             const row = document.createElement('tr');
             row.className = 'border-b dark:border-gray-700';
@@ -1531,11 +1731,13 @@ const UI = {
 
     // 显示编辑考试界面
     showEditExam(index) {
-        const exams = Storage.getExams();
+        const exams = this.currentExams || Storage.getExams();
         const exam = exams[index];
         if (!exam) return;
 
-        this.editingExamIndex = index;
+        // 找到该考试在原始数据中的索引
+        const originalExams = Storage.getExams();
+        this.editingExamIndex = originalExams.findIndex(e => e.date === exam.date && e.name === exam.name);
         
         // 填充编辑表单
         document.getElementById('editExamName').value = exam.name;
@@ -2494,8 +2696,6 @@ const UI = {
 
     // 获取等级
     getGrade(scoreRate) {
-        if (scoreRate >= 90) return '优秀';
-        if (scoreRate >= 80) return '良好';
         if (scoreRate >= 60) return '及格';
         return '不及格';
     },
