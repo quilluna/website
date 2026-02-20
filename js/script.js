@@ -7,6 +7,37 @@ const navItems = [
     { id: 'profile', name: '个人档案', icon: 'fa-solid fa-user-circle', href: '#profile' }
 ];
 
+// 获取API基础URL
+let apiBaseUrl = null;
+async function getApiBaseUrl() {
+    if (apiBaseUrl === null) {
+        try {
+            // 尝试获取dev文件
+            const response = await fetch('/dev');
+            if (response.ok) {
+                apiBaseUrl = 'http://localhost:8787/haozhiyu';
+            } else {
+                apiBaseUrl = 'https://api.280910.xyz/haozhiyu';
+            }
+        } catch (error) {
+            // 如果获取失败，使用默认域名
+            apiBaseUrl = 'https://api.280910.xyz/haozhiyu';
+        }
+    }
+    return apiBaseUrl;
+}
+
+// 同步获取API基础URL（用于需要立即获取的场景）
+function getApiBaseUrlSync() {
+    if (apiBaseUrl === null) {
+        // 默认使用域名，异步检查会在后台更新
+        apiBaseUrl = 'https://api.280910.xyz/haozhiyu';
+        // 后台异步检查
+        getApiBaseUrl();
+    }
+    return apiBaseUrl;
+}
+
 // 主题色管理工具
 const ThemeColors = {
     // 获取当前主题的主色调
@@ -2547,4 +2578,1121 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+    });
+// 登录功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 登录按钮点击事件
+            const loginButton = document.getElementById('loginButton');
+            const loginModal = document.getElementById('loginModal');
+            const closeLoginModal = document.getElementById('closeLoginModal');
+            const loginForm = document.getElementById('loginForm');
+            const loginMessage = document.getElementById('loginMessage');
+
+            // 打开登录模态框或执行登出
+            if (loginButton && loginModal) {
+                loginButton.addEventListener('click', function() {
+                    const username = localStorage.getItem('username') || '';
+                    
+                    if (username) {
+                        // 已登录，执行登出
+                        if (confirm('确定要登出吗？')) {
+                            // 清除所有登录相关存储
+                            localStorage.removeItem('username');
+                            localStorage.removeItem('password');
+                            localStorage.removeItem('autologin');
+                            localStorage.removeItem('isLoggedIn');
+                            localStorage.removeItem('user');
+                            localStorage.removeItem('syncData');
+                            localStorage.removeItem('lastSyncTime');
+                            
+                            // 更新登录按钮显示
+                            updateLoginButton();
+                            
+                            // 显示登出成功消息
+                            alert('登出成功！');
+                        }
+                    } else {
+                        // 未登录，显示登录模态框
+                        loginModal.classList.remove('hidden');
+                        
+                        // 添加输入事件监听器，当用户输入时移除错误状态
+                        const usernameInput = document.getElementById('username');
+                        const passwordInput = document.getElementById('password');
+                        
+                        if (usernameInput) {
+                            usernameInput.addEventListener('input', function() {
+                                this.classList.remove('input-error');
+                                const usernameError = document.getElementById('usernameError');
+                                if (usernameError) {
+                                    usernameError.textContent = '';
+                                    usernameError.classList.add('hidden');
+                                }
+                            });
+                        }
+                        
+                        if (passwordInput) {
+                            passwordInput.addEventListener('input', function() {
+                                this.classList.remove('input-error');
+                                const passwordError = document.getElementById('passwordError');
+                                if (passwordError) {
+                                    passwordError.textContent = '';
+                                    passwordError.classList.add('hidden');
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+
+            // 关闭登录模态框
+            if (closeLoginModal && loginModal) {
+                closeLoginModal.addEventListener('click', function() {
+                    hideModal('loginModal');
+                    resetLoginForm();
+                });
+            }
+
+            // 点击模态框外部关闭
+            if (loginModal) {
+                loginModal.addEventListener('click', function(e) {
+                    if (e.target === loginModal) {
+                        hideModal('loginModal');
+                        resetLoginForm();
+                    }
+                });
+            }
+
+            // 登录表单提交
+            if (loginForm) {
+                loginForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const username = document.getElementById('username').value;
+                    const password = document.getElementById('password').value;
+
+                    // 显示加载状态
+                    showLoginMessage('登录中...', 'info');
+
+                    try {
+                        // 发送登录请求到API
+                        const apiUrl = await getApiBaseUrl();
+                        const response = await fetch(`${apiUrl}/sync_data`, {
+                            method: 'POST',
+                            headers: {
+                                'x_username': username,
+                                'x_password': password
+                            }
+                        });
+
+                        const result = await response.json();
+
+                        if (result.code === 200) {
+                            // 登录成功
+                            showLoginMessage('登录成功！', 'success');
+                            
+                            // 存储用户名和密码到localStorage
+                            localStorage.setItem('username', username);
+                            localStorage.setItem('password', password);
+                            localStorage.setItem('autologin', 'true');
+                            
+                            // 同时更新Storage对象使用的登录状态和用户信息
+                            // 密码加密后存储
+                            function encrypt(password) {
+                                if (!password) return '';
+                                return btoa(password.split('').reverse().join(''));
+                            }
+                            localStorage.setItem('isLoggedIn', 'true');
+                            localStorage.setItem('user', JSON.stringify({ username: username, password: encrypt(password) }));
+                            
+                            // 存储返回的数据到localStorage并解析
+                            if (result.data) {
+                                localStorage.setItem('syncData', JSON.stringify(result.data));
+                                console.log('同步数据已存储到本地');
+                                
+                                // 解析同步数据（模拟importData的行为）
+                                console.log('开始解析同步数据');
+                                try {
+                                    // 模拟Storage.importData函数的行为
+                                    if (result.data.exams) {
+                                        localStorage.setItem('exams', JSON.stringify(result.data.exams));
+                                    }
+                                    if (result.data.profile) {
+                                        localStorage.setItem('profile', JSON.stringify(result.data.profile));
+                                    }
+                                    if (result.data.goals) {
+                                        localStorage.setItem('goals', JSON.stringify(result.data.goals));
+                                    }
+                                    if (result.data.fullMarks) {
+                                        localStorage.setItem('fullMarks', JSON.stringify(result.data.fullMarks));
+                                    }
+                                    console.log('同步数据解析成功');
+                                } catch (error) {
+                                    console.error('同步数据解析失败', error);
+                                }
+                            } else {
+                                console.log('返回结果中没有data字段');
+                            }
+                            
+                            // 更新登录按钮显示
+                            updateLoginButton();
+                            // 关闭模态框
+                            setTimeout(() => {
+                                hideModal('loginModal');
+                                resetLoginForm();
+                            }, 1000);
+                        } else {
+                        // 登录失败
+                        console.log('登录失败:', result.msg);
+                        
+                        // 隐藏登录中消息
+                        document.getElementById('loginMessage').style.display = 'none';
+                        
+                        // 重置所有错误状态
+                        resetErrorStates();
+                        
+                        // 检查是否有锁定时间
+                        if (result.lockUntil) {
+                            // 处理登录锁定
+                            handleLoginLock(result.lockUntil);
+                        } else {
+                            // 根据错误信息确定哪个输入框有问题
+                            const usernameInput = document.getElementById('username');
+                            const passwordInput = document.getElementById('password');
+                            const usernameError = document.getElementById('usernameError');
+                            const passwordError = document.getElementById('passwordError');
+                            
+                            // 假设错误信息包含用户名或密码的信息
+                            // 这里需要根据实际的错误信息格式进行调整
+                            if (result.msg.includes('用户名') || result.msg.includes('用户不存在')) {
+                                // 用户名错误
+                                usernameInput.classList.add('input-error');
+                                usernameError.textContent = result.msg;
+                                usernameError.classList.remove('hidden');
+                            } else if (result.msg.includes('密码') || result.msg.includes('密码错误')) {
+                                // 密码错误
+                                passwordInput.classList.add('input-error');
+                                passwordError.textContent = result.msg;
+                                passwordError.classList.remove('hidden');
+                            } else {
+                                // 其他错误，显示在密码框旁边
+                                passwordInput.classList.add('input-error');
+                                passwordError.textContent = result.msg;
+                                passwordError.classList.remove('hidden');
+                            }
+                        }
+                    }
+                    } catch (error) {
+                        console.error('登录请求失败:', error);
+                        showLoginMessage('登录失败：网络错误', 'error');
+                    }
+                });
+            }
+
+            // 检查自动登录
+        checkAutoLogin();
+
+        // 更新登录按钮显示
+        updateLoginButton();
+
+        // 刷新数据按钮点击事件
+        const refreshDataBtn = document.getElementById('refreshDataBtn');
+        if (refreshDataBtn) {
+            refreshDataBtn.addEventListener('click', async function() {
+                const username = localStorage.getItem('username');
+                const password = localStorage.getItem('password');
+                
+                if (!username || !password) {
+                    alert('请先登录');
+                    return;
+                }
+                
+                // 显示加载状态
+                refreshDataBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>刷新中...</span>';
+                refreshDataBtn.disabled = true;
+                
+                try {
+                    // 访问 clear_cache 接口
+                    console.log('访问 clear_cache 接口');
+                    const apiUrl = await getApiBaseUrl();
+                    const clearCacheResponse = await fetch(`${apiUrl}/clear_cache`, {
+                        method: 'POST',
+                        headers: {
+                            'x_username': username,
+                            'x_password': password
+                        }
+                    });
+                    
+                    const clearCacheResult = await clearCacheResponse.json();
+                    console.log('clear_cache 接口响应:', clearCacheResult);
+                    
+                    if (clearCacheResult.code === 200) {
+                        // 缓存清除成功，重新同步数据
+                        console.log('缓存清除成功，重新同步数据');
+                        const apiUrl = await getApiBaseUrl();
+                        const syncResponse = await fetch(`${apiUrl}/sync_data`, {
+                            method: 'POST',
+                            headers: {
+                                'x_username': username,
+                                'x_password': password
+                            }
+                        });
+                        
+                        const syncResult = await syncResponse.json();
+                        console.log('sync_data 接口响应:', syncResult);
+                        
+                        if (syncResult.code === 200 && syncResult.data) {
+                            // 存储返回的数据到 localStorage
+                            localStorage.setItem('syncData', JSON.stringify(syncResult.data));
+                            console.log('同步数据已存储到本地');
+                            
+                            // 解析同步数据（模拟 importData 的行为）
+                            console.log('开始解析同步数据');
+                            console.log('同步数据内容:', JSON.stringify(syncResult.data, null, 2));
+                            try {
+                                // 模拟 Storage.importData 函数的行为
+                                if (syncResult.data.exams) {
+                                    localStorage.setItem('exams', JSON.stringify(syncResult.data.exams));
+                                    console.log('解析并存储 exams 数据:', syncResult.data.exams.length, '条记录');
+                                }
+                                if (syncResult.data.profile) {
+                                    localStorage.setItem('profile', JSON.stringify(syncResult.data.profile));
+                                    console.log('解析并存储 profile 数据:', syncResult.data.profile);
+                                }
+                                if (syncResult.data.goals) {
+                                    localStorage.setItem('goals', JSON.stringify(syncResult.data.goals));
+                                    console.log('解析并存储 goals 数据:', syncResult.data.goals);
+                                }
+                                if (syncResult.data.fullMarks) {
+                                    localStorage.setItem('fullMarks', JSON.stringify(syncResult.data.fullMarks));
+                                    console.log('解析并存储 fullMarks 数据:', syncResult.data.fullMarks);
+                                }
+                                console.log('同步数据解析成功');
+                                alert('数据刷新成功');
+                            } catch (error) {
+                                console.error('同步数据解析失败', error);
+                                alert('数据刷新失败：解析数据时出错');
+                            }
+                        } else {
+                            console.error('重新同步数据失败', syncResult);
+                            alert('数据刷新失败：重新同步数据时出错');
+                        }
+                    } else {
+                        console.error('清除缓存失败', clearCacheResult);
+                        alert('数据刷新失败：清除缓存时出错');
+                    }
+                } catch (error) {
+                    console.error('刷新数据失败', error);
+                    alert('数据刷新失败：网络错误');
+                } finally {
+                    // 恢复按钮状态
+                    refreshDataBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i><span>刷新数据</span>';
+                    refreshDataBtn.disabled = false;
+                }
+            });
+        }
+
+        // 重置错误状态
+        function resetErrorStates() {
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const usernameError = document.getElementById('usernameError');
+            const passwordError = document.getElementById('passwordError');
+            
+            // 重置用户名输入框
+            if (usernameInput) {
+                usernameInput.classList.remove('input-error');
+            }
+            if (usernameError) {
+                usernameError.textContent = '';
+                usernameError.classList.add('hidden');
+            }
+            
+            // 重置密码输入框
+            if (passwordInput) {
+                passwordInput.classList.remove('input-error');
+            }
+            if (passwordError) {
+                passwordError.textContent = '';
+                passwordError.classList.add('hidden');
+            }
+        }
+
+        // 重置登录表单
+        function resetLoginForm() {
+            document.getElementById('loginForm').reset();
+            document.getElementById('loginMessage').style.display = 'none';
+            resetErrorStates();
+        }
+
+        // 显示登录消息
+        function showLoginMessage(message, type) {
+            // 只有在登录中或登录成功时显示消息，错误信息在输入框旁边显示
+            if (type !== 'error') {
+                const loginMessage = document.getElementById('loginMessage');
+                loginMessage.textContent = message;
+                loginMessage.style.display = 'block';
+                
+                // 设置消息样式
+                if (type === 'success') {
+                    loginMessage.style.backgroundColor = 'rgba(163, 228, 215, 0.2)';
+                    loginMessage.style.color = '#2ecc71';
+                    loginMessage.style.border = '1px solid #2ecc71';
+                } else {
+                    loginMessage.style.backgroundColor = 'rgba(52, 152, 219, 0.2)';
+                    loginMessage.style.color = '#3498db';
+                    loginMessage.style.border = '1px solid #3498db';
+                }
+            }
+        }
+        
+        // 处理登录锁定
+        function handleLoginLock(lockUntil) {
+            const loginButton = document.querySelector('#loginForm button[type="submit"]');
+            const loginMessage = document.getElementById('loginMessage');
+            
+            // 禁用登录按钮
+            if (loginButton) {
+                loginButton.disabled = true;
+                loginButton.classList.add('bg-gray-400');
+                loginButton.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+            }
+            
+            // 开始倒计时
+            const countdownInterval = setInterval(() => {
+                const now = Date.now();
+                const remainingTime = Math.max(0, lockUntil - now);
+                
+                if (remainingTime > 0) {
+                    // 计算分秒
+                    const minutes = Math.floor(remainingTime / 60000);
+                    const seconds = Math.floor((remainingTime % 60000) / 1000);
+                    
+                    // 显示倒计时
+                    if (loginMessage) {
+                        loginMessage.textContent = `登录失败次数过多，请等待 ${minutes}分${seconds}秒后重试`;
+                        loginMessage.style.display = 'block';
+                        loginMessage.style.backgroundColor = 'rgba(248, 113, 113, 0.2)';
+                        loginMessage.style.color = '#ef4444';
+                        loginMessage.style.border = '1px solid #ef4444';
+                    }
+                } else {
+                    // 锁定时间结束
+                    clearInterval(countdownInterval);
+                    
+                    // 启用登录按钮
+                    if (loginButton) {
+                        loginButton.disabled = false;
+                        loginButton.classList.remove('bg-gray-400');
+                        loginButton.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                    }
+                    
+                    // 清除消息
+                    if (loginMessage) {
+                        loginMessage.style.display = 'none';
+                    }
+                }
+            }, 1000);
+            
+            // 初始执行一次
+            const now = Date.now();
+            const remainingTime = Math.max(0, lockUntil - now);
+            if (remainingTime > 0) {
+                const minutes = Math.floor(remainingTime / 60000);
+                const seconds = Math.floor((remainingTime % 60000) / 1000);
+                
+                if (loginMessage) {
+                    loginMessage.textContent = `登录失败次数过多，请等待 ${minutes}分${seconds}秒后重试`;
+                    loginMessage.style.display = 'block';
+                    loginMessage.style.backgroundColor = 'rgba(248, 113, 113, 0.2)';
+                    loginMessage.style.color = '#ef4444';
+                    loginMessage.style.border = '1px solid #ef4444';
+                }
+            }
+        }
+
+        // 检查自动登录
+        async function checkAutoLogin() {
+            const autologin = localStorage.getItem('autologin') === 'true';
+            const username = localStorage.getItem('username');
+            const password = localStorage.getItem('password');
+
+            if (autologin && username && password) {
+                try {
+                    // 发送自动登录请求
+                    const apiUrl = await getApiBaseUrl();
+                    const response = await fetch(`${apiUrl}/sync_data`, {
+                        method: 'POST',
+                        headers: {
+                            'x_username': username,
+                            'x_password': password
+                        }
+                    });
+
+                    const result = await response.json();
+
+                    if (result.code === 200) {
+                        // 自动登录成功
+                        console.log('自动登录成功');
+                        
+                        // 同时更新Storage对象使用的登录状态和用户信息
+                        // 密码加密后存储
+                        function encrypt(password) {
+                            if (!password) return '';
+                            return btoa(password.split('').reverse().join(''));
+                        }
+                        localStorage.setItem('isLoggedIn', 'true');
+                        localStorage.setItem('user', JSON.stringify({ username: username, password: encrypt(password) }));
+                        
+                        // 存储返回的数据到localStorage并解析
+                        if (result.data) {
+                            localStorage.setItem('syncData', JSON.stringify(result.data));
+                            console.log('同步数据已存储到本地');
+                            
+                            // 解析同步数据（模拟importData的行为）
+                            console.log('开始解析同步数据');
+                            try {
+                                // 模拟Storage.importData函数的行为
+                                if (result.data.exams) {
+                                    localStorage.setItem('exams', JSON.stringify(result.data.exams));
+                                }
+                                if (result.data.profile) {
+                                    localStorage.setItem('profile', JSON.stringify(result.data.profile));
+                                }
+                                if (result.data.goals) {
+                                    localStorage.setItem('goals', JSON.stringify(result.data.goals));
+                                }
+                                if (result.data.fullMarks) {
+                                    localStorage.setItem('fullMarks', JSON.stringify(result.data.fullMarks));
+                                }
+                                console.log('同步数据解析成功');
+                            } catch (error) {
+                                console.error('同步数据解析失败', error);
+                            }
+                        } else {
+                            console.log('返回结果中没有data字段');
+                        }
+
+                        // 更新登录按钮显示
+                        updateLoginButton();
+                        
+
+                    } else {
+                        // 自动登录失败，清除存储
+                        localStorage.removeItem('username');
+                        localStorage.removeItem('password');
+                        localStorage.removeItem('syncData');
+                        localStorage.removeItem('user');
+                    }
+                } catch (error) {
+                    console.error('自动登录失败:', error);
+                    // 清除存储
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('password');
+                    localStorage.removeItem('syncData');
+                    localStorage.removeItem('user');
+                }
+            }
+        }
+
+        // 更新登录按钮显示
+        function updateLoginButton() {
+            const loginButton = document.getElementById('loginButton');
+            const refreshDataBtn = document.getElementById('refreshDataBtn');
+            const username = localStorage.getItem('username');
+
+            if (username) {
+                loginButton.innerHTML = `<i class="fas fa-user-check mr-1"></i> ${username}`;
+                // 显示刷新数据按钮
+                if (refreshDataBtn) {
+                    refreshDataBtn.style.display = 'flex';
+                }
+            } else {
+                loginButton.innerHTML = '<i class="fas fa-user mr-1"></i> 登录';
+                // 隐藏刷新数据按钮
+                if (refreshDataBtn) {
+                    refreshDataBtn.style.display = 'none';
+                }
+            }
+        }
+
+        // 成绩分析页面功能
+        function initAnalysisPage() {
+            // 标签页切换功能
+            const tabs = document.querySelectorAll('#analysisTabs button');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // 更新标签页状态
+                    tabs.forEach(t => {
+                        t.classList.remove('border-primary', 'active');
+                        t.classList.add('border-transparent');
+                        t.setAttribute('aria-selected', 'false');
+                        t.classList.remove('text-gray-700', 'dark:text-gray-200');
+                        t.classList.add('text-gray-700', 'dark:text-gray-300');
+                    });
+                    this.classList.add('border-primary', 'active');
+                    this.classList.remove('border-transparent');
+                    this.setAttribute('aria-selected', 'true');
+                    this.classList.remove('text-gray-700', 'dark:text-gray-300');
+                    this.classList.add('text-gray-700', 'dark:text-gray-200');
+                    
+                    // 显示对应内容
+                    const tabContents = document.querySelectorAll('.tab-content');
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                        content.classList.add('hidden');
+                    });
+                    document.getElementById(tabId).classList.add('active');
+                    document.getElementById(tabId).classList.remove('hidden');
+                    
+                    // 如果切换到全览标签页，初始化图表
+                    if (tabId === 'overview') {
+                        initOverviewCharts();
+                    }
+                });
+            });
+
+            // 科目选择功能
+            const subjectButtons = document.querySelectorAll('.subject-select-btn');
+            subjectButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const subject = this.getAttribute('data-subject');
+                    const subjectName = this.textContent;
+                    
+                    // 更新选中状态
+                    subjectButtons.forEach(btn => btn.classList.remove('btn-primary'));
+                    this.classList.add('btn-primary');
+                    
+                    // 更新科目名称
+                    document.getElementById('selectedSubjectName').textContent = subjectName;
+                    
+                    // 加载科目详情
+                    loadSubjectDetail(subject, subjectName);
+                });
+            });
+            
+            // 自动初始化全览标签页的图表
+            initOverviewCharts();
+        }
+
+        // 初始化全览页面图表
+        function initOverviewCharts() {
+            const exams = Storage.getExams().sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // 总分趋势图
+            const totalScoreCtx = document.getElementById('totalScoreTrendChart');
+            if (totalScoreCtx && exams.length > 0) {
+                // 销毁旧图表实例
+                if (window.totalScoreTrendChart && typeof window.totalScoreTrendChart.destroy === 'function') {
+                    window.totalScoreTrendChart.destroy();
+                }
+                
+                const examNames = exams.map(exam => exam.name);
+                const totalScores = exams.map(exam => exam.totalScore || 0);
+                const classRanks = exams.map(exam => exam.rankClass || null);
+                const gradeRanks = exams.map(exam => exam.rankGrade || null);
+                
+                window.totalScoreTrendChart = new Chart(totalScoreCtx, {
+                    type: 'line',
+                    data: {
+                        labels: examNames,
+                        datasets: [
+                            {
+                                label: '总分',
+                                data: totalScores,
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                tension: 0.3,
+                                fill: true,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: '班级排名',
+                                data: classRanks,
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                tension: 0.3,
+                                yAxisID: 'y1'
+                            },
+                            {
+                                label: '年级排名',
+                                data: gradeRanks,
+                                borderColor: '#f59e0b',
+                                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                tension: 0.3,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true
+                            }
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: '分数'
+                                },
+                                beginAtZero: false,
+                                min: Math.min(...totalScores) - 50
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: '排名'
+                                },
+                                beginAtZero: false,
+                                reverse: true,
+                                grid: {
+                                    drawOnChartArea: false
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 各科雷达图
+            const radarCtx = document.getElementById('subjectRadarChart');
+            if (radarCtx && exams.length > 0) {
+                // 销毁旧图表实例
+                if (window.subjectRadarChart && typeof window.subjectRadarChart.destroy === 'function') {
+                    window.subjectRadarChart.destroy();
+                }
+                
+                // 获取最近一次考试的数据
+                const latestExam = exams[exams.length - 1];
+                const subjects = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
+                const subjectKeys = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+                
+                // 计算得分率
+                const scoreRates = subjectKeys.map(key => {
+                    if (latestExam.subjects && latestExam.fullMarks && latestExam.subjects[key] && latestExam.fullMarks[key]) {
+                        return latestExam.subjects[key] / latestExam.fullMarks[key];
+                    }
+                    return 0;
+                });
+                
+                // 计算班级排名率（排名率越低越好，转换为1-排名率）
+                const classRankRates = subjectKeys.map(key => {
+                    if (latestExam.subjectRankClass && latestExam.subjectRankClass[key]) {
+                        return 1 - (latestExam.subjectRankClass[key] / 51);
+                    }
+                    return 0;
+                });
+                
+                // 计算年级排名率（排名率越低越好，转换为1-排名率）
+                const gradeRankRates = subjectKeys.map(key => {
+                    if (latestExam.subjectRankGrade && latestExam.subjectRankGrade[key]) {
+                        return 1 - (latestExam.subjectRankGrade[key] / 620);
+                    }
+                    return 0;
+                });
+                
+                window.subjectRadarChart = new Chart(radarCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: subjects,
+                        datasets: [
+                            {
+                                label: '得分率',
+                                data: scoreRates,
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.2)'
+                            },
+                            {
+                                label: '班级排名率',
+                                data: classRankRates,
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.2)'
+                            },
+                            {
+                                label: '年级排名率',
+                                data: gradeRankRates,
+                                borderColor: '#f59e0b',
+                                backgroundColor: 'rgba(245, 158, 11, 0.2)'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 1,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value * 100 + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 生成学习建议
+            generateStudyAdvice();
+        }
+
+        // 生成学习建议
+        function generateStudyAdvice() {
+            const exams = Storage.getExams();
+            if (exams.length === 0) {
+                document.getElementById('strengthSubjects').textContent = '暂无数据';
+                document.getElementById('weakSubjects').textContent = '暂无数据';
+                document.getElementById('generalAdvice').textContent = '请先录入考试数据，系统将为你生成个性化的学习建议。';
+                return;
+            }
+            
+            // 获取最近一次考试的数据（按日期排序）
+            const sortedExams = exams.sort((a, b) => new Date(b.date) - new Date(a.date));
+            const latestExam = sortedExams[0];
+            const subjectKeys = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology'];
+            const subjectNames = ['语文', '数学', '英语', '物理', '化学', '生物'];
+            const subjectScores = [];
+            
+            // 计算各科得分率
+            subjectKeys.forEach((key, index) => {
+                if (latestExam.subjects && latestExam.fullMarks && latestExam.subjects[key] && latestExam.fullMarks[key]) {
+                    const scoreRate = latestExam.subjects[key] / latestExam.fullMarks[key];
+                    subjectScores.push({ name: subjectNames[index], score: scoreRate });
+                }
+            });
+            
+            // 检查是否有有效科目数据
+            if (subjectScores.length === 0) {
+                document.getElementById('strengthSubjects').textContent = '暂无数据';
+                document.getElementById('weakSubjects').textContent = '暂无数据';
+                document.getElementById('generalAdvice').textContent = '请先录入完整的考试数据，系统将为你生成个性化的学习建议。';
+                return;
+            }
+            
+            // 排序科目得分率
+            subjectScores.sort((a, b) => b.score - a.score);
+            
+            // 确定优势科目和弱势科目
+            const topSubjects = subjectScores.slice(0, 2).map(s => s.name).join('、');
+            const weakSubjects = subjectScores.slice(-2).map(s => s.name).join('、');
+            
+            // 生成建议
+            document.getElementById('strengthSubjects').textContent = topSubjects || '暂无数据';
+            document.getElementById('weakSubjects').textContent = weakSubjects || '暂无数据';
+            document.getElementById('generalAdvice').textContent = `继续保持${topSubjects}的优势，加强${weakSubjects}的基础知识学习。建议制定合理的学习计划，注重错题整理和知识点巩固。保持积极的学习态度，相信你会取得更大的进步！`;
+        }
+
+        // 加载科目详情
+        function loadSubjectDetail(subject, subjectName) {
+            const exams = Storage.getExams().sort((a, b) => new Date(a.date) - new Date(b.date));
+            if (exams.length === 0) {
+                document.getElementById('subjectScore').textContent = '--';
+                document.getElementById('subjectClassRank').textContent = '--';
+                document.getElementById('subjectGradeRank').textContent = '--';
+                document.getElementById('subjectAdvice').innerHTML = '<p>请先录入考试数据</p>';
+                document.getElementById('subjectStatusText').textContent = '--';
+                return;
+            }
+            
+            // 获取最近一次考试的科目数据
+            const latestExam = exams[exams.length - 1];
+            let score = 0;
+            let classRank = '--';
+            let gradeRank = '--';
+            let status = 0;
+            let advice = '';
+            
+            if (latestExam.subjects && latestExam.subjects[subject]) {
+                score = latestExam.subjects[subject];
+            }
+            
+            if (latestExam.subjectRankClass && latestExam.subjectRankClass[subject]) {
+                classRank = latestExam.subjectRankClass[subject];
+            }
+            
+            if (latestExam.subjectRankGrade && latestExam.subjectRankGrade[subject]) {
+                gradeRank = latestExam.subjectRankGrade[subject];
+            }
+            
+            // 计算平均排名（使用所有考试的排名数据）
+            let totalClassRank = 0;
+            let totalGradeRank = 0;
+            let classRankCount = 0;
+            let gradeRankCount = 0;
+            
+            exams.forEach(exam => {
+                if (exam.subjectRankClass && exam.subjectRankClass[subject]) {
+                    totalClassRank += exam.subjectRankClass[subject];
+                    classRankCount++;
+                }
+                if (exam.subjectRankGrade && exam.subjectRankGrade[subject]) {
+                    totalGradeRank += exam.subjectRankGrade[subject];
+                    gradeRankCount++;
+                }
+            });
+            
+            // 计算平均排名得分（排名越小越好，转换为0-1的得分）
+            let avgRankScore = 0;
+            if (classRankCount > 0 || gradeRankCount > 0) {
+                // 使用班级排名和年级排名的平均值
+                let avgClassRank = classRankCount > 0 ? totalClassRank / classRankCount : 26; // 假设班级有51人，默认排名26
+                let avgGradeRank = gradeRankCount > 0 ? totalGradeRank / gradeRankCount : 310; // 假设年级有620人，默认排名310
+                
+                // 转换为0-1的得分（排名越小得分越高）
+                const classRankScore = 1 - (avgClassRank / 51); // 班级51人
+                const gradeRankScore = 1 - (avgGradeRank / 620); // 年级620人
+                
+                // 综合得分（班级排名权重更高）
+                avgRankScore = (classRankScore * 0.6 + gradeRankScore * 0.4);
+                // 确保得分在0-1之间
+                avgRankScore = Math.max(0, Math.min(1, avgRankScore));
+            }
+            
+            // 如果没有排名数据，使用得分率作为备用
+            if (avgRankScore === 0 && latestExam.subjects && latestExam.fullMarks && latestExam.subjects[subject] && latestExam.fullMarks[subject]) {
+                avgRankScore = latestExam.subjects[subject] / latestExam.fullMarks[subject];
+            }
+            
+            status = avgRankScore;
+            
+            // 生成建议
+            if (status >= 0.9) {
+                advice = `${subjectName}成绩优秀，继续保持。建议挑战一些难题，拓展解题思路，保持领先地位。`;
+            } else if (status >= 0.8) {
+                advice = `${subjectName}成绩良好，建议加强知识点的系统性整理，多做练习题巩固知识点。`;
+            } else if (status >= 0.7) {
+                advice = `${subjectName}成绩中等，建议注重基础知识的学习，多做练习题，提高解题能力。`;
+            } else {
+                advice = `${subjectName}成绩有待提高，建议加强基础知识学习，多做练习题，注重理解概念和公式的应用。`;
+            }
+            
+            // 更新建议
+            document.getElementById('subjectAdvice').innerHTML = `<p>${advice}</p>`;
+            
+            // 更新学习状态
+            const statusBar = document.getElementById('subjectStatusBar');
+            const statusText = document.getElementById('subjectStatusText');
+            statusBar.style.width = (status * 100) + '%';
+            
+            // 清空之前的状态文本类
+            statusText.className = 'ml-3 text-sm font-medium';
+            
+            if (status >= 0.9) {
+                statusText.textContent = '优秀';
+                statusText.classList.add('text-success');
+            } else if (status >= 0.8) {
+                statusText.textContent = '良好';
+                statusText.classList.add('text-primary');
+            } else if (status >= 0.7) {
+                statusText.textContent = '中等';
+                statusText.classList.add('text-warning');
+            } else {
+                statusText.textContent = '需要加强';
+                statusText.classList.add('text-danger');
+            }
+            
+            // 初始化排名趋势图
+            initSubjectRankChart(subject);
+        }
+
+        // 初始化科目排名趋势图
+        function initSubjectRankChart(subject) {
+            const ctx = document.getElementById('subjectRankTrendChart');
+            if (!ctx) return;
+            
+            // 销毁旧图表实例
+            if (window.subjectRankChart) {
+                window.subjectRankChart.destroy();
+            }
+            
+            const exams = Storage.getExams().sort((a, b) => new Date(a.date) - new Date(b.date));
+            if (exams.length === 0) return;
+            
+            const examNames = exams.map(exam => exam.name);
+            const classRanks = exams.map(exam => {
+                return exam.subjectRankClass && exam.subjectRankClass[subject] ? exam.subjectRankClass[subject] : null;
+            });
+            const gradeRanks = exams.map(exam => {
+                return exam.subjectRankGrade && exam.subjectRankGrade[subject] ? exam.subjectRankGrade[subject] : null;
+            });
+            const scores = exams.map(exam => {
+                return exam.subjects && exam.subjects[subject] ? exam.subjects[subject] : null;
+            });
+            
+            window.subjectRankChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: examNames,
+                    datasets: [
+                        {
+                            label: '分数',
+                            data: scores,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.3,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: '班级排名',
+                            data: classRanks,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.3,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: '年级排名',
+                            data: gradeRanks,
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            tension: 0.3,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: '分数'
+                            },
+                            beginAtZero: false
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: '排名'
+                            },
+                            beginAtZero: false,
+                            reverse: true,
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 初始化仪表盘页面
+        function initDashboardPage() {
+            // 更新问候语
+            updateGreeting();
+            
+            // 加载最近一次考试
+            loadLatestExam();
+            
+            // 加载一言
+            loadHitokoto();
+            
+            // 绑定查看全部按钮事件
+            document.getElementById('viewAllExamsBtn').addEventListener('click', function() {
+                if (UI && UI.navigateTo) {
+                    UI.navigateTo('records');
+                }
+            });
+            
+            // 绑定去录入按钮事件
+            document.getElementById('goToInputBtn').addEventListener('click', function() {
+                if (UI && UI.navigateTo) {
+                    UI.navigateTo('input');
+                }
+            });
+        }
+        
+        // 更新问候语
+        function updateGreeting() {
+            const now = new Date();
+            const hour = now.getHours();
+            let timeGreeting = '';
+            
+            if (hour >= 5 && hour < 6) {
+                timeGreeting = '凌晨';
+            } else if (hour >= 6 && hour < 8) {
+                timeGreeting = '清晨';
+            } else if (hour >= 8 && hour < 11) {
+                timeGreeting = '上午';
+            } else if (hour >= 11 && hour < 13) {
+                timeGreeting = '中午';
+            } else if (hour >= 13 && hour < 15) {
+                timeGreeting = '午后';
+            } else if (hour >= 15 && hour < 18) {
+                timeGreeting = '下午';
+            } else if (hour >= 18 && hour < 20) {
+                timeGreeting = '傍晚';
+            } else if (hour >= 20 && hour < 22) {
+                timeGreeting = '晚上';
+            } else if (hour >= 22 && hour < 24) {
+                timeGreeting = '深夜';
+            } else {
+                timeGreeting = '凌晨';
+            }
+            
+            const profile = Storage.getProfile();
+            const username = profile.name || '欢迎使用';
+            const greetingElement = document.getElementById('greeting');
+            greetingElement.textContent = `${timeGreeting}好，${username}`;
+        }
+        
+        // 加载最近一次考试
+        function loadLatestExam() {
+            const exams = Storage.getExams();
+            if (exams.length === 0) {
+                document.getElementById('latestExamScore').textContent = '--';
+                return;
+            }
+            
+            // 按日期排序，取最新的一次考试
+            const latestExam = exams.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+            const scoreElement = document.getElementById('latestExamScore');
+            scoreElement.textContent = latestExam.totalScore || '--';
+        }
+        
+        // 加载一言
+        function loadHitokoto() {
+            fetch('https://v1.hitokoto.cn/?c=i&c=k')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('hitokoto').textContent = data.hitokoto;
+                    document.getElementById('hitokotoFrom').textContent = `—— ${data.from || '一言'}`;
+                })
+                .catch(error => {
+                    console.error('加载一言失败:', error);
+                    document.getElementById('hitokoto').textContent = '愿你拥有美好的一天';
+                    document.getElementById('hitokotoFrom').textContent = '—— 系统';
+                });
+        }
+
+        // 确保所有函数都是全局可访问的
+        window.initDashboardPage = initDashboardPage;
+        window.initAnalysisPage = initAnalysisPage;
+        
+        // 页面加载完成后立即初始化仪表盘
+        initDashboardPage();
     });
