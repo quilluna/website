@@ -1,3 +1,45 @@
+// 保存和恢复位置的函数
+function saveCurrentLocation() {
+    // 获取当前激活的页面
+    let currentPage = 'dashboard';
+    const activeNavItem = document.querySelector('.nav-item.active');
+    if (activeNavItem) {
+        currentPage = activeNavItem.getAttribute('data-page') || 'dashboard';
+    } else {
+        // 从 hash 获取
+        const hash = window.location.hash.replace('#', '');
+        if (hash && ['dashboard', 'input', 'records', 'analysis', 'profile'].includes(hash)) {
+            currentPage = hash;
+        }
+    }
+    
+    const location = {
+        page: currentPage,
+        scrollY: window.scrollY
+    };
+    localStorage.setItem('savedLocation', JSON.stringify(location));
+}
+
+function restoreLocation() {
+    const savedLocation = localStorage.getItem('savedLocation');
+    if (savedLocation) {
+        try {
+            const location = JSON.parse(savedLocation);
+            if (location.page && UI && typeof UI.navigateTo === 'function') {
+                UI.navigateTo(location.page);
+            }
+            if (location.scrollY !== undefined) {
+                setTimeout(() => {
+                    window.scrollTo(0, location.scrollY);
+                }, 200);
+            }
+            localStorage.removeItem('savedLocation');
+        } catch (e) {
+            console.error('恢复位置失败', e);
+        }
+    }
+}
+
 // 导航菜单数据 - 统一管理移动端和桌面端导航项
 const navItems = [
     { id: 'dashboard', name: '仪表盘', icon: 'fa-solid fa-chart-line', href: '#dashboard' },
@@ -225,10 +267,16 @@ const Storage = {
     },
 
     // 保存考试记录
-    saveExam(exam) {
+    async saveExam(exam) {
         const exams = this.getExams();
         exams.push(exam);
         localStorage.setItem('exams', JSON.stringify(exams));
+        // 自动同步到服务器
+        try {
+            await this.syncDataToServer();
+        } catch (error) {
+            console.error('同步考试记录失败:', error);
+        }
         return true;
     },
     
@@ -238,22 +286,34 @@ const Storage = {
     },
 
     // 更新考试记录
-    updateExam(index, updatedExam) {
+    async updateExam(index, updatedExam) {
         const exams = this.getExams();
         if (index >= 0 && index < exams.length) {
             exams[index] = updatedExam;
             localStorage.setItem('exams', JSON.stringify(exams));
+            // 自动同步到服务器
+            try {
+                await this.syncDataToServer();
+            } catch (error) {
+                console.error('同步考试记录失败:', error);
+            }
             return true;
         }
         return false;
     },
 
     // 删除考试记录
-    deleteExam(index) {
+    async deleteExam(index) {
         const exams = this.getExams();
         if (index >= 0 && index < exams.length) {
             exams.splice(index, 1);
             localStorage.setItem('exams', JSON.stringify(exams));
+            // 自动同步到服务器
+            try {
+                await this.syncDataToServer();
+            } catch (error) {
+                console.error('同步考试记录失败:', error);
+            }
             return true;
         }
         return false;
@@ -280,8 +340,16 @@ const Storage = {
     },
 
     // 保存个人信息
-    saveProfile(profile) {
+    async saveProfile(profile, syncToServer = true) {
         localStorage.setItem('profile', JSON.stringify(profile));
+        // 自动同步到服务器
+        if (syncToServer) {
+            try {
+                await this.syncDataToServer();
+            } catch (error) {
+                console.error('同步个人信息失败:', error);
+            }
+        }
         return true;
     },
 
@@ -296,18 +364,77 @@ const Storage = {
     },
 
     // 保存学习目标
-    saveGoals(goals) {
+    async saveGoals(goals) {
         localStorage.setItem('goals', JSON.stringify(goals));
+        // 自动同步到服务器
+        try {
+            await this.syncDataToServer();
+        } catch (error) {
+            console.error('同步学习目标失败:', error);
+        }
         return true;
     },
 
+    // 同步数据到服务器
+    async syncDataToServer() {
+        const username = localStorage.getItem('username');
+        const password = localStorage.getItem('password');
+        
+        if (!username || !password) {
+            console.log('未登录，跳过数据同步');
+            return false;
+        }
+
+        try {
+            // 准备要同步的数据
+            const dataToSync = {
+                exams: this.getExams(),
+                profile: this.getProfile(),
+                goals: this.getGoals(),
+                fullMarks: this.getFullMarks()
+            };
+
+            // 发送同步请求
+            const apiUrl = await getApiBaseUrl();
+            const response = await fetch(`${apiUrl}/sync_data`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x_username': username,
+                    'x_password': password
+                },
+                body: JSON.stringify(dataToSync)
+            });
+
+            const result = await response.json();
+            if (result.code === 200) {
+                console.log('数据同步成功');
+                return true;
+            } else {
+                console.error('数据同步失败:', result.msg);
+                return false;
+            }
+        } catch (error) {
+            console.error('数据同步出错:', error);
+            return false;
+        }
+    },
+
     // 导入数据
-    importData(data) {
+    async importData(data) {
         try {
             if (data.exams) localStorage.setItem('exams', JSON.stringify(data.exams));
             if (data.profile) localStorage.setItem('profile', JSON.stringify(data.profile));
             if (data.goals) localStorage.setItem('goals', JSON.stringify(data.goals));
             if (data.fullMarks) localStorage.setItem('fullMarks', JSON.stringify(data.fullMarks));
+            
+            // 自动同步到服务器
+            try {
+                await this.syncDataToServer();
+            } catch (error) {
+                console.error('同步导入数据失败:', error);
+            }
+            
             return true;
         } catch (error) {
             console.error('导入数据失败', error);
@@ -332,8 +459,14 @@ const Storage = {
     },
     
     // 保存满分设置
-    saveFullMarks(fullMarks) {
+    async saveFullMarks(fullMarks) {
         localStorage.setItem('fullMarks', JSON.stringify(fullMarks));
+        // 自动同步到服务器
+        try {
+            await this.syncDataToServer();
+        } catch (error) {
+            console.error('同步满分设置失败:', error);
+        }
         return true;
     },
     
@@ -2190,33 +2323,62 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = Storage.getUser();
         if (user && Storage.isLoggedIn()) {
             try {
-                // 检查缓存时间戳
-                const lastSyncTime = localStorage.getItem('lastSyncTime');
-                const now = new Date().getTime();
-                const oneHour = 60 * 60 * 1000; // 1小时
+                const username = localStorage.getItem('username');
+                const password = localStorage.getItem('password');
                 
-                // 如果缓存时间戳不存在或已过期，则同步数据
-                if (!lastSyncTime || (now - parseInt(lastSyncTime)) > oneHour) {
-                    console.log('缓存时间戳过期或不存在，开始同步数据');
+                if (username && password) {
+                    // 检查缓存时间戳
+                    const lastSyncTime = localStorage.getItem('lastSyncTime');
+                    const now = new Date().getTime();
+                    const oneHour = 60 * 60 * 1000; // 1小时
                     
-                    // 从localStorage获取同步数据
-                    const syncDataStr = localStorage.getItem('syncData');
-                    if (syncDataStr) {
-                        try {
-                            const syncData = JSON.parse(syncDataStr);
-                            Storage.importData(syncData);
-                        } catch (e) {
-                            console.error('解析syncData失败:', e);
+                    // 如果缓存时间戳不存在或已过期，则同步数据
+                    if (!lastSyncTime || (now - parseInt(lastSyncTime)) > oneHour) {
+                        console.log('缓存时间戳过期或不存在，开始同步数据');
+                        
+                        // 从服务器获取最新数据
+                        const apiUrl = await getApiBaseUrl();
+                        const response = await fetch(`${apiUrl}/sync_data`, {
+                            method: 'POST',
+                            headers: {
+                                'x_username': username,
+                                'x_password': password
+                            }
+                        });
+                        
+                        const result = await response.json();
+                        if (result.code === 200 && result.data) {
+                            // 存储返回的数据
+                            localStorage.setItem('syncData', JSON.stringify(result.data));
+                            
+                            // 解析同步数据
+                            try {
+                                if (result.data.exams) {
+                                    localStorage.setItem('exams', JSON.stringify(result.data.exams));
+                                }
+                                if (result.data.profile) {
+                                    localStorage.setItem('profile', JSON.stringify(result.data.profile));
+                                }
+                                if (result.data.goals) {
+                                    localStorage.setItem('goals', JSON.stringify(result.data.goals));
+                                }
+                                if (result.data.fullMarks) {
+                                    localStorage.setItem('fullMarks', JSON.stringify(result.data.fullMarks));
+                                }
+                                console.log('数据同步成功');
+                            } catch (error) {
+                                console.error('解析同步数据失败', error);
+                            }
                         }
+                        
+                        // 更新缓存时间戳
+                        localStorage.setItem('lastSyncTime', now.toString());
+                        console.log('已设置新的缓存时间戳:', new Date(now).toLocaleString());
+                    } else {
+                        console.log('缓存时间戳未过期，跳过数据同步');
+                        console.log('上次同步时间:', new Date(parseInt(lastSyncTime)).toLocaleString());
+                        console.log('下次同步时间:', new Date(parseInt(lastSyncTime) + oneHour).toLocaleString());
                     }
-                    
-                    // 同步完成后，设置新的缓存时间戳
-                    localStorage.setItem('lastSyncTime', now.toString());
-                    console.log('已设置新的缓存时间戳:', new Date(now).toLocaleString());
-                } else {
-                    console.log('缓存时间戳未过期，跳过数据同步');
-                    console.log('上次同步时间:', new Date(parseInt(lastSyncTime)).toLocaleString());
-                    console.log('下次同步时间:', new Date(parseInt(lastSyncTime) + oneHour).toLocaleString());
                 }
                 
                 // 用登录信息覆盖姓名、班级和学校
@@ -2227,7 +2389,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     className: user.class || '',
                     school: user.school || ''
                 };
-                Storage.saveProfile(updatedProfile);
+                Storage.saveProfile(updatedProfile, false); // 不自动同步
             } catch (error) {
                 console.error('同步数据失败:', error);
             }
@@ -2259,6 +2421,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 显示测试版本通知
         UI.showNotification('info', '测试版本', '当前为测试版本，可能存在不稳定性,请悉知');
+        
+        // 在 UI 初始化后恢复位置
+        setTimeout(() => {
+            restoreLocation();
+        }, 150);
     }
     
     // 绑定登出事件
@@ -2733,12 +2900,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 console.log('返回结果中没有data字段');
                             }
                             
-                            // 更新登录按钮显示
-                            updateLoginButton();
-                            // 关闭模态框
+                            // 保存当前位置后刷新页面
                             setTimeout(() => {
-                                hideModal('loginModal');
-                                resetLoginForm();
+                                saveCurrentLocation();
+                                window.location.reload();
                             }, 1000);
                         } else {
                         // 登录失败
@@ -2811,10 +2976,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 refreshDataBtn.disabled = true;
                 
                 try {
-                    // 访问 clear_cache 接口
-                    console.log('访问 clear_cache 接口');
+                    // 直接从服务器同步数据
+                    console.log('开始同步数据');
                     const apiUrl = await getApiBaseUrl();
-                    const clearCacheResponse = await fetch(`${apiUrl}/clear_cache`, {
+                    const syncResponse = await fetch(`${apiUrl}/sync_data`, {
                         method: 'POST',
                         headers: {
                             'x_username': username,
@@ -2822,67 +2987,55 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
                     
-                    const clearCacheResult = await clearCacheResponse.json();
-                    console.log('clear_cache 接口响应:', clearCacheResult);
+                    const syncResult = await syncResponse.json();
+                    console.log('sync_data 接口响应:', syncResult);
                     
-                    if (clearCacheResult.code === 200) {
-                        // 缓存清除成功，重新同步数据
-                        console.log('缓存清除成功，重新同步数据');
-                        const apiUrl = await getApiBaseUrl();
-                        const syncResponse = await fetch(`${apiUrl}/sync_data`, {
-                            method: 'POST',
-                            headers: {
-                                'x_username': username,
-                                'x_password': password
+                    if (syncResult.code === 200 && syncResult.data) {
+                        // 存储返回的数据到 localStorage
+                        localStorage.setItem('syncData', JSON.stringify(syncResult.data));
+                        console.log('同步数据已存储到本地');
+                        
+                        // 解析同步数据（模拟 importData 的行为）
+                        console.log('开始解析同步数据');
+                        console.log('同步数据内容:', JSON.stringify(syncResult.data, null, 2));
+                        try {
+                            // 模拟 Storage.importData 函数的行为
+                            if (syncResult.data.exams) {
+                                localStorage.setItem('exams', JSON.stringify(syncResult.data.exams));
+                                console.log('解析并存储 exams 数据:', syncResult.data.exams.length, '条记录');
                             }
-                        });
-                        
-                        const syncResult = await syncResponse.json();
-                        console.log('sync_data 接口响应:', syncResult);
-                        
-                        if (syncResult.code === 200 && syncResult.data) {
-                            // 存储返回的数据到 localStorage
-                            localStorage.setItem('syncData', JSON.stringify(syncResult.data));
-                            console.log('同步数据已存储到本地');
+                            if (syncResult.data.profile) {
+                                localStorage.setItem('profile', JSON.stringify(syncResult.data.profile));
+                                console.log('解析并存储 profile 数据:', syncResult.data.profile);
+                            }
+                            if (syncResult.data.goals) {
+                                localStorage.setItem('goals', JSON.stringify(syncResult.data.goals));
+                                console.log('解析并存储 goals 数据:', syncResult.data.goals);
+                            }
+                            if (syncResult.data.fullMarks) {
+                                localStorage.setItem('fullMarks', JSON.stringify(syncResult.data.fullMarks));
+                                console.log('解析并存储 fullMarks 数据:', syncResult.data.fullMarks);
+                            }
+                            console.log('同步数据解析成功');
                             
-                            // 解析同步数据（模拟 importData 的行为）
-                            console.log('开始解析同步数据');
-                            console.log('同步数据内容:', JSON.stringify(syncResult.data, null, 2));
-                            try {
-                                // 模拟 Storage.importData 函数的行为
-                                if (syncResult.data.exams) {
-                                    localStorage.setItem('exams', JSON.stringify(syncResult.data.exams));
-                                    console.log('解析并存储 exams 数据:', syncResult.data.exams.length, '条记录');
-                                }
-                                if (syncResult.data.profile) {
-                                    localStorage.setItem('profile', JSON.stringify(syncResult.data.profile));
-                                    console.log('解析并存储 profile 数据:', syncResult.data.profile);
-                                }
-                                if (syncResult.data.goals) {
-                                    localStorage.setItem('goals', JSON.stringify(syncResult.data.goals));
-                                    console.log('解析并存储 goals 数据:', syncResult.data.goals);
-                                }
-                                if (syncResult.data.fullMarks) {
-                                    localStorage.setItem('fullMarks', JSON.stringify(syncResult.data.fullMarks));
-                                    console.log('解析并存储 fullMarks 数据:', syncResult.data.fullMarks);
-                                }
-                                console.log('同步数据解析成功');
-                                alert('数据刷新成功');
-                            } catch (error) {
-                                console.error('同步数据解析失败', error);
-                                alert('数据刷新失败：解析数据时出错');
-                            }
-                        } else {
-                            console.error('重新同步数据失败', syncResult);
-                            alert('数据刷新失败：重新同步数据时出错');
+                            UI.showNotification('success', '刷新成功', '数据已同步，正在刷新页面...');
+                            
+                            // 保存当前位置后刷新页面
+                            setTimeout(() => {
+                                saveCurrentLocation();
+                                window.location.reload();
+                            }, 500);
+                        } catch (error) {
+                            console.error('同步数据解析失败', error);
+                            UI.showNotification('error', '解析失败', '同步数据解析失败');
                         }
                     } else {
-                        console.error('清除缓存失败', clearCacheResult);
-                        alert('数据刷新失败：清除缓存时出错');
+                        console.error('同步数据失败', syncResult);
+                        UI.showNotification('error', '刷新失败', syncResult.msg || '同步数据时出错');
                     }
                 } catch (error) {
                     console.error('刷新数据失败', error);
-                    alert('数据刷新失败：网络错误');
+                    UI.showNotification('error', '刷新失败', '网络错误或服务器异常');
                 } finally {
                     // 恢复按钮状态
                     refreshDataBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i><span>刷新数据</span>';
