@@ -767,13 +767,15 @@ body:has(.modal-backdrop:not(.hidden)) {
 }
 
 /* 背景模糊效果 - 应用到主内容区域 */
-main {
+main, #editModeContainer {
     transition: filter 0.3s ease;
 }
 
 /* 当有模态框显示时，只对主内容区域应用模糊 */
 body:has(.fixed.inset-0.bg-black.bg-opacity-50:not(.hidden)) main,
-body:has(.modal-backdrop:not(.hidden)) main {
+body:has(.modal-backdrop:not(.hidden)) main,
+body:has(.fixed.inset-0.bg-black.bg-opacity-50:not(.hidden)) #editModeContainer,
+body:has(.modal-backdrop:not(.hidden)) #editModeContainer {
     filter: blur(4px);
 }
 .modal-content {

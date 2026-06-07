@@ -391,7 +391,8 @@ const Storage = {
                 exams: this.getExams(),
                 profile: this.getProfile(),
                 goals: this.getGoals(),
-                fullMarks: this.getFullMarks()
+                fullMarks: this.getFullMarks(),
+                electiveSubjects: this.getElectiveSubjects()
             };
 
             // 发送同步请求
@@ -427,6 +428,7 @@ const Storage = {
             if (data.profile) localStorage.setItem('profile', JSON.stringify(data.profile));
             if (data.goals) localStorage.setItem('goals', JSON.stringify(data.goals));
             if (data.fullMarks) localStorage.setItem('fullMarks', JSON.stringify(data.fullMarks));
+            if (data.electiveSubjects) localStorage.setItem('electiveSubjects', JSON.stringify(data.electiveSubjects));
             
             // 自动同步到服务器
             try {
@@ -448,7 +450,8 @@ const Storage = {
             exams: this.getExams(),
             profile: this.getProfile(),
             goals: this.getGoals(),
-            fullMarks: this.getFullMarks()
+            fullMarks: this.getFullMarks(),
+            electiveSubjects: this.getElectiveSubjects()
         };
     },
     
@@ -477,6 +480,49 @@ const Storage = {
             return user.username;
         }
         return localStorage.getItem('username') || '';
+    },
+
+    // 获取选科
+    getElectiveSubjects() {
+        const elective = localStorage.getItem('electiveSubjects');
+        return elective ? JSON.parse(elective) : [];
+    },
+
+    // 保存选科
+    async saveElectiveSubjects(subjects) {
+        localStorage.setItem('electiveSubjects', JSON.stringify(subjects));
+        // 自动同步到服务器
+        try {
+            await this.syncDataToServer();
+        } catch (error) {
+            console.error('同步选科设置失败:', error);
+        }
+        return true;
+    },
+
+    // 获取核心科目（语数英+选科）
+    getCoreSubjects() {
+        const electiveSubjects = this.getElectiveSubjects();
+        return ['chinese', 'math', 'english', ...electiveSubjects];
+    },
+
+    // 判断是否为未选科目（物理、化学、生物、政治、历史、地理中未选的）
+    isUnselectedElective(subject) {
+        const allElectives = ['physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+        const electiveSubjects = this.getElectiveSubjects();
+        return allElectives.includes(subject) && !electiveSubjects.includes(subject);
+    },
+
+    // 计算选科总分（语数英+选科）
+    calculateElectiveTotalScore(exam) {
+        const coreSubjects = this.getCoreSubjects();
+        let total = 0;
+        coreSubjects.forEach(subject => {
+            if (exam.subjects && exam.subjects[subject] !== undefined && exam.subjects[subject] !== null) {
+                total += exam.subjects[subject];
+            }
+        });
+        return total;
     }
 };
 
@@ -496,8 +542,26 @@ const Charts = {
                 return;
             }
 
-            const subjects = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
-            const subjectNames = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
+            const allSubjects = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+            const allSubjectNames = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
+            
+            // 根据选科过滤科目
+            const electiveSubjects = Storage.getElectiveSubjects();
+            let subjects, subjectNames;
+            
+            if (electiveSubjects.length > 0) {
+                // 有选科，只显示语数英+选科
+                subjects = ['chinese', 'math', 'english', ...electiveSubjects];
+                subjects = subjects.filter((s, i, arr) => arr.indexOf(s) === i); // 去重
+                subjectNames = subjects.map(s => {
+                    const idx = allSubjects.indexOf(s);
+                    return idx >= 0 ? allSubjectNames[idx] : s;
+                });
+            } else {
+                // 没有选科，显示所有科目
+                subjects = allSubjects;
+                subjectNames = allSubjectNames;
+            }
             
             // 获取数据优先级：1.年级排名率 2.班级排名率 3.得分率
             const getSubjectPriorityData = (subject) => {
@@ -978,12 +1042,120 @@ const UI = {
             });
         }
 
+        // 学期筛选下拉框交互
+        const semesterDropdownBtn = document.getElementById('semesterDropdownBtn');
+        const semesterDropdownMenu = document.getElementById('semesterDropdownMenu');
+        const semesterDropdownClose = document.getElementById('semesterDropdownClose');
+        
+        semesterDropdownBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // 如果菜单已经打开，再次点击则关闭
+            if (semesterDropdownMenu && !semesterDropdownMenu.classList.contains('hidden')) {
+                semesterDropdownMenu.classList.add('hidden');
+                return;
+            }
+            
+            const rect = semesterDropdownBtn.getBoundingClientRect();
+            const margin = 10;
+            
+            // 先设置基础样式并显示菜单，以便测量其实际尺寸
+            semesterDropdownMenu.removeAttribute('style');
+            semesterDropdownMenu.style.position = 'fixed';
+            semesterDropdownMenu.style.top = '0';
+            semesterDropdownMenu.style.left = '0';
+            semesterDropdownMenu.style.visibility = 'hidden';
+            semesterDropdownMenu.style.zIndex = '9999';
+            semesterDropdownMenu.classList.remove('hidden');
+            
+            // 获取菜单实际尺寸
+            const menuRect = semesterDropdownMenu.getBoundingClientRect();
+            const menuWidth = menuRect.width;
+            const menuHeight = menuRect.height;
+            
+            // 计算水平位置：优先让菜单右边缘对齐按钮右边缘
+            let left = rect.right - menuWidth;
+            // 检查左边是否超出屏幕
+            if (left < margin) left = margin;
+            // 检查右边是否超出屏幕
+            if (left + menuWidth > window.innerWidth - margin) {
+                left = window.innerWidth - menuWidth - margin;
+                // 如果连这个位置都不行（菜单比屏幕宽），贴左边
+                if (left < margin) left = margin;
+            }
+            
+            // 计算垂直位置：优先放在按钮下方
+            let top = rect.bottom + 5;
+            if (top + menuHeight > window.innerHeight - margin) {
+                // 下方放不下，尝试放按钮上方
+                top = rect.top - menuHeight - 5;
+                if (top < margin) {
+                    // 上方也放不下，贴顶部，设置最大高度和滚动
+                    top = margin;
+                    semesterDropdownMenu.style.maxHeight = (window.innerHeight - margin * 2) + 'px';
+                    semesterDropdownMenu.style.overflowY = 'auto';
+                }
+            }
+            
+            // 设置最终位置
+            semesterDropdownMenu.style.left = left + 'px';
+            semesterDropdownMenu.style.top = top + 'px';
+            semesterDropdownMenu.style.visibility = 'visible';
+            semesterDropdownMenu.style.maxWidth = (window.innerWidth - margin * 2) + 'px';
+        });
+        
+        // 关闭按钮
+        semesterDropdownClose?.addEventListener('click', () => {
+            semesterDropdownMenu?.classList.add('hidden');
+        });
+        
+        // 全选复选框
+        const selectAllSemesters = document.getElementById('selectAllSemesters');
+        selectAllSemesters?.addEventListener('change', (e) => {
+            document.querySelectorAll('.semester-checkbox').forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+            });
+            this.updateSemesterDropdownText();
+            this.filterExams();
+        });
+        
+        // 学期筛选事件（复选框）
+        document.querySelectorAll('.semester-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                this.updateSemesterDropdownText();
+                this.filterExams();
+            });
+        });
+        
+        // 点击外部关闭下拉框
+        document.addEventListener('click', (e) => {
+            if (semesterDropdownMenu && !semesterDropdownMenu.contains(e.target) && e.target !== semesterDropdownBtn) {
+                semesterDropdownMenu.classList.add('hidden');
+            }
+        });
+
         // 排序选择事件
         const sortSelect = document.getElementById('sortSelect');
         if (sortSelect) {
             sortSelect.addEventListener('change', () => {
                 this.sortExams();
             });
+        }
+    },
+    
+    // 更新学期下拉框显示文本
+    updateSemesterDropdownText() {
+        const selectedSemesters = Array.from(document.querySelectorAll('.semester-checkbox:checked'))
+            .map(checkbox => checkbox.value);
+        
+        const dropdownText = document.getElementById('semesterDropdownText');
+        if (dropdownText) {
+            if (selectedSemesters.length === 0) {
+                dropdownText.textContent = '全部学期';
+            } else if (selectedSemesters.length === 6) {
+                dropdownText.textContent = '全部学期';
+            } else {
+                dropdownText.textContent = selectedSemesters.join('、');
+            }
         }
     },
 
@@ -1097,6 +1269,7 @@ const UI = {
     addExam() {
         const examName = document.getElementById('examName').value.trim();
         const examDate = document.getElementById('examDate').value;
+        const semester = document.getElementById('examSemester').value;
         const rankClass = parseInt(document.getElementById('rankClass').value) || 0;
         const rankGrade = parseInt(document.getElementById('rankGrade').value) || 0;
         const examSummary = document.getElementById('examSummary').value.trim();
@@ -1175,6 +1348,7 @@ const UI = {
         const exam = {
             name: examName,
             date: examDate,
+            semester: semester,
             subjects: subjects,
             subjectRankClass: subjectRankClass,
             subjectRankGrade: subjectRankGrade,
@@ -1248,8 +1422,18 @@ const UI = {
                         ${exam.name}
                     </div>
                 </td>
+                <td class="py-3 px-4">${exam.semester || '-'}</td>
                 <td class="py-3 px-4">${formattedDate}</td>
-                <td class="py-3 px-4 font-medium text-primary">${typeof exam.totalScore === 'number' ? exam.totalScore.toFixed(1) : '-'}</td>
+                <td class="py-3 px-4 font-medium text-primary">${(() => {
+                    const electiveSubjects = Storage.getElectiveSubjects();
+                    if (electiveSubjects.length > 0) {
+                        const electiveTotal = Storage.calculateElectiveTotalScore(exam);
+                        const fullTotal = typeof exam.totalScore === 'number' ? exam.totalScore : 0;
+                        return `${electiveTotal.toFixed(1)}/${fullTotal.toFixed(1)}`;
+                    } else {
+                        return typeof exam.totalScore === 'number' ? exam.totalScore.toFixed(1) : '-';
+                    }
+                })()}</td>
                 <td class="py-3 px-4">${exam.rankClass || '-'}</td>
                 <td class="py-3 px-4">${exam.rankGrade || '-'}</td>
                 <td class="py-3 px-4">
@@ -1274,7 +1458,7 @@ const UI = {
             
             // 构建详情内容
             const detailContent = this.generateExamDetailContent(exam, index);
-            detailRow.innerHTML = `<td colspan="6" class="py-4 px-6">${detailContent}</td>`;
+            detailRow.innerHTML = `<td colspan="7" class="py-4 px-6">${detailContent}</td>`;
             
             // 添加点击事件
             row.addEventListener('click', () => {
@@ -1343,6 +1527,15 @@ const UI = {
         const date = new Date(exam.date);
         const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         
+        const electiveSubjects = Storage.getElectiveSubjects();
+        const hasElective = electiveSubjects.length > 0;
+        
+        // 计算选科总分
+        let electiveTotal = 0;
+        if (hasElective) {
+            electiveTotal = Storage.calculateElectiveTotalScore(exam);
+        }
+        
         let rankText = '';
         if (exam.rankClass) rankText += `班级: ${exam.rankClass}`;
         if (exam.rankGrade) rankText += (rankText ? ' | ' : '') + `年级: ${exam.rankGrade}`;
@@ -1382,7 +1575,13 @@ const UI = {
             
             Object.keys(exam.subjects).forEach(subject => {
                 const score = exam.subjects[subject];
-                const fullMark = (exam.fullMarks && exam.fullMarks[subject]) || 100;
+                const fullMark = (exam.fullMarks && exam.fullMarks[subject]) !== undefined ? exam.fullMarks[subject] : 100;
+                
+                // 如果有选科设置且满分为0，跳过显示
+                if (hasElective && fullMark === 0) {
+                    return;
+                }
+                
                 const rate = fullMark > 0 ? (score / fullMark) * 100 : 0;
                 const grade = this.getGrade(rate);
                 const rankClass = (exam.subjectRankClass && exam.subjectRankClass[subject]) || '-';
@@ -1391,9 +1590,13 @@ const UI = {
                 // 检查是否及格（得分率低于60%为不及格）
                 const isFail = rate < 60;
                 
+                // 判断是否为未选科目（需要变灰）
+                const isUnselected = hasElective && Storage.isUnselectedElective(subject);
+                const rowClass = isUnselected ? 'border-t border-gray-200 dark:border-gray-700 opacity-50' : 'border-t border-gray-200 dark:border-gray-700';
+                
                 subjectsTable += `
-                    <tr class="border-t border-gray-200 dark:border-gray-700">
-                        <td class="py-2 px-4">${subjectNames[subject] || subject}</td>
+                    <tr class="${rowClass}">
+                        <td class="py-2 px-4 ${isUnselected ? 'text-gray-400' : ''}">${subjectNames[subject] || subject}${isUnselected ? ' (未选)' : ''}</td>
                         <td class="py-2 px-4">
                             ${typeof score === 'number' && !isNaN(score) ? `
                                 <span class="${isFail ? 'text-danger font-medium' : ''}">${score.toFixed(1)}</span>
@@ -1418,6 +1621,27 @@ const UI = {
             `;
         }
         
+        // 总分显示（如果有选科，显示选科总分）
+        let totalScoreDisplay = '';
+        if (typeof exam.totalScore === 'number' && !isNaN(exam.totalScore)) {
+            totalScoreDisplay = `
+                <div class="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-gray-600 dark:text-gray-300">总分</span>
+                            <span class="ml-2 text-2xl font-bold text-primary">${exam.totalScore.toFixed(1)}</span>
+                        </div>
+                        ${hasElective ? `
+                        <div class="text-right">
+                            <span class="text-gray-600 dark:text-gray-300">选科总分</span>
+                            <span class="ml-2 text-2xl font-bold text-info">${electiveTotal.toFixed(1)}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
         // 构建详情内容
         return `
             <div class="exam-detail-content">
@@ -1427,6 +1651,8 @@ const UI = {
                         <p class="text-gray-600 dark:text-gray-300">${exam.summary}</p>
                     </div>
                 ` : ''}
+                
+                ${totalScoreDisplay}
                 
                 ${subjectsTable}
                 
@@ -1547,55 +1773,46 @@ const UI = {
         // 填充编辑表单
         document.getElementById('editExamName').value = exam.name;
         document.getElementById('editExamDate').value = exam.date;
+        document.getElementById('editExamSemester').value = exam.semester || '';
         document.getElementById('editRankClass').value = exam.rankClass || '';
         document.getElementById('editRankGrade').value = exam.rankGrade || '';
         document.getElementById('editExamSummary').value = exam.summary || '';
         
-        // 填充科目成绩表格
-        const tbody = document.getElementById('editScoresTable').querySelector('tbody');
-        tbody.innerHTML = '';
-        
-        const subjectNames = {
-            'chinese': '语文',
-            'math': '数学',
-            'english': '英语',
-            'physics': '物理',
-            'chemistry': '化学',
-            'biology': '生物',
-            'politics': '政治',
-            'history': '历史',
-            'geography': '地理'
-        };
-        
-        Object.keys(subjectNames).forEach(subject => {
+        // 填充科目成绩（卡片式表单）
+        const subjects = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+        subjects.forEach(subject => {
             const score = (exam.subjects && exam.subjects[subject]) || '';
             const fullMark = (exam.fullMarks && exam.fullMarks[subject]) || (subject === 'chinese' || subject === 'math' || subject === 'english' ? 150 : 100);
             const rankClass = (exam.subjectRankClass && exam.subjectRankClass[subject]) || '';
             const rankGrade = (exam.subjectRankGrade && exam.subjectRankGrade[subject]) || '';
             
-            const row = document.createElement('tr');
-            row.className = 'border-b dark:border-gray-700';
-            row.innerHTML = `
-                <td class="py-3 px-4">${subjectNames[subject]}</td>
-                <td class="py-3 px-4">
-                    <input type="number" name="edit${subject.charAt(0).toUpperCase() + subject.slice(1)}Score" 
-                           class="input-field" value="${score}" placeholder="0-${fullMark}" max="${fullMark}">
-                </td>
-                <td class="py-3 px-4">
-                    <input type="number" name="edit${subject.charAt(0).toUpperCase() + subject.slice(1)}FullMark" 
-                           class="input-field" value="${fullMark}" min="0" step="0.1">
-                </td>
-                <td class="py-3 px-4">
-                    <input type="number" name="edit${subject.charAt(0).toUpperCase() + subject.slice(1)}RankClass" 
-                           class="input-field" value="${rankClass}" placeholder="班级排名" min="1" max="51">
-                </td>
-                <td class="py-3 px-4">
-                    <input type="number" name="edit${subject.charAt(0).toUpperCase() + subject.slice(1)}RankGrade" 
-                           class="input-field" value="${rankGrade}" placeholder="年级排名" min="1" max="650">
-                </td>
-            `;
+            // 设置分数输入框
+            const scoreInput = document.querySelector(`input[name="edit${subject.charAt(0).toUpperCase() + subject.slice(1)}Score"]`);
+            if (scoreInput) {
+                scoreInput.value = score;
+                scoreInput.max = fullMark;
+                scoreInput.placeholder = `0-${fullMark}`;
+            }
             
-            tbody.appendChild(row);
+            // 设置满分显示和隐藏字段
+            const fullMarkDisplay = document.getElementById(`edit${subject.charAt(0).toUpperCase() + subject.slice(1)}FullMarkDisplay`);
+            const fullMarkInput = document.querySelector(`input[name="edit${subject.charAt(0).toUpperCase() + subject.slice(1)}FullMark"]`);
+            if (fullMarkDisplay) {
+                fullMarkDisplay.textContent = fullMark;
+            }
+            if (fullMarkInput) {
+                fullMarkInput.value = fullMark;
+            }
+            
+            // 设置排名输入框
+            const rankClassInput = document.querySelector(`input[name="edit${subject.charAt(0).toUpperCase() + subject.slice(1)}RankClass"]`);
+            if (rankClassInput) {
+                rankClassInput.value = rankClass;
+            }
+            const rankGradeInput = document.querySelector(`input[name="edit${subject.charAt(0).toUpperCase() + subject.slice(1)}RankGrade"]`);
+            if (rankGradeInput) {
+                rankGradeInput.value = rankGrade;
+            }
         });
         
         // 切换到编辑模式并显示模态框
@@ -1613,6 +1830,7 @@ const UI = {
 
         const examName = document.getElementById('editExamName').value.trim();
         const examDate = document.getElementById('editExamDate').value;
+        const semester = document.getElementById('editExamSemester').value;
         const rankClass = parseInt(document.getElementById('editRankClass').value) || 0;
         const rankGrade = parseInt(document.getElementById('editRankGrade').value) || 0;
         const examSummary = document.getElementById('editExamSummary').value.trim();
@@ -1691,6 +1909,7 @@ const UI = {
         const updatedExam = {
             name: examName,
             date: examDate,
+            semester: semester,
             subjects: subjects,
             subjectRankClass: subjectRankClass,
             subjectRankGrade: subjectRankGrade,
@@ -2137,7 +2356,8 @@ const UI = {
     // 显示满分编辑模态框
     showEditFullMarkModal(subject, defaultMark) {
         this.editingSubject = subject;
-        const currentMark = document.querySelector(`input[name="${subject}FullMark"]`).value;
+        const fullMarkInput = document.querySelector(`input[name="${subject}FullMark"]`);
+        const currentMark = fullMarkInput ? fullMarkInput.value : defaultMark;
         document.getElementById('fullMarkInput').value = currentMark;
         const editModal = document.getElementById('editFullMarkModal');
         // 确保动画能够正常触发
@@ -2148,13 +2368,40 @@ const UI = {
 
     // 加载满分设置
     loadFullMarks() {
-        const fullMarks = Storage.getFullMarks() || { chinese: 150, math: 150, english: 150, physics: 100, chemistry: 100, biology: 100 };
+        const electiveSubjects = Storage.getElectiveSubjects();
+        
+        // 获取当前的满分设置，如果没有则使用默认值
+        let fullMarks = Storage.getFullMarks() || {
+            chinese: 150,
+            math: 150,
+            english: 150,
+            physics: 100,
+            chemistry: 100,
+            biology: 100,
+            politics: 100,
+            history: 100,
+            geography: 100
+        };
+        
+        // 根据选科设置动态更新满分：选科保持原有值，非选科设为0
+        fullMarks = {
+            chinese: fullMarks.chinese || 150,
+            math: fullMarks.math || 150,
+            english: fullMarks.english || 150,
+            physics: electiveSubjects.includes('physics') ? (fullMarks.physics || 100) : 0,
+            chemistry: electiveSubjects.includes('chemistry') ? (fullMarks.chemistry || 100) : 0,
+            biology: electiveSubjects.includes('biology') ? (fullMarks.biology || 100) : 0,
+            politics: electiveSubjects.includes('politics') ? (fullMarks.politics || 100) : 0,
+            history: electiveSubjects.includes('history') ? (fullMarks.history || 100) : 0,
+            geography: electiveSubjects.includes('geography') ? (fullMarks.geography || 100) : 0
+        };
+        
         this.fullMarks = fullMarks;
         
         // 更新所有科目的满分显示
         const subjects = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
         subjects.forEach(subject => {
-            const mark = fullMarks[subject] || 100;
+            const mark = fullMarks[subject] !== undefined ? fullMarks[subject] : 100;
             const displayMark = mark % 1 === 0 ? mark : mark.toFixed(1);
             
             // 更新显示元素
@@ -2169,11 +2416,45 @@ const UI = {
                 hiddenInput.value = mark;
             }
             
-            // 更新得分输入框的最大值
+            // 根据满分设置科目卡片的样式
+            const subjectCard = document.querySelector(`input[name="${subject}Score"]`)?.closest('.bg-gray-50, .dark\\:bg-gray-700');
             const scoreInput = document.querySelector(`input[name="${subject}Score"]`);
-            if (scoreInput) {
-                scoreInput.max = mark;
-                scoreInput.placeholder = `0-${displayMark}`;
+            const rankClassInput = document.querySelector(`input[name="${subject}RankClass"]`);
+            const rankGradeInput = document.querySelector(`input[name="${subject}RankGrade"]`);
+            
+            if (subjectCard && mark === 0) {
+                subjectCard.style.opacity = '0.5';
+                // 禁用分数输入框和排名输入框
+                if (scoreInput) {
+                    scoreInput.disabled = true;
+                    scoreInput.placeholder = '不统计';
+                    scoreInput.value = '';
+                }
+                if (rankClassInput) {
+                    rankClassInput.disabled = true;
+                    rankClassInput.placeholder = '-';
+                    rankClassInput.value = '';
+                }
+                if (rankGradeInput) {
+                    rankGradeInput.disabled = true;
+                    rankGradeInput.placeholder = '-';
+                    rankGradeInput.value = '';
+                }
+            } else if (subjectCard) {
+                subjectCard.style.opacity = '1';
+                if (scoreInput) {
+                    scoreInput.disabled = false;
+                    scoreInput.max = mark;
+                    scoreInput.placeholder = `0-${displayMark}`;
+                }
+                if (rankClassInput) {
+                    rankClassInput.disabled = false;
+                    rankClassInput.placeholder = '班级排名';
+                }
+                if (rankGradeInput) {
+                    rankGradeInput.disabled = false;
+                    rankGradeInput.placeholder = '年级排名';
+                }
             }
         });
     },
@@ -2223,29 +2504,88 @@ const UI = {
             return;
         }
 
+        // 获取科目名称（去除edit前缀）
+        let subjectName = subject;
+        let isEditMode = false;
+        if (subject.startsWith('edit')) {
+            subjectName = subject.charAt(4).toLowerCase() + subject.slice(5);
+            isEditMode = true;
+        }
+
         // 更新显示和隐藏输入框
         // 如果满分是整数，显示为整数，否则显示一位小数
         const displayMark = newMark % 1 === 0 ? newMark : newMark.toFixed(1);
-        document.getElementById(`${subject}FullMarkDisplay`).textContent = displayMark;
-        document.querySelector(`input[name="${subject}FullMark"]`).value = newMark;
+        
+        // 更新显示元素
+        const displayId = isEditMode ? `edit${subjectName.charAt(0).toUpperCase() + subjectName.slice(1)}FullMarkDisplay` : `${subjectName}FullMarkDisplay`;
+        const displayEl = document.getElementById(displayId);
+        if (displayEl) {
+            displayEl.textContent = displayMark;
+        }
+        
+        // 更新隐藏的满分输入框
+        const fullMarkInput = document.querySelector(`input[name="${subject}FullMark"]`);
+        if (fullMarkInput) {
+            fullMarkInput.value = newMark;
+        }
 
         // 更新得分输入框的最大值
         const scoreInput = document.querySelector(`input[name="${subject}Score"]`);
-        if (newMark > 0) {
-            scoreInput.max = newMark;
-            scoreInput.disabled = false;
-            // 如果满分是整数，显示为整数，否则显示一位小数
-            const placeholderMark = newMark % 1 === 0 ? newMark : newMark.toFixed(1);
-            scoreInput.placeholder = `0-${placeholderMark}`;
+        if (scoreInput) {
+            if (newMark > 0) {
+                scoreInput.max = newMark;
+                scoreInput.disabled = false;
+                // 如果满分是整数，显示为整数，否则显示一位小数
+                const placeholderMark = newMark % 1 === 0 ? newMark : newMark.toFixed(1);
+                scoreInput.placeholder = `0-${placeholderMark}`;
+            } else {
+                scoreInput.disabled = true;
+                scoreInput.placeholder = '不统计';
+                scoreInput.value = '';
+            }
+        }
+        
+        // 更新排名输入框
+        const rankClassInput = document.querySelector(`input[name="${subject}RankClass"]`);
+        const rankGradeInput = document.querySelector(`input[name="${subject}RankGrade"]`);
+        
+        if (newMark === 0) {
+            if (rankClassInput) {
+                rankClassInput.disabled = true;
+                rankClassInput.placeholder = '-';
+                rankClassInput.value = '';
+            }
+            if (rankGradeInput) {
+                rankGradeInput.disabled = true;
+                rankGradeInput.placeholder = '-';
+                rankGradeInput.value = '';
+            }
         } else {
-            scoreInput.disabled = true;
-            scoreInput.placeholder = '不统计';
-            scoreInput.value = '';
+            if (rankClassInput) {
+                rankClassInput.disabled = false;
+                rankClassInput.placeholder = '班级排名';
+            }
+            if (rankGradeInput) {
+                rankGradeInput.disabled = false;
+                rankGradeInput.placeholder = '年级排名';
+            }
+        }
+        
+        // 更新科目卡片样式
+        if (scoreInput) {
+            const subjectCard = scoreInput.closest('.bg-gray-50, .dark\\:bg-gray-700');
+            if (subjectCard) {
+                if (newMark === 0) {
+                    subjectCard.style.opacity = '0.5';
+                } else {
+                    subjectCard.style.opacity = '1';
+                }
+            }
         }
         
         // 更新fullMarks对象并保存到localStorage
         const currentFullMarks = this.fullMarks || {};
-        currentFullMarks[subject] = newMark;
+        currentFullMarks[subjectName] = newMark;
         this.fullMarks = currentFullMarks;
         Storage.saveFullMarks(currentFullMarks);
 
@@ -2264,7 +2604,18 @@ const UI = {
     filterExams() {
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         
+        // 获取选中的学期（复选框形式）
+        const selectedSemesters = Array.from(document.querySelectorAll('.semester-checkbox:checked'))
+            .map(checkbox => checkbox.value);
+        
         let filteredExams = Storage.getExams();
+        
+        // 学期筛选（多选）
+        if (selectedSemesters.length > 0) {
+            filteredExams = filteredExams.filter(exam => 
+                selectedSemesters.includes(exam.semester)
+            );
+        }
         
         // 搜索筛选
         if (searchTerm) {
@@ -2364,6 +2715,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 }
                                 if (result.data.fullMarks) {
                                     localStorage.setItem('fullMarks', JSON.stringify(result.data.fullMarks));
+                                }
+                                if (result.data.electiveSubjects) {
+                                    localStorage.setItem('electiveSubjects', JSON.stringify(result.data.electiveSubjects));
                                 }
                                 console.log('数据同步成功');
                             } catch (error) {
@@ -2490,6 +2844,132 @@ document.addEventListener('DOMContentLoaded', () => {
         // 点击关闭按钮关闭设置对话框
         if (closeSettingsModal) {
             closeSettingsModal.addEventListener('click', closeSettingsModalFunc);
+        }
+        
+        // 选科模态框相关
+        const electiveModal = document.getElementById('electiveModal');
+        const closeElectiveModal = document.getElementById('closeElectiveModal');
+        const openElectiveModalBtn = document.getElementById('openElectiveModalBtn');
+        
+        // 打开选科对话框
+        function openElectiveModal() {
+            showModal('electiveModal');
+            loadElectiveSubjectsSettings();
+        }
+        
+        // 关闭选科对话框
+        function closeElectiveModalFunc() {
+            hideModal('electiveModal');
+        }
+        
+        // 点击打开选科按钮
+        if (openElectiveModalBtn) {
+            openElectiveModalBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openElectiveModal();
+            });
+        }
+        
+        // 点击关闭按钮关闭选科对话框
+        if (closeElectiveModal) {
+            closeElectiveModal.addEventListener('click', closeElectiveModalFunc);
+        }
+        
+        // 点击对话框外部关闭选科对话框
+        if (electiveModal) {
+            electiveModal.addEventListener('click', (event) => {
+                if (event.target === electiveModal) {
+                    closeElectiveModalFunc();
+                }
+            });
+        }
+        
+        // 选科功能
+        function loadElectiveSubjectsSettings() {
+            const savedElectives = Storage.getElectiveSubjects();
+            const checkboxes = document.querySelectorAll('input[name="elective"]');
+            const countHint = document.getElementById('electiveCountHint');
+            const saveBtn = document.getElementById('saveElectiveBtn');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = savedElectives.includes(checkbox.value);
+            });
+            
+            updateElectiveCountHint();
+        }
+        
+        function updateElectiveCountHint() {
+            const checkboxes = document.querySelectorAll('input[name="elective"]:checked');
+            const count = checkboxes.length;
+            const countHint = document.getElementById('electiveCountHint');
+            const saveBtn = document.getElementById('saveElectiveBtn');
+            
+            if (countHint) {
+                countHint.textContent = `已选择 ${count}/3 门`;
+            }
+            
+            if (saveBtn) {
+                saveBtn.disabled = count !== 3;
+            }
+        }
+        
+        // 更新仪表盘选科显示
+        function updateElectiveDisplay() {
+            const electiveSubjects = Storage.getElectiveSubjects();
+            const selectedElectivesEl = document.getElementById('selectedElectives');
+            const subjectNames = {
+                'physics': '物理',
+                'chemistry': '化学',
+                'biology': '生物',
+                'politics': '政治',
+                'history': '历史',
+                'geography': '地理'
+            };
+            
+            if (selectedElectivesEl) {
+                if (electiveSubjects.length > 0) {
+                    selectedElectivesEl.textContent = electiveSubjects.map(s => subjectNames[s] || s).join('、');
+                } else {
+                    selectedElectivesEl.textContent = '未设置';
+                }
+            }
+        }
+        
+        // 页面加载时更新选科显示
+        updateElectiveDisplay();
+        
+        // 选科复选框事件
+        document.querySelectorAll('input[name="elective"]').forEach(checkbox => {
+            checkbox.addEventListener('change', updateElectiveCountHint);
+        });
+        
+        // 保存选科按钮
+        const saveElectiveBtn = document.getElementById('saveElectiveBtn');
+        if (saveElectiveBtn) {
+            saveElectiveBtn.addEventListener('click', async () => {
+                const selectedSubjects = [];
+                document.querySelectorAll('input[name="elective"]:checked').forEach(checkbox => {
+                    selectedSubjects.push(checkbox.value);
+                });
+                
+                if (selectedSubjects.length !== 3) {
+                    UI.showNotification('error', '保存失败', '请选择恰好3门科目');
+                    return;
+                }
+                
+                await Storage.saveElectiveSubjects(selectedSubjects);
+                UI.showNotification('success', '保存成功', '选科设置已保存');
+                
+                // 关闭选科对话框
+                closeElectiveModalFunc();
+                
+                // 更新仪表盘显示
+                updateElectiveDisplay();
+                
+                // 刷新页面以应用新设置
+                saveCurrentLocation();
+                window.location.reload();
+            });
         }
         
         // 点击对话框外部关闭设置对话框
@@ -3270,6 +3750,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 成绩分析页面功能
         function initAnalysisPage() {
+            // 根据选科设置显示/隐藏科目按钮
+            const electiveSubjects = Storage.getElectiveSubjects();
+            const allElectiveButtons = document.querySelectorAll('.subject-select-btn');
+            allElectiveButtons.forEach(button => {
+                const subject = button.getAttribute('data-subject');
+                // 语数英总是显示，其他科目根据选科决定样式
+                if (!['chinese', 'math', 'english'].includes(subject)) {
+                    if (electiveSubjects.includes(subject)) {
+                        button.style.display = '';
+                        button.classList.remove('btn-outline-secondary');
+                        button.classList.add('btn-outline-primary');
+                    } else {
+                        // 非选科保留但变成次级按钮
+                        button.style.display = '';
+                        button.classList.remove('btn-outline-primary');
+                        button.classList.add('btn-outline-secondary');
+                        button.style.opacity = '0.7';
+                    }
+                }
+            });
+            
             // 标签页切换功能
             const tabs = document.querySelectorAll('#analysisTabs button');
             tabs.forEach(tab => {
@@ -3325,13 +3826,133 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
             
+            // 成绩分析页面学期筛选下拉框交互
+            const analysisSemesterDropdownBtn = document.getElementById('analysisSemesterDropdownBtn');
+            const analysisSemesterDropdownMenu = document.getElementById('analysisSemesterDropdownMenu');
+            const analysisSemesterDropdownClose = document.getElementById('analysisSemesterDropdownClose');
+            
+            analysisSemesterDropdownBtn?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // 如果菜单已经打开，再次点击则关闭
+                if (analysisSemesterDropdownMenu && !analysisSemesterDropdownMenu.classList.contains('hidden')) {
+                    analysisSemesterDropdownMenu.classList.add('hidden');
+                    return;
+                }
+                
+                const rect = analysisSemesterDropdownBtn.getBoundingClientRect();
+                const margin = 10;
+                
+                // 先设置基础样式并显示菜单，以便测量其实际尺寸
+                analysisSemesterDropdownMenu.removeAttribute('style');
+                analysisSemesterDropdownMenu.style.position = 'fixed';
+                analysisSemesterDropdownMenu.style.top = '0';
+                analysisSemesterDropdownMenu.style.left = '0';
+                analysisSemesterDropdownMenu.style.visibility = 'hidden';
+                analysisSemesterDropdownMenu.style.zIndex = '9999';
+                analysisSemesterDropdownMenu.classList.remove('hidden');
+                
+                // 获取菜单实际尺寸
+                const menuRect = analysisSemesterDropdownMenu.getBoundingClientRect();
+                const menuWidth = menuRect.width;
+                const menuHeight = menuRect.height;
+                
+                // 计算水平位置：优先让菜单右边缘对齐按钮右边缘
+                let left = rect.right - menuWidth;
+                // 检查左边是否超出屏幕
+                if (left < margin) left = margin;
+                // 检查右边是否超出屏幕
+                if (left + menuWidth > window.innerWidth - margin) {
+                    left = window.innerWidth - menuWidth - margin;
+                    // 如果连这个位置都不行（菜单比屏幕宽），贴左边
+                    if (left < margin) left = margin;
+                }
+                
+                // 计算垂直位置：优先放在按钮下方
+                let top = rect.bottom + 5;
+                if (top + menuHeight > window.innerHeight - margin) {
+                    // 下方放不下，尝试放按钮上方
+                    top = rect.top - menuHeight - 5;
+                    if (top < margin) {
+                        // 上方也放不下，贴顶部，设置最大高度和滚动
+                        top = margin;
+                        analysisSemesterDropdownMenu.style.maxHeight = (window.innerHeight - margin * 2) + 'px';
+                        analysisSemesterDropdownMenu.style.overflowY = 'auto';
+                    }
+                }
+                
+                // 设置最终位置
+                analysisSemesterDropdownMenu.style.left = left + 'px';
+                analysisSemesterDropdownMenu.style.top = top + 'px';
+                analysisSemesterDropdownMenu.style.visibility = 'visible';
+                analysisSemesterDropdownMenu.style.maxWidth = (window.innerWidth - margin * 2) + 'px';
+            });
+            
+            // 关闭按钮
+            analysisSemesterDropdownClose?.addEventListener('click', () => {
+                analysisSemesterDropdownMenu?.classList.add('hidden');
+            });
+            
+            // 全选复选框
+            const selectAllAnalysisSemesters = document.getElementById('selectAllAnalysisSemesters');
+            selectAllAnalysisSemesters?.addEventListener('change', (e) => {
+                document.querySelectorAll('.analysis-semester-checkbox').forEach(checkbox => {
+                    checkbox.checked = e.target.checked;
+                });
+                updateAnalysisSemesterDropdownText();
+                initOverviewCharts();
+            });
+            
+            // 学期筛选事件（复选框）
+            document.querySelectorAll('.analysis-semester-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', () => {
+                    updateAnalysisSemesterDropdownText();
+                    initOverviewCharts();
+                });
+            });
+            
+            // 点击外部关闭下拉框
+            document.addEventListener('click', (e) => {
+                if (analysisSemesterDropdownMenu && !analysisSemesterDropdownMenu.contains(e.target) && e.target !== analysisSemesterDropdownBtn) {
+                    analysisSemesterDropdownMenu.classList.add('hidden');
+                }
+            });
+            
+            // 更新分析页面学期下拉框显示文本
+            function updateAnalysisSemesterDropdownText() {
+                const selectedSemesters = Array.from(document.querySelectorAll('.analysis-semester-checkbox:checked'))
+                    .map(checkbox => checkbox.value);
+                
+                const dropdownText = document.getElementById('analysisSemesterDropdownText');
+                if (dropdownText) {
+                    if (selectedSemesters.length === 0) {
+                        dropdownText.textContent = '全部学期';
+                    } else if (selectedSemesters.length === 6) {
+                        dropdownText.textContent = '全部学期';
+                    } else {
+                        dropdownText.textContent = selectedSemesters.join('、');
+                    }
+                }
+            }
+            
             // 自动初始化全览标签页的图表
             initOverviewCharts();
         }
 
         // 初始化全览页面图表
         function initOverviewCharts() {
-            const exams = Storage.getExams().sort((a, b) => new Date(a.date) - new Date(b.date));
+            // 获取选中的学期（复选框形式）
+            const selectedSemesters = Array.from(document.querySelectorAll('.analysis-semester-checkbox:checked'))
+                .map(checkbox => checkbox.value);
+            
+            let exams = Storage.getExams().sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // 应用学期筛选（多选）
+            if (selectedSemesters.length > 0) {
+                exams = exams.filter(exam => selectedSemesters.includes(exam.semester));
+            }
+            
+            const electiveSubjects = Storage.getElectiveSubjects();
+            const hasElective = electiveSubjects.length > 0;
             
             // 总分趋势图
             const totalScoreCtx = document.getElementById('totalScoreTrendChart');
@@ -3342,41 +3963,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 const examNames = exams.map(exam => exam.name);
-                const totalScores = exams.map(exam => exam.totalScore || 0);
+                // 如果有选科，显示选科总分，否则显示总分
+                const totalScores = hasElective 
+                    ? exams.map(exam => Storage.calculateElectiveTotalScore(exam) || 0)
+                    : exams.map(exam => exam.totalScore || 0);
                 const classRanks = exams.map(exam => exam.rankClass || null);
                 const gradeRanks = exams.map(exam => exam.rankGrade || null);
+                
+                const datasets = [
+                    {
+                        label: hasElective ? '选科总分' : '总分',
+                        data: totalScores,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.3,
+                        fill: true,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: '班级排名',
+                        data: classRanks,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.3,
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: '年级排名',
+                        data: gradeRanks,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        tension: 0.3,
+                        yAxisID: 'y1'
+                    }
+                ];
                 
                 window.totalScoreTrendChart = new Chart(totalScoreCtx, {
                     type: 'line',
                     data: {
                         labels: examNames,
-                        datasets: [
-                            {
-                                label: '总分',
-                                data: totalScores,
-                                borderColor: '#3b82f6',
-                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                tension: 0.3,
-                                fill: true,
-                                yAxisID: 'y'
-                            },
-                            {
-                                label: '班级排名',
-                                data: classRanks,
-                                borderColor: '#10b981',
-                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                tension: 0.3,
-                                yAxisID: 'y1'
-                            },
-                            {
-                                label: '年级排名',
-                                data: gradeRanks,
-                                borderColor: '#f59e0b',
-                                backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                                tension: 0.3,
-                                yAxisID: 'y1'
-                            }
-                        ]
+                        datasets: datasets
                     },
                     options: {
                         responsive: true,
@@ -3396,7 +4022,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     text: '分数'
                                 },
                                 beginAtZero: false,
-                                min: Math.min(...totalScores) - 50
+                                min: totalScores.length > 0 ? Math.min(...totalScores) - 50 : 0
                             },
                             y1: {
                                 type: 'linear',
@@ -3427,8 +4053,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // 获取最近一次考试的数据
                 const latestExam = exams[exams.length - 1];
-                const subjects = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
-                const subjectKeys = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+                
+                // 根据选科过滤科目
+                let subjects, subjectKeys;
+                if (hasElective) {
+                    subjects = ['语文', '数学', '英语'];
+                    subjectKeys = ['chinese', 'math', 'english'];
+                    electiveSubjects.forEach(s => {
+                        const idx = ['physics', 'chemistry', 'biology', 'politics', 'history', 'geography'].indexOf(s);
+                        if (idx >= 0) {
+                            subjects.push(['物理', '化学', '生物', '政治', '历史', '地理'][idx]);
+                            subjectKeys.push(s);
+                        }
+                    });
+                } else {
+                    subjects = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '地理'];
+                    subjectKeys = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'politics', 'history', 'geography'];
+                }
                 
                 // 计算得分率
                 const scoreRates = subjectKeys.map(key => {
@@ -3504,6 +4145,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // 生成学习建议
         function generateStudyAdvice() {
             const exams = Storage.getExams();
+            const electiveSubjects = Storage.getElectiveSubjects();
+            
             if (exams.length === 0) {
                 document.getElementById('strengthSubjects').textContent = '暂无数据';
                 document.getElementById('weakSubjects').textContent = '暂无数据';
@@ -3514,15 +4157,30 @@ document.addEventListener('DOMContentLoaded', () => {
             // 获取最近一次考试的数据（按日期排序）
             const sortedExams = exams.sort((a, b) => new Date(b.date) - new Date(a.date));
             const latestExam = sortedExams[0];
-            const subjectKeys = ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology'];
-            const subjectNames = ['语文', '数学', '英语', '物理', '化学', '生物'];
+            
+            // 根据选科确定要分析的科目
+            let subjectKeys = ['chinese', 'math', 'english', ...electiveSubjects];
+            subjectKeys = [...new Set(subjectKeys)]; // 去重
+            
+            const subjectNames = {
+                'chinese': '语文',
+                'math': '数学',
+                'english': '英语',
+                'physics': '物理',
+                'chemistry': '化学',
+                'biology': '生物',
+                'politics': '政治',
+                'history': '历史',
+                'geography': '地理'
+            };
+            
             const subjectScores = [];
             
             // 计算各科得分率
-            subjectKeys.forEach((key, index) => {
+            subjectKeys.forEach(key => {
                 if (latestExam.subjects && latestExam.fullMarks && latestExam.subjects[key] && latestExam.fullMarks[key]) {
                     const scoreRate = latestExam.subjects[key] / latestExam.fullMarks[key];
-                    subjectScores.push({ name: subjectNames[index], score: scoreRate });
+                    subjectScores.push({ name: subjectNames[key], key: key, score: scoreRate });
                 }
             });
             
@@ -3537,19 +4195,27 @@ document.addEventListener('DOMContentLoaded', () => {
             // 排序科目得分率
             subjectScores.sort((a, b) => b.score - a.score);
             
-            // 确定优势科目和弱势科目
-            const topSubjects = subjectScores.slice(0, 2).map(s => s.name).join('、');
-            const weakSubjects = subjectScores.slice(-2).map(s => s.name).join('、');
+            // 确定优势科目和弱势科目（最多显示2个）
+            const topSubjects = subjectScores.slice(0, Math.min(2, subjectScores.length)).map(s => s.name).join('、');
+            const weakSubjects = subjectScores.slice(-Math.min(2, subjectScores.length)).map(s => s.name).join('、');
             
             // 生成建议
             document.getElementById('strengthSubjects').textContent = topSubjects || '暂无数据';
             document.getElementById('weakSubjects').textContent = weakSubjects || '暂无数据';
-            document.getElementById('generalAdvice').textContent = `继续保持${topSubjects}的优势，加强${weakSubjects}的基础知识学习。建议制定合理的学习计划，注重错题整理和知识点巩固。保持积极的学习态度，相信你会取得更大的进步！`;
+            
+            if (topSubjects && weakSubjects && topSubjects !== weakSubjects) {
+                document.getElementById('generalAdvice').textContent = `继续保持${topSubjects}的优势，加强${weakSubjects}的基础知识学习。建议制定合理的学习计划，注重错题整理和知识点巩固。保持积极的学习态度，相信你会取得更大的进步！`;
+            } else {
+                document.getElementById('generalAdvice').textContent = '继续保持当前的学习状态，注重各科的均衡发展。建议制定合理的学习计划，注重错题整理和知识点巩固。';
+            }
         }
 
         // 加载科目详情
         function loadSubjectDetail(subject, subjectName) {
             const exams = Storage.getExams().sort((a, b) => new Date(a.date) - new Date(b.date));
+            const electiveSubjects = Storage.getElectiveSubjects();
+            const isUnselectedElective = Storage.isUnselectedElective(subject);
+            
             if (exams.length === 0) {
                 document.getElementById('subjectScore').textContent = '--';
                 document.getElementById('subjectClassRank').textContent = '--';
@@ -3620,19 +4286,24 @@ document.addEventListener('DOMContentLoaded', () => {
             
             status = avgRankScore;
             
-            // 生成建议
-            if (status >= 0.9) {
-                advice = `${subjectName}成绩优秀，继续保持。建议挑战一些难题，拓展解题思路，保持领先地位。`;
-            } else if (status >= 0.8) {
-                advice = `${subjectName}成绩良好，建议加强知识点的系统性整理，多做练习题巩固知识点。`;
-            } else if (status >= 0.7) {
-                advice = `${subjectName}成绩中等，建议注重基础知识的学习，多做练习题，提高解题能力。`;
+            // 生成建议（未选科目不显示建议）
+            if (isUnselectedElective) {
+                advice = '<p class="text-gray-500">未选科目，暂无建议</p>';
             } else {
-                advice = `${subjectName}成绩有待提高，建议加强基础知识学习，多做练习题，注重理解概念和公式的应用。`;
+                if (status >= 0.9) {
+                    advice = `${subjectName}成绩优秀，继续保持。建议挑战一些难题，拓展解题思路，保持领先地位。`;
+                } else if (status >= 0.8) {
+                    advice = `${subjectName}成绩良好，建议加强知识点的系统性整理，多做练习题巩固知识点。`;
+                } else if (status >= 0.7) {
+                    advice = `${subjectName}成绩中等，建议注重基础知识的学习，多做练习题，提高解题能力。`;
+                } else {
+                    advice = `${subjectName}成绩有待提高，建议加强基础知识学习，多做练习题，注重理解概念和公式的应用。`;
+                }
+                advice = `<p>${advice}</p>`;
             }
             
             // 更新建议
-            document.getElementById('subjectAdvice').innerHTML = `<p>${advice}</p>`;
+            document.getElementById('subjectAdvice').innerHTML = advice;
             
             // 更新学习状态
             const statusBar = document.getElementById('subjectStatusBar');
@@ -3652,7 +4323,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusText.textContent = '中等';
                 statusText.classList.add('text-warning');
             } else {
-                statusText.textContent = '需要加强';
+                // 需要加强的区间改成稍弱
+                statusText.textContent = '稍弱';
                 statusText.classList.add('text-danger');
             }
             

@@ -44,11 +44,11 @@
                             <div class="px-3 py-3">
                                 <div class="flex justify-between items-center">
                                     <span class="text-sm">版本号</span>
-                                    <span class="text-sm font-medium">0.2.1-beta</span>
+                                    <span class="text-sm font-medium">0.3.0-beta</span>
                                 </div>
                                 <div class="flex justify-between items-center mt-1">
                                     <span class="text-sm">构建时间</span>
-                                    <span class="text-sm font-medium">2026-2-21</span>
+                                    <span class="text-sm font-medium">2026-6-7</span>
                                 </div>
                                 <div class="flex justify-between items-center mt-3">
                                     <span class="text-sm">构建作者</span>
@@ -134,7 +134,26 @@
                         </div>
                     </div>
 
-                    <!-- 2) 新增考试录入 -->
+                    <!-- 2) 选科设置 -->
+                    <div id="electiveCard" class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm mb-8">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold mb-2">选科设置</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">选择3门选科科目</p>
+                            </div>
+                            <div class="mt-4 md:mt-0">
+                                <button id="openElectiveModalBtn" class="btn btn-secondary">
+                                    <i class="fa-solid fa-gear"></i>
+                                    <span>设置选科</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="electiveDisplay" class="mt-4 text-sm text-gray-600 dark:text-gray-300">
+                            已选科目：<span id="selectedElectives">未设置</span>
+                        </div>
+                    </div>
+
+                    <!-- 3) 新增考试录入 -->
                     <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div>
@@ -178,6 +197,19 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">考试日期</label>
                                 <input type="date" id="examDate" class="input-field">
                             </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">学期</label>
+                            <select id="examSemester" class="input-field">
+                                <option value="">请选择学期</option>
+                                <option value="高一上">高一上</option>
+                                <option value="高一下">高一下</option>
+                                <option value="高二上">高二上</option>
+                                <option value="高二下">高二下</option>
+                                <option value="高三上">高三上</option>
+                                <option value="高三下">高三下</option>
+                            </select>
                         </div>
 
                         <div class="mb-4">
@@ -399,6 +431,13 @@
 
                         </div>
                         <div class="flex items-center gap-2">
+                            <!-- 学期筛选下拉框 -->
+                            <div class="relative semester-dropdown">
+                                <button type="button" id="semesterDropdownBtn" class="input-field flex items-center justify-between w-32">
+                                    <span id="semesterDropdownText">全部学期</span>
+                                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                                </button>
+                            </div>
                             <select id="sortSelect" class="input-field">
                                 <option value="date-desc">时间(新到旧)</option>
                                 <option value="date-asc">时间(旧到新)</option>
@@ -418,6 +457,7 @@
                             <thead>
                                 <tr class="border-b dark:border-gray-700">
                                     <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">考试名称</th>
+                                    <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">学期</th>
                                     <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">考试日期</th>
                                     <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">总分</th>
                                     <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">班级排名</th>
@@ -442,6 +482,14 @@
 
             <!-- 成绩分析页面 -->
             <div id="analysisPage" class="page-content container mx-auto p-4 hidden">
+                <!-- 学期筛选 -->
+                <div class="flex justify-end mb-4">
+                    <button type="button" id="analysisSemesterDropdownBtn" class="input-field flex items-center justify-between w-32">
+                        <span id="analysisSemesterDropdownText">全部学期</span>
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </button>
+                </div>
+                
                 <!-- 标签页导航 -->
                 <div class="mb-6 border-b">
                     <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="analysisTabs" role="tablist">
@@ -690,66 +738,244 @@
             </div>
 
             <!-- 编辑模式容器 -->
-            <div id="editModeContainer" class="p-6 hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-bold">编辑考试</h3>
-                    <button id="closeEditModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-                <form id="editExamForm">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">考试名称</label>
-                            <input type="text" id="editExamName" class="input-field">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">考试日期</label>
-                            <input type="date" id="editExamDate" class="input-field">
-                        </div>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-3 dark:text-gray-300">科目成绩</label>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full" id="editScoresTable">
-                                <thead>
-                                    <tr class="border-b dark:border-gray-700">
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">科目</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">分数</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">满分</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">班级排名</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400">年级排名</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="flex gap-4 mb-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">班级排名</label>
-                            <input type="number" id="editRankClass" class="input-field" min="1">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">年级排名</label>
-                            <input type="number" id="editRankGrade" class="input-field" min="1">
-                        </div>
-                    </div>
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">考试总结</label>
-                        <textarea id="editExamSummary" class="input-field" rows="3"></textarea>
-                    </div>
-                    <div class="flex justify-end gap-4">
-                        <button type="button" id="cancelEditBtn" class="btn btn-secondary">
+            <div id="editModeContainer" class="page-content container mx-auto p-4 hidden">
+                <!-- 编辑成绩表单 -->
+                <div class="card mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">编辑考试</h3>
+                        <button id="closeEditModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
                             <i class="fa-solid fa-xmark"></i>
-                            <span>取消</span>
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fa-solid fa-floppy-disk"></i>
-                            <span>保存</span>
                         </button>
                     </div>
-                </form>
+                    <form id="editExamForm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">考试名称</label>
+                                <input type="text" id="editExamName" class="input-field" placeholder="考试的名称">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">考试日期</label>
+                                <input type="date" id="editExamDate" class="input-field">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">学期</label>
+                            <select id="editExamSemester" class="input-field">
+                                <option value="">请选择学期</option>
+                                <option value="高一上">高一上</option>
+                                <option value="高一下">高一下</option>
+                                <option value="高二上">高二上</option>
+                                <option value="高二下">高二下</option>
+                                <option value="高三上">高三上</option>
+                                <option value="高三下">高三下</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <h4 class="text-base font-medium text-gray-700 mb-3 dark:text-gray-300">科目成绩</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <!-- 语文 -->
+                                <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700 scale-hover">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">语文</label>
+                                        <div class="flex items-center">
+                                            <span id="editChineseFullMarkDisplay" class="text-xs text-gray-500 mr-2">150</span>
+                                            <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="editChinese" data-default="150">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+                                            <input type="hidden" name="editChineseFullMark" value="150">
+                                        </div>
+                                    </div>
+                                    <input type="number" name="editChineseScore" class="input-field" placeholder="0-150" max="150" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="editChineseRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="editChineseRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
+                                </div>
+
+                                <!-- 数学 -->
+                                <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700 scale-hover">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">数学</label>
+                                        <div class="flex items-center">
+                                            <span id="editMathFullMarkDisplay" class="text-xs text-gray-500 mr-2">150</span>
+                                            <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="editMath" data-default="150">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+                                            <input type="hidden" name="editMathFullMark" value="150">
+                                        </div>
+                                    </div>
+                                    <input type="number" name="editMathScore" class="input-field" placeholder="0-150" max="150" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="editMathRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="editMathRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
+                                </div>
+
+                                <!-- 英语 -->
+                                <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700 scale-hover">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">英语</label>
+                                        <div class="flex items-center">
+                                            <span id="editEnglishFullMarkDisplay" class="text-xs text-gray-500 mr-2">150</span>
+                                            <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="editEnglish" data-default="150">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+                                            <input type="hidden" name="editEnglishFullMark" value="150">
+                                        </div>
+                                    </div>
+                                    <input type="number" name="editEnglishScore" class="input-field" placeholder="0-150" max="150" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="editEnglishRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="editEnglishRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
+                                </div>
+
+                                <!-- 物理 -->
+                                <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700 scale-hover">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">物理</label>
+                                        <div class="flex items-center">
+                                            <span id="editPhysicsFullMarkDisplay" class="text-xs text-gray-500 mr-2">100</span>
+                                            <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="editPhysics" data-default="100">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+                                            <input type="hidden" name="editPhysicsFullMark" value="100">
+                                        </div>
+                                    </div>
+                                    <input type="number" name="editPhysicsScore" class="input-field" placeholder="0-100" max="100" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="editPhysicsRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="editPhysicsRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
+                                </div>
+
+                                <!-- 化学 -->
+                                <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700 scale-hover">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">化学</label>
+                                        <div class="flex items-center">
+                                            <span id="editChemistryFullMarkDisplay" class="text-xs text-gray-500 mr-2">100</span>
+                                            <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="editChemistry" data-default="100">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+                                            <input type="hidden" name="editChemistryFullMark" value="100">
+                                        </div>
+                                    </div>
+                                    <input type="number" name="editChemistryScore" class="input-field" placeholder="0-100" max="100" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="editChemistryRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="editChemistryRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
+                                </div>
+
+                                <!-- 生物 -->
+                                <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700 scale-hover">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">生物</label>
+                                        <div class="flex items-center">
+                                            <span id="editBiologyFullMarkDisplay" class="text-xs text-gray-500 mr-2">100</span>
+                                            <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="editBiology" data-default="100">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+                                            <input type="hidden" name="editBiologyFullMark" value="100">
+                                        </div>
+                                    </div>
+                                    <input type="number" name="editBiologyScore" class="input-field" placeholder="0-100" max="100" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="editBiologyRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="editBiologyRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
+                                </div>
+
+                                <!-- 政治 -->
+                                <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700 scale-hover">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">政治</label>
+                                        <div class="flex items-center">
+                                            <span id="editPoliticsFullMarkDisplay" class="text-xs text-gray-500 mr-2">100</span>
+                                            <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="editPolitics" data-default="100">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+                                            <input type="hidden" name="editPoliticsFullMark" value="100">
+                                        </div>
+                                    </div>
+                                    <input type="number" name="editPoliticsScore" class="input-field" placeholder="0-100" max="100" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="editPoliticsRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="editPoliticsRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
+                                </div>
+
+                                <!-- 历史 -->
+                                <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">历史</label>
+                                        <div class="flex items-center">
+                                            <span id="editHistoryFullMarkDisplay" class="text-xs text-gray-500 mr-2">100</span>
+                                            <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="editHistory" data-default="100">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+                                            <input type="hidden" name="editHistoryFullMark" value="100">
+                                        </div>
+                                    </div>
+                                    <input type="number" name="editHistoryScore" class="input-field" placeholder="0-100" max="100" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="editHistoryRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="editHistoryRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
+                                </div>
+
+                                <!-- 地理 -->
+                                <div class="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">地理</label>
+                                        <div class="flex items-center">
+                                            <span id="editGeographyFullMarkDisplay" class="text-xs text-gray-500 mr-2">100</span>
+                                            <button type="button" class="edit-fullmark-btn text-xs text-primary" data-subject="editGeography" data-default="100">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+                                            <input type="hidden" name="editGeographyFullMark" value="100">
+                                        </div>
+                                    </div>
+                                    <input type="number" name="editGeographyScore" class="input-field" placeholder="0-100" max="100" step="0.25">
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <input type="number" name="editGeographyRankClass" class="input-field text-sm" placeholder="班级排名" min="1" max="51">
+                                        <input type="number" name="editGeographyRankGrade" class="input-field text-sm" placeholder="年级排名" min="1" max="650">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">班级排名</label>
+                                <input type="number" id="editRankClass" class="input-field" placeholder="例如: 1" min="1">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">年级排名</label>
+                                <input type="number" id="editRankGrade" class="input-field" placeholder="例如: 1" min="1">
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">考试总结</label>
+                            <textarea id="editExamSummary" class="input-field" rows="3" placeholder="记录本次考试的感受和总结..."></textarea>
+                        </div>
+
+                        <div class="mt-6 flex justify-end gap-4">
+                            <button type="reset" class="btn btn-secondary">
+                                <i class="fa-solid fa-rotate-right"></i>
+                                <span>重置</span>
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa-solid fa-floppy-disk"></i>
+                                <span>保存成绩</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -799,27 +1025,57 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+    
+    <!-- 选科设置对话框 -->
+    <div id="electiveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden elective-modal-backdrop">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full elective-modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">选科设置</h3>
+                <button id="closeElectiveModal" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
             
-            <!-- 颜色模式设置 -->
-            <div class="mb-6">
-                <h4 class="text-lg font-medium mb-4 text-gray-900 dark:text-white">外观</h4>
-                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-md mb-3">
-                    <span class="text-sm text-gray-800 dark:text-gray-200">颜色模式</span>
-                    <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600">
-                        <i class="fa-solid fa-moon text-gray-600 dark:text-yellow-400"></i>
-                    </button>
+            <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">从物化生政史地中选择3门作为选科</p>
+                <div id="electiveSubjectsContainer" class="grid grid-cols-3 gap-2 mb-3">
+                    <!-- 物理 -->
+                    <label class="elective-subject-checkbox flex items-center p-2 bg-white dark:bg-gray-600 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
+                        <input type="checkbox" name="elective" value="physics" class="mr-2 w-4 h-4 rounded text-primary">
+                        <span class="text-sm text-gray-700 dark:text-gray-200">物理</span>
+                    </label>
+                    <!-- 化学 -->
+                    <label class="elective-subject-checkbox flex items-center p-2 bg-white dark:bg-gray-600 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
+                        <input type="checkbox" name="elective" value="chemistry" class="mr-2 w-4 h-4 rounded text-primary">
+                        <span class="text-sm text-gray-700 dark:text-gray-200">化学</span>
+                    </label>
+                    <!-- 生物 -->
+                    <label class="elective-subject-checkbox flex items-center p-2 bg-white dark:bg-gray-600 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
+                        <input type="checkbox" name="elective" value="biology" class="mr-2 w-4 h-4 rounded text-primary">
+                        <span class="text-sm text-gray-700 dark:text-gray-200">生物</span>
+                    </label>
+                    <!-- 政治 -->
+                    <label class="elective-subject-checkbox flex items-center p-2 bg-white dark:bg-gray-600 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
+                        <input type="checkbox" name="elective" value="politics" class="mr-2 w-4 h-4 rounded text-primary">
+                        <span class="text-sm text-gray-700 dark:text-gray-200">政治</span>
+                    </label>
+                    <!-- 历史 -->
+                    <label class="elective-subject-checkbox flex items-center p-2 bg-white dark:bg-gray-600 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
+                        <input type="checkbox" name="elective" value="history" class="mr-2 w-4 h-4 rounded text-primary">
+                        <span class="text-sm text-gray-700 dark:text-gray-200">历史</span>
+                    </label>
+                    <!-- 地理 -->
+                    <label class="elective-subject-checkbox flex items-center p-2 bg-white dark:bg-gray-600 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
+                        <input type="checkbox" name="elective" value="geography" class="mr-2 w-4 h-4 rounded text-primary">
+                        <span class="text-sm text-gray-700 dark:text-gray-200">地理</span>
+                    </label>
                 </div>
-                <!-- 主题色切换功能暂时隐藏 -->
-                <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-md hidden">
-                    <span class="text-sm text-gray-800 dark:text-gray-200 block mb-3">主题色</span>
-                    <div id="themeColorSelector" class="flex gap-3">
-                        <button data-theme="blue" class="theme-color-btn w-8 h-8 rounded-full bg-blue-500 border-2 border-white shadow-md active"></button>
-                        <button data-theme="green" class="theme-color-btn w-8 h-8 rounded-full bg-green-500 border-2 border-white shadow-md"></button>
-                        <button data-theme="purple" class="theme-color-btn w-8 h-8 rounded-full bg-purple-500 border-2 border-white shadow-md"></button>
-                        <button data-theme="red" class="theme-color-btn w-8 h-8 rounded-full bg-red-500 border-2 border-white shadow-md"></button>
-                        <button data-theme="amber" class="theme-color-btn w-8 h-8 rounded-full bg-amber-500 border-2 border-white shadow-md"></button>
-                    </div>
-                </div>
+                <p id="electiveCountHint" class="text-sm text-gray-500 dark:text-gray-400">已选择 0/3 门</p>
+                <button id="saveElectiveBtn" class="mt-3 w-full p-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                    保存选科
+                </button>
             </div>
         </div>
     </div>
@@ -854,7 +1110,7 @@
     </div>
 
     <!-- 满分编辑模态框 -->
-    <div id="editFullMarkModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div id="editFullMarkModal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
         <div class="bg-white rounded-xl shadow-lg max-w-md w-full p-6 dark:bg-gray-800 dark:text-white">
             <h3 class="text-xl font-bold mb-4">编辑满分</h3>
             <div class="mb-6">
@@ -871,6 +1127,88 @@
                     <i class="fa-solid fa-floppy-disk"></i>
                     <span>保存</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成绩记录页面 - 学期筛选下拉菜单（固定定位，放在body底部避免父容器影响） -->
+    <div id="semesterDropdownMenu" class="hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+        <div class="p-3">
+            <div class="flex items-center justify-between mb-3">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="selectAllSemesters">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">全选</span>
+                </label>
+                <button id="semesterDropdownClose" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" class="semester-checkbox" value="高一上">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">高一上</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" class="semester-checkbox" value="高一下">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">高一下</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" class="semester-checkbox" value="高二上">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">高二上</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" class="semester-checkbox" value="高二下">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">高二下</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" class="semester-checkbox" value="高三上">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">高三上</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" class="semester-checkbox" value="高三下">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">高三下</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成绩分析页面 - 学期筛选下拉菜单（固定定位，放在body底部避免父容器影响） -->
+    <div id="analysisSemesterDropdownMenu" class="hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+        <div class="p-3">
+            <div class="flex items-center justify-between mb-3">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="selectAllAnalysisSemesters">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">全选</span>
+                </label>
+                <button id="analysisSemesterDropdownClose" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" class="analysis-semester-checkbox" value="高一上">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">高一上</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" class="analysis-semester-checkbox" value="高一下">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">高一下</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" class="analysis-semester-checkbox" value="高二上">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">高二上</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" class="analysis-semester-checkbox" value="高二下">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">高二下</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" class="analysis-semester-checkbox" value="高三上">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">高三上</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" class="analysis-semester-checkbox" value="高三下">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">高三下</span>
+                </label>
             </div>
         </div>
     </div>
